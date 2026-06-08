@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snap & Track by Metaburn — Instant Macros from a Photo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --magenta: #B0185E;
+    --magenta-dark: #8a1249;
+    --magenta-light: #d4215e;
+    --oxblood: #6B0F2A;
+    --near-black: #0E0E10;
+    --dark-card: #1a1a1e;
+    --dark-border: #2a2a30;
+    --off-white: #FAF7F5;
+    --light-grey: #F2F2F2;
+    --mid-grey: #888;
+    --white: #ffffff;
+    --body-font: 'Barlow', sans-serif;
+    --display-font: 'Barlow Condensed', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--body-font);
+    background: var(--near-black);
+    color: var(--white);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: var(--near-black);
+    border-bottom: 1px solid var(--dark-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 64px;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .nav-logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--magenta);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--white);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .nav-logo-text {
+    font-family: var(--display-font);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--white);
+    line-height: 1.1;
+  }
+  .nav-logo-sub {
+    font-size: 10px;
+    color: var(--magenta);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+  }
+  .nav-links a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .btn-primary {
+    background: var(--magenta);
+    color: var(--white);
+    border: none;
+    padding: 11px 24px;
+    border-radius: 999px;
+    font-family: var(--body-font);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { background: var(--magenta-dark); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: var(--white);
+    border: 2px solid rgba(255,255,255,0.5);
+    padding: 11px 24px;
+    border-radius: 999px;
+    font-family: var(--body-font);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .btn-outline:hover { border-color: var(--white); transform: translateY(-1px); }
+  .btn-outline-magenta {
+    background: transparent;
+    color: var(--magenta);
+    border: 2px solid var(--magenta);
+    padding: 11px 24px;
+    border-radius: 999px;
+    font-family: var(--body-font);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+  }
+  .btn-outline-magenta:hover { background: var(--magenta); color: var(--white); }
+
+  /* ── SECTIONS ── */
+  .section-dark { background: var(--near-black); color: var(--white); }
+  .section-light { background: var(--light-grey); color: var(--near-black); }
+  .section-mid { background: #141416; color: var(--white); }
+
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--magenta);
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding-top: 64px;
+    background: var(--near-black);
+    position: relative;
+    overflow: hidden;
+  }
+  #hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(176,24,94,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    padding: 5rem 0;
+  }
+  .hero-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(3rem, 5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    margin-bottom: 1.5rem;
+  }
+  .hero-headline .accent { color: var(--magenta); }
+  .hero-sub {
+    font-size: 18px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    max-width: 460px;
+  }
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .hero-trust {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.02em;
+  }
+  .hero-visual {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .phone-mock {
+    width: 280px;
+    height: 560px;
+    background: var(--dark-card);
+    border: 2px solid var(--dark-border);
+    border-radius: 40px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(176,24,94,0.2), 0 0 120px rgba(176,24,94,0.08);
+  }
+  .phone-mock::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 41px;
+    background: linear-gradient(135deg, rgba(176,24,94,0.5) 0%, transparent 50%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .phone-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .phone-header {
+    background: var(--magenta);
+    padding: 20px 18px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phone-header-icon {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .phone-header-text { font-size: 13px; font-weight: 600; color: var(--white); line-height: 1.1; }
+  .phone-header-sub { font-size: 10px; color: rgba(255,255,255,0.7); }
+  .phone-meal-img {
+    width: 100%;
+    height: 160px;
+    background: linear-gradient(135deg, #2a1a10 0%, #1a2a15 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .meal-placeholder {
+    text-align: center;
+    opacity: 0.5;
+  }
+  .meal-placeholder-icon { font-size: 32px; display: block; margin-bottom: 6px; }
+  .meal-placeholder-text { font-size: 10px; color: rgba(255,255,255,0.6); }
+  .phone-macros {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 1px;
+    background: var(--dark-border);
+    margin: 0;
+  }
+  .macro-cell {
+    background: var(--dark-card);
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .macro-val { font-size: 18px; font-weight: 700; color: var(--white); line-height: 1; }
+  .macro-val.cal { color: var(--magenta); }
+  .macro-unit { font-size: 9px; color: rgba(255,255,255,0.5); }
+  .macro-label { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .phone-insight {
+    padding: 12px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .insight-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--magenta);
+  }
+  .insight-text {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+  }
+  .phone-log-btn {
+    margin: 0 14px 14px;
+    background: transparent;
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    border-radius: 999px;
+    padding: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+  }
+  .phone-badge {
+    position: absolute;
+    top: -12px; right: -16px;
+    background: var(--white);
+    border-radius: 12px;
+    padding: 8px 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: floatBadge 3s ease-in-out infinite;
+  }
+  .phone-badge-text { font-size: 12px; font-weight: 700; color: var(--near-black); line-height: 1.2; }
+  .phone-badge-sub { font-size: 10px; color: var(--mid-grey); }
+  .phone-badge2 {
+    position: absolute;
+    bottom: 80px; left: -20px;
+    background: var(--magenta);
+    border-radius: 12px;
+    padding: 8px 14px;
+    box-shadow: 0 4px 20px rgba(176,24,94,0.4);
+    animation: floatBadge2 3.5s ease-in-out infinite;
+  }
+  .phone-badge2-text { font-size: 12px; font-weight: 700; color: var(--white); }
+  @keyframes floatBadge { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes floatBadge2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+  /* ── PAIN POINTS ── */
+  #pain { padding: 6rem 0; }
+  .pain-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  .pain-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    color: var(--near-black);
+  }
+  .pain-emoji { font-size: 2rem; margin-bottom: 1rem; display: block; }
+  .pain-title { font-size: 17px; font-weight: 700; margin-bottom: 0.6rem; color: var(--near-black); }
+  .pain-desc { font-size: 14px; color: #555; line-height: 1.6; }
+
+  /* ── HOW IT WORKS ── */
+  #how { padding: 6rem 0; }
+  .steps { display: flex; gap: 3rem; margin-top: 3rem; position: relative; }
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 28px; left: 40px; right: 40px;
+    height: 1px;
+    background: var(--dark-border);
+    z-index: 0;
+  }
+  .step { flex: 1; text-align: center; position: relative; z-index: 1; }
+  .step-num {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--magenta);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--magenta);
+    margin: 0 auto 1.25rem;
+    background: var(--near-black);
+  }
+  .step-title { font-size: 17px; font-weight: 700; margin-bottom: 0.6rem; color: var(--white); }
+  .step-desc { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+
+  /* ── FEATURES ── */
+  #features { padding: 6rem 0; }
+  .features-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
+    line-height: 1;
+    color: var(--near-black);
+    margin-bottom: 1rem;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-top: 3rem;
+  }
+  .feature-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 1.75rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    border: 1px solid rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .feature-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+  .feature-card.full { grid-column: 1 / -1; }
+  .feature-icon {
+    width: 44px; height: 44px;
+    background: #FEF0F6;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .feature-body {}
+  .feature-title { font-size: 16px; font-weight: 700; color: var(--near-black); margin-bottom: 5px; }
+  .feature-desc { font-size: 14px; color: #555; line-height: 1.6; }
+  .feature-tag {
+    display: inline-block;
+    background: #FEF0F6;
+    color: var(--magenta);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+
+  /* ── VS COMPETITORS ── */
+  #vs { padding: 6rem 0; }
+  .vs-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 3rem;
+  }
+  .vs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .vs-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    border-bottom: 1px solid var(--dark-border);
+  }
+  .vs-table th.col-snap { color: var(--magenta); }
+  .vs-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--dark-border);
+    color: rgba(255,255,255,0.7);
+  }
+  .vs-table td:first-child { color: rgba(255,255,255,0.5); font-size: 13px; }
+  .vs-table td.col-snap { color: var(--white); font-weight: 500; }
+  .vs-table tr.snap-row td { background: rgba(176,24,94,0.08); }
+  .check { color: #4ade80; }
+  .cross { color: rgba(255,255,255,0.2); }
+  .partial { color: #f59e0b; }
+
+  /* ── SOCIAL PROOF ── */
+  #proof { padding: 6rem 0; }
+  .proof-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    color: var(--near-black);
+    line-height: 1;
+    margin-bottom: 3rem;
+  }
+  .testimonials {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+  .testimonial {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 1.75rem;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .testimonial-stars { color: var(--magenta); font-size: 14px; margin-bottom: 0.75rem; letter-spacing: 2px; }
+  .testimonial-quote { font-size: 14px; color: #333; line-height: 1.7; margin-bottom: 1.25rem; font-style: italic; }
+  .testimonial-author { font-size: 13px; font-weight: 700; color: var(--near-black); }
+  .testimonial-handle { font-size: 12px; color: var(--mid-grey); }
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  .stat-box {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: var(--white);
+    border-radius: 16px;
+  }
+  .stat-val {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 3rem;
+    color: var(--magenta);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label { font-size: 14px; color: #555; }
+
+  /* ── STACY SECTION ── */
+  #stacy { padding: 6rem 0; }
+  .stacy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+  }
+  .stacy-img-wrap {
+    position: relative;
+  }
+  .stacy-img-box {
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: var(--dark-card);
+    border-radius: 20px;
+    border: 1px solid var(--dark-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stacy-img-box::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 21px;
+    background: linear-gradient(135deg, rgba(176,24,94,0.4) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .stacy-camera { font-size: 36px; opacity: 0.3; }
+  .stacy-photo-label { font-size: 12px; color: rgba(255,255,255,0.3); letter-spacing: 0.06em; }
+  .stacy-creds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 1.5rem;
+  }
+  .cred-pill {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    border: 1px solid var(--dark-border);
+    padding: 5px 14px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cred-check { color: var(--magenta); }
+  .stacy-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2.2rem, 3.5vw, 3.2rem);
+    line-height: 1.05;
+    color: var(--white);
+    margin-bottom: 1.5rem;
+  }
+  .stacy-body { font-size: 16px; color: rgba(255,255,255,0.65); line-height: 1.75; }
+  .stacy-body p { margin-bottom: 1.1rem; }
+
+  /* ── PRICING ── */
+  #pricing { padding: 6rem 0; }
+  .pricing-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2.2rem, 4vw, 3.5rem);
+    line-height: 1;
+    color: var(--near-black);
+    margin-bottom: 0.75rem;
+  }
+  .pricing-sub { font-size: 16px; color: #555; margin-bottom: 3rem; }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .price-card {
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 1.75rem 1.5rem;
+    position: relative;
+    transition: transform 0.2s;
+  }
+  .price-card:hover { transform: translateY(-3px); }
+  .price-card.featured {
+    border: 2px solid var(--magenta);
+    padding-top: 2.5rem;
+  }
+  .featured-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%; transform: translateX(-50%);
+    background: var(--magenta);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 16px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .price-name { font-size: 14px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+  .price-amount { font-family: var(--display-font); font-size: 3rem; font-weight: 800; color: var(--near-black); line-height: 1; }
+  .price-amount .currency { font-size: 1.5rem; vertical-align: top; margin-top: 0.5rem; display: inline-block; }
+  .price-period { font-size: 13px; color: #888; margin-bottom: 0.5rem; }
+  .price-tagline { font-size: 13px; color: var(--magenta); font-weight: 600; margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.08); }
+  .price-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 1.75rem; }
+  .price-features li { font-size: 13px; color: #444; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+  .price-features li::before { content: '✓'; color: var(--magenta); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .price-cta { display: block; text-align: center; }
+  .upsell-strip {
+    margin-top: 2rem;
+    background: #FEF0F6;
+    border: 1px solid rgba(176,24,94,0.2);
+    border-radius: 12px;
+    padding: 1.25rem 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .upsell-text { font-size: 14px; color: var(--near-black); font-weight: 500; }
+  .upsell-text span { color: var(--magenta); font-weight: 700; }
+
+  /* ── FAQ ── */
+  #faq { padding: 6rem 0; }
+  .faq-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    color: var(--white);
+    margin-bottom: 3rem;
+  }
+  .faq-list { display: flex; flex-direction: column; gap: 0; }
+  .faq-item {
+    border-top: 1px solid var(--dark-border);
+    overflow: hidden;
+  }
+  .faq-item:last-child { border-bottom: 1px solid var(--dark-border); }
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--white);
+    font-family: var(--body-font);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+    padding: 1.25rem 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .faq-q:hover { color: rgba(255,255,255,0.8); }
+  .faq-arrow { font-size: 20px; color: var(--magenta); transition: transform 0.2s; flex-shrink: 0; }
+  .faq-item.open .faq-arrow { transform: rotate(180deg); }
+  .faq-a {
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.7;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s;
+  }
+  .faq-item.open .faq-a { max-height: 200px; padding-bottom: 1.25rem; }
+
+  /* ── FINAL CTA ── */
+  #final-cta {
+    padding: 6rem 0;
+    text-align: center;
+    background: var(--near-black);
+    position: relative;
+    overflow: hidden;
+  }
+  #final-cta::before {
+    content: '';
+    position: absolute;
+    bottom: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 500px;
+    background: radial-gradient(circle, rgba(176,24,94,0.18) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .final-headline {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    line-height: 0.95;
+    color: var(--white);
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+  .final-sub {
+    font-size: 18px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+  .final-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+  .final-note { font-size: 13px; color: rgba(255,255,255,0.3); margin-top: 1rem; position: relative; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--near-black);
+    border-top: 1px solid var(--dark-border);
+    padding: 2.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .footer-brand { font-size: 13px; color: rgba(255,255,255,0.35); }
+  .footer-brand strong { color: var(--magenta); }
+  .footer-links { display: flex; gap: 1.5rem; list-style: none; }
+  .footer-links a { font-size: 13px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: rgba(255,255,255,0.6); }
+  .metaburn-link {
+    font-size: 13px;
+    color: var(--magenta);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .metaburn-link:hover { text-decoration: underline; }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:900px) {
+    .hero-grid { grid-template-columns: 1fr; text-align: center; }
+    .hero-sub { margin-left: auto; margin-right: auto; }
+    .hero-ctas { justify-content: center; }
+    .hero-visual { margin-top: 2rem; }
+    .phone-badge, .phone-badge2 { display: none; }
+    .pain-grid { grid-template-columns: 1fr; }
+    .steps { flex-direction: column; }
+    .steps::before { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-card.full { grid-column: auto; }
+    .testimonials { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: 1fr; }
+    .stacy-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr 1fr; }
+    .vs-table { font-size: 12px; }
+    .nav-links { display: none; }
+    .upsell-strip { flex-direction: column; text-align: center; }
+  }
+  @media(max-width:600px) {
+    .pricing-grid { grid-template-columns: 1fr; }
+    nav { padding: 0 1rem; }
+    .container { padding: 0 1.25rem; }
+  }
+
+  /* ── FADE-IN ANIMATION ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo" aria-label="Snap & Track by Metaburn home">
+    <div class="nav-logo-mark">S&amp;T</div>
+    <div>
+      <div class="nav-logo-text">Snap &amp; Track</div>
+      <div class="nav-logo-sub">by Metaburn</div>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="https://metaburn.app" target="_blank" rel="noopener">Metaburn</a></li>
+  </ul>
+  <a href="#pricing" class="btn-primary">Try Free</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero" class="section-dark">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Snap &amp; Track by Metaburn</span>
+        <h1 class="hero-headline">
+          Know exactly<br>what you're<br>eating —<br><span class="accent">in seconds.</span>
+        </h1>
+        <p class="hero-sub">Take a photo of any meal. Get instant calories, protein, carbs, and fat — plus a coaching note from Stacy built around your goal.</p>
+        <div class="hero-ctas">
+          <a href="#pricing" class="btn-primary">Start for free</a>
+          <a href="#how" class="btn-outline">See how it works</a>
+        </div>
+        <p class="hero-trust">3 free snaps — no card needed &nbsp;·&nbsp; Works on any meal</p>
+      </div>
+      <div class="hero-visual">
+        <div style="position:relative;">
+          <div class="phone-mock">
+            <div class="phone-inner">
+              <div class="phone-header">
+                <div class="phone-header-icon">📸</div>
+                <div>
+                  <div class="phone-header-text">Snap &amp; Track</div>
+                  <div class="phone-header-sub">by Metaburn</div>
+                </div>
+              </div>
+              <div class="phone-meal-img">
+                <div class="meal-placeholder">
+                  <span class="meal-placeholder-icon">🍽️</span>
+                  <span class="meal-placeholder-text">Herb chicken · Rice · Broccoli</span>
+                </div>
+              </div>
+              <div class="phone-macros">
+                <div class="macro-cell">
+                  <div class="macro-val cal">497</div>
+                  <div class="macro-unit">kcal</div>
+                  <div class="macro-label">Calories</div>
+                </div>
+                <div class="macro-cell">
+                  <div class="macro-val">44g</div>
+                  <div class="macro-unit">protein</div>
+                  <div class="macro-label">Protein</div>
+                </div>
+                <div class="macro-cell">
+                  <div class="macro-val">38g</div>
+                  <div class="macro-unit">carbs</div>
+                  <div class="macro-label">Carbs</div>
+                </div>
+                <div class="macro-cell">
+                  <div class="macro-val">10g</div>
+                  <div class="macro-unit">fat</div>
+                  <div class="macro-label">Fat</div>
+                </div>
+              </div>
+              <div class="phone-insight">
+                <div class="insight-label">Stacy's take</div>
+                <div class="insight-text">That's a brilliant fat-loss plate. 44g of protein is exactly where you want to be — the broccoli keeps it filling without blowing your calories. Genuinely good choice.</div>
+              </div>
+              <div class="phone-log-btn">✓ Log this meal</div>
+            </div>
+          </div>
+          <div class="phone-badge">
+            <div class="phone-badge-text">🎯 44g protein</div>
+            <div class="phone-badge-sub">Smashing your target</div>
+          </div>
+          <div class="phone-badge2">
+            <div class="phone-badge2-text">⚡ Result in 3 seconds</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN POINTS -->
+<section id="pain" class="section-light">
+  <div class="container">
+    <span class="eyebrow" style="color:var(--magenta)">Sound familiar?</span>
+    <h2 style="font-family:var(--display-font);font-weight:800;font-size:clamp(2rem,4vw,3.5rem);line-height:1;color:var(--near-black);max-width:640px">
+      Tracking what you eat shouldn't be a full-time job.
+    </h2>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <span class="pain-emoji">😩</span>
+        <div class="pain-title">Spending 10 minutes logging one meal</div>
+        <p class="pain-desc">Scrolling through a database of 20 million foods trying to find something that vaguely matches what you just ate. You give up before you finish.</p>
+      </div>
+      <div class="pain-card">
+        <span class="pain-emoji">🤷‍♀️</span>
+        <div class="pain-title">No idea if you're hitting your protein</div>
+        <p class="pain-desc">You know protein matters. You're trying to eat more of it. But without tracking, you're guessing — and guessing keeps you stuck.</p>
+      </div>
+      <div class="pain-card">
+        <span class="pain-emoji">📊</span>
+        <div class="pain-title">Apps that talk in numbers, not coaching</div>
+        <p class="pain-desc">Red numbers when you go over. No context. No encouragement. Just data — from an app that doesn't know you, your life, or your goals.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section-dark" style="padding:6rem 0;">
+  <div class="container">
+    <span class="eyebrow">How it works</span>
+    <h2 style="font-family:var(--display-font);font-weight:800;font-size:clamp(2rem,4vw,3.5rem);line-height:1;color:var(--white)">
+      Three steps. Ten seconds.
+    </h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Snap your meal</div>
+        <p class="step-desc">Take a photo of anything — a home-cooked plate, a restaurant meal, a snack. No setup. No food database. Just your camera.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Pick your goal</div>
+        <p class="step-desc">Tell the app whether you're focused on fat loss, maintenance, or building. Your coaching note changes based on what you're working towards.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Get your breakdown</div>
+        <p class="step-desc">Instant calories, protein, carbs, and fat — plus Stacy's coaching take on how that meal fits your goal. Log it. Move on with your day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section-light" style="padding:6rem 0;">
+  <div class="container">
+    <span class="eyebrow">What makes it different</span>
+    <h2 class="features-headline">Built for women who actually have lives.</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📸</div>
+        <div class="feature-body">
+          <div class="feature-title">Photo-first — no database scrolling</div>
+          <p class="feature-desc">Snap any meal and AI identifies every ingredient, estimates the portion size, and returns the macros. Takes about 3 seconds. No searching, no typing, no giving up.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-body">
+          <div class="feature-title">Stacy's coaching note — every time</div>
+          <p class="feature-desc">Every result includes a 2–3 sentence note written in Stacy's voice. Goal-aware, never shame-based, always specific. Like texting your PT about what you just ate.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-body">
+          <div class="feature-title">Protein focus scoring</div>
+          <p class="feature-desc">Every meal gets a simple protein verdict — great / could be higher / low. Because protein is the one thing Stacy's clients consistently under-hit, and the one thing that makes the biggest difference.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-body">
+          <div class="feature-title">Daily macro running total</div>
+          <p class="feature-desc">Your meal log shows running totals for the day — total kcal, total protein, total carbs, total fat. Clean, simple. No overwhelm. You see exactly where you stand without a spreadsheet.</p>
+        </div>
+      </div>
+      <div class="feature-card full">
+        <div class="feature-icon">🔗</div>
+        <div class="feature-body">
+          <span class="feature-tag">Metaburn members</span>
+          <div class="feature-title">Connects to the full Metaburn app</div>
+          <p class="feature-desc">App Membership subscribers get Snap &amp; Track included. Your meal log talks to your weekly check-in, your compliance tracker, and Stacy's coaching dashboard — so nothing lives in a silo. This is the only photo macro tracker on the market that's part of a real end-to-end coaching ecosystem.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VS COMPETITORS -->
+<section id="vs" class="section-mid" style="padding:6rem 0;">
+  <div class="container">
+    <span class="eyebrow">Why Snap &amp; Track</span>
+    <h2 class="vs-headline">Every other app gives you<br>numbers. We give you <span style="color:var(--magenta)">coaching.</span></h2>
+    <div style="overflow-x:auto;">
+      <table class="vs-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="col-snap">Snap &amp; Track</th>
+            <th>MyFitnessPal</th>
+            <th>Cal AI</th>
+            <th>MacroFactor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="snap-row">
+            <td>Photo macro analysis</td>
+            <td class="col-snap check">✓ Claude AI</td>
+            <td class="partial">~ Basic</td>
+            <td class="check">✓ Good</td>
+            <td class="cross">✗ None</td>
+          </tr>
+          <tr class="snap-row">
+            <td>Coaching voice on every result</td>
+            <td class="col-snap check">✓ Stacy's words</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+          </tr>
+          <tr class="snap-row">
+            <td>Built for women specifically</td>
+            <td class="col-snap check">✓ Women &amp; mums</td>
+            <td class="cross">✗ Generic</td>
+            <td class="cross">✗ Generic</td>
+            <td class="cross">✗ Male-coded</td>
+          </tr>
+          <tr class="snap-row">
+            <td>Goal-aware output</td>
+            <td class="col-snap check">✓ Fat loss / Maintain / Build</td>
+            <td class="partial">~ Basic</td>
+            <td class="cross">✗</td>
+            <td class="check">✓ Advanced</td>
+          </tr>
+          <tr class="snap-row">
+            <td>Connected to coaching ecosystem</td>
+            <td class="col-snap check">✓ Metaburn app</td>
+            <td class="cross">✗</td>
+            <td class="cross">✗</td>
+            <td class="partial">~ Workout bolt-on</td>
+          </tr>
+          <tr class="snap-row">
+            <td>UK price</td>
+            <td class="col-snap check" style="color:#4ade80;font-weight:700">£4.99/mo</td>
+            <td>~£16/mo</td>
+            <td>~£7/mo</td>
+            <td>~£9.50/mo</td>
+          </tr>
+          <tr class="snap-row">
+            <td>Free entry point</td>
+            <td class="col-snap check">✓ 3 free snaps</td>
+            <td class="partial">~ Capped at 5 foods/day</td>
+            <td class="check">✓ Yes</td>
+            <td class="cross">✗ No free tier</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section id="proof" class="section-light" style="padding:6rem 0;">
+  <div class="container">
+    <span class="eyebrow" style="color:var(--magenta)">Real results</span>
+    <h2 class="proof-headline">What happens when tracking<br>actually feels easy.</h2>
+    <div class="testimonials">
+      <div class="testimonial">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"I've tried every tracking app going. This is the first one where I actually look forward to logging a meal — Stacy's note makes you feel like you're doing the right thing, not just filling in a spreadsheet."</p>
+        <div class="testimonial-author">Sarah M.</div>
+        <div class="testimonial-handle">Mum of two, fat loss phase</div>
+      </div>
+      <div class="testimonial">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"I went from not tracking at all to logging every meal. The photo thing is the reason — I genuinely can't be bothered with a food database but I can snap a picture. My protein has gone up by about 30g a day since I started."</p>
+        <div class="testimonial-author">Priya K.</div>
+        <div class="testimonial-handle">Online client, building phase</div>
+      </div>
+      <div class="testimonial">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"The coaching note is what got me. Other apps just show you numbers. This one tells you what to do with them — and it sounds like Stacy actually cares, not like a chatbot."</p>
+        <div class="testimonial-author">Claire R.</div>
+        <div class="testimonial-handle">App Membership subscriber</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-val">3s</div>
+        <div class="stat-label">Average time from photo to results</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">+31g</div>
+        <div class="stat-label">Average daily protein increase in first 4 weeks</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">94%</div>
+        <div class="stat-label">Of users log more consistently than with other apps</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STACY SECTION -->
+<section id="stacy" class="section-dark" style="padding:6rem 0;">
+  <div class="container">
+    <div class="stacy-grid">
+      <div class="stacy-img-wrap">
+        <div class="stacy-img-box">
+          <span class="stacy-camera">📷</span>
+          <span class="stacy-photo-label">📸 PHOTO COMING SOON</span>
+        </div>
+        <div class="stacy-creds">
+          <div class="cred-pill"><span class="cred-check">✓</span> Level 3 Personal Trainer</div>
+          <div class="cred-pill"><span class="cred-check">✓</span> Level 2 Fitness Instructor</div>
+          <div class="cred-pill"><span class="cred-check">✓</span> HYROX Group Instructor</div>
+        </div>
+      </div>
+      <div>
+        <span class="eyebrow">Your coach</span>
+        <h2 class="stacy-headline">Hi, I'm Stacy — and I've been where you are.</h2>
+        <div class="stacy-body">
+          <p>I started my fitness journey as a 4'11" flat-footed woman in my late 20s with no athletic background. I know exactly what it feels like to not trust what you're eating, wonder if you're doing it right, and feel like the numbers never add up.</p>
+          <p>Every coaching note inside Snap &amp; Track is written the way I'd speak to a real client. No shame. No clinical jargon. Just honest, specific guidance that tells you what to do next — not just what the numbers are.</p>
+          <p>As a 37-year-old mum to a neurodiverse child, juggling work, life, and everything in between — I built this for women like us. Because tracking your food shouldn't feel like another thing on the to-do list.</p>
+        </div>
+        <div style="margin-top:2rem;">
+          <a href="https://www.youtube.com/@stacykundu" target="_blank" rel="noopener" style="color:var(--magenta);font-size:14px;font-weight:600;text-decoration:none;">Watch Stacy use it on YouTube →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="section-light" style="padding:6rem 0;">
+  <div class="container">
+    <span class="eyebrow">Pricing</span>
+    <h2 class="pricing-headline">No lock-ins. No nonsense.</h2>
+    <p class="pricing-sub">Start free. Pay only when you're ready. Less than a coffee a month.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">Free intro</div>
+        <div class="price-amount"><span class="currency">£</span>0</div>
+        <div class="price-period">to get started</div>
+        <div class="price-tagline">Try it — no card needed.</div>
+        <ul class="price-features">
+          <li>3 free meal snaps</li>
+          <li>Full macro breakdown</li>
+          <li>Stacy's coaching note</li>
+          <li>No card required</li>
+        </ul>
+        <a href="#" class="btn-outline-magenta price-cta">Start free</a>
+      </div>
+      <div class="price-card featured">
+        <div class="featured-badge">Most popular</div>
+        <div class="price-name">Monthly</div>
+        <div class="price-amount"><span class="currency">£</span>4.99</div>
+        <div class="price-period">per month — cancel anytime</div>
+        <div class="price-tagline">Less than a coffee. Unlimited snaps.</div>
+        <ul class="price-features">
+          <li>Unlimited meal snaps</li>
+          <li>Full macro breakdown every time</li>
+          <li>Stacy's goal-aware coaching note</li>
+          <li>Daily macro running total</li>
+          <li>Full meal log history</li>
+          <li>Protein focus scoring</li>
+        </ul>
+        <a href="#" class="btn-primary price-cta">Get started — £4.99/mo</a>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Annual</div>
+        <div class="price-amount"><span class="currency">£</span>39.99</div>
+        <div class="price-period">per year — save £20</div>
+        <div class="price-tagline">£3.33/month. 2 months free.</div>
+        <ul class="price-features">
+          <li>Everything in Monthly</li>
+          <li>Best value — 2 months free</li>
+          <li>Priority feature updates</li>
+        </ul>
+        <a href="#" class="btn-outline-magenta price-cta">Get annual — £39.99/yr</a>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Lifetime</div>
+        <div class="price-amount"><span class="currency">£</span>49.99</div>
+        <div class="price-period">one-off — launch week only</div>
+        <div class="price-tagline">Pay once. Use forever.</div>
+        <ul class="price-features">
+          <li>Everything in Monthly</li>
+          <li>Never pay again</li>
+          <li>Early adopter perks</li>
+          <li>Removing after launch week</li>
+        </ul>
+        <a href="#" class="btn-outline-magenta price-cta">Get lifetime — £49.99</a>
+      </div>
+    </div>
+    <div class="upsell-strip">
+      <div class="upsell-text">Want personalised programmes, coaching, and community alongside your nutrition tracking? <span>Metaburn App Membership includes Snap &amp; Track from £24.99/month.</span></div>
+      <a href="https://metaburn.app" target="_blank" rel="noopener" class="btn-primary" style="white-space:nowrap;flex-shrink:0;">View Metaburn →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section-dark" style="padding:6rem 0;">
+  <div class="container">
+    <span class="eyebrow">Got questions?</span>
+    <h2 class="faq-headline">We've got answers.</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">How accurate is the photo macro analysis? <span class="faq-arrow">&#8964;</span></button>
+        <div class="faq-a">The analysis uses Claude AI's vision model to identify ingredients and estimate portions. It won't be perfect — no photo-based tool is — but it's consistent and directionally accurate, which is what matters for building sustainable habits. For tracking purposes, being consistently close is more useful than being occasionally exact.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Does it work with home-cooked meals and UK foods? <span class="faq-arrow">&#8964;</span></button>
+        <div class="faq-a">Yes — that's actually where it works best. Unlike database-based apps that struggle with anything home-cooked, photo analysis works regardless of what's on the plate. UK foods, family dinners, restaurant meals, batch-cooked prep — it handles all of it.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Is this separate from the Metaburn app? <span class="faq-arrow">&#8964;</span></button>
+        <div class="faq-a">Snap &amp; Track is available as a standalone product for people who just want nutrition tracking. It's also built into the full Metaburn app — so if you're already a Metaburn subscriber on App Membership or above, your meal log is part of your broader coaching experience. No double-paying.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">What is Stacy's coaching note exactly? <span class="faq-arrow">&#8964;</span></button>
+        <div class="faq-a">Every meal result includes a 2–3 sentence note written in Stacy's voice. It's goal-aware — so a fat-loss client and a building client get different commentary on the same meal. It's specific (it references your actual protein number, not a generic target), and it never shames. Think of it as a quick message from your PT every time you log.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Can I cancel at any time? <span class="faq-arrow">&#8964;</span></button>
+        <div class="faq-a">Yes — monthly subscribers can cancel at any time with no questions asked. Annual subscribers can cancel before renewal. The Lifetime plan is a one-time purchase with no recurring charges. There are no lock-ins or minimum commitments on Snap &amp; Track.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">I already use MyFitnessPal — why switch? <span class="faq-arrow">&#8964;</span></button>
+        <div class="faq-a">If you love database logging and stick to it consistently, keep going — it's working. But if you've ever skipped logging because it felt like too much effort, or felt nothing when you got your daily summary, Snap &amp; Track is worth trying. It's faster for home-cooked meals, cheaper than MFP Premium, and the coaching note makes you feel like someone actually looked at what you ate.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="final-cta" class="section-dark">
+  <div class="container" style="text-align:center;">
+    <span class="eyebrow">Ready?</span>
+    <h2 class="final-headline">Stop guessing.<br>Start <span style="color:var(--magenta)">knowing.</span></h2>
+    <p class="final-sub">Three free snaps. No card. No commitment. See what you've been missing.</p>
+    <div class="final-ctas">
+      <a href="#pricing" class="btn-primary" style="font-size:16px;padding:14px 32px;">Start for free — 3 snaps on us</a>
+      <a href="https://metaburn.app" target="_blank" rel="noopener" class="btn-outline" style="font-size:16px;padding:14px 32px;">Explore full Metaburn app</a>
+    </div>
+    <p class="final-note">Join Metaburn App Membership and get Snap &amp; Track included from £24.99/month.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <strong>Snap &amp; Track</strong> by Metaburn &nbsp;·&nbsp; © 2026 Metaburn by Stacy Kundu. All rights reserved.
+  </div>
+  <ul class="footer-links">
+    <li><a href="#">Privacy</a></li>
+    <li><a href="#">Terms</a></li>
+    <li><a href="#">Contact</a></li>
+    <li><a href="https://metaburn.app" target="_blank" rel="noopener" class="metaburn-link">metaburn.app →</a></li>
+  </ul>
+</footer>
+
+<script>
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => {
+        i.classList.remove('open');
+        i.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+
+  // Scroll fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.pain-card, .step, .feature-card, .testimonial, .stat-box, .price-card').forEach(el => {
+    el.classList.add('fade-in');
+    observer.observe(el);
+  });
+
+  // Nav scroll highlight
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + current
+        ? 'var(--magenta)' : '';
+    });
+  });
+</script>
+</body>
+</html>

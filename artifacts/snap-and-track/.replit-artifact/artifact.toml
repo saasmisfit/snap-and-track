@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Snap & Track Landing Page"
+version = "1.0.0"
+id = "artifacts/snap-and-track"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25640
+
+[services.development]
+run = "pnpm --filter @workspace/snap-and-track run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/snap-and-track", "run", "build" ]
+publicDir = "artifacts/snap-and-track/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25640"
+BASE_PATH = "/"
