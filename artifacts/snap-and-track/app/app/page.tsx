@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 
@@ -82,6 +83,7 @@ export default function SnapAndTrackApp() {
   const [result, setResult] = useState<AnalyseResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [justLogged, setJustLogged] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -102,6 +104,13 @@ export default function SnapAndTrackApp() {
     }, 1800);
     return () => window.clearInterval(id);
   }, [isAnalysing]);
+
+  // Auto-clear "Logged!" confirmation after 2 seconds
+  useEffect(() => {
+    if (!justLogged) return;
+    const id = window.setTimeout(() => setJustLogged(false), 2000);
+    return () => window.clearTimeout(id);
+  }, [justLogged]);
 
   function pickFile() {
     fileInputRef.current?.click();
@@ -188,10 +197,29 @@ export default function SnapAndTrackApp() {
   }
 
   function logMeal() {
-    if (!result) return;
-    // Placeholder — wire to backend/storage later.
-    // eslint-disable-next-line no-console
-    console.log('LOG_MEAL', { goal, result });
+    if (!result || justLogged) return;
+    const entry = {
+      id: Date.now().toString(),
+      dish: result.dish,
+      portion_estimate: result.portion_estimate,
+      calories: result.calories,
+      protein_g: result.protein_g,
+      carbs_g: result.carbs_g,
+      fat_g: result.fat_g,
+      foods_identified: result.foods_identified,
+      stacy_insight: result.stacy_insight,
+      loggedAt: new Date().toISOString(),
+    };
+    try {
+      const raw = window.localStorage.getItem('snaptrack_log');
+      const existing: unknown = raw ? JSON.parse(raw) : [];
+      const arr = Array.isArray(existing) ? existing : [];
+      arr.push(entry);
+      window.localStorage.setItem('snaptrack_log', JSON.stringify(arr));
+    } catch {
+      // best-effort: still flash the confirmation so the UI feels responsive
+    }
+    setJustLogged(true);
   }
 
   const canAnalyse = !!file && !isAnalysing && !result;
@@ -204,10 +232,13 @@ export default function SnapAndTrackApp() {
           <div style={styles.headerMark} aria-hidden="true">
             📸
           </div>
-          <div>
+          <div style={styles.headerTitleGroup}>
             <div style={styles.headerTitle}>Snap &amp; Track</div>
             <div style={styles.headerSub}>by Metaburn</div>
           </div>
+          <Link href="/app/log" className="view-log-link">
+            View log →
+          </Link>
         </header>
 
         {/* Goal selector */}
@@ -358,8 +389,13 @@ export default function SnapAndTrackApp() {
               <p style={styles.insight}>{result.stacy_insight}</p>
             </div>
 
-            <button type="button" onClick={logMeal} className="log-btn">
-              ✓ Log this meal
+            <button
+              type="button"
+              onClick={logMeal}
+              disabled={justLogged}
+              className={`log-btn${justLogged ? ' logged' : ''}`}
+            >
+              {justLogged ? '✓ Logged!' : '✓ Log this meal'}
             </button>
 
             <button type="button" onClick={() => reset()} className="reset-link">
@@ -528,6 +564,27 @@ export default function SnapAndTrackApp() {
           background: ${COLOURS.magenta};
           color: ${COLOURS.white};
         }
+        .log-btn.logged,
+        .log-btn.logged:hover {
+          color: #4ade80;
+          border-color: #4ade80;
+          background: rgba(74, 222, 128, 0.08);
+          cursor: default;
+          transform: none;
+        }
+
+        .view-log-link {
+          font-size: 12px;
+          font-weight: 600;
+          color: ${COLOURS.textMuted};
+          text-decoration: none;
+          letter-spacing: 0.02em;
+          white-space: nowrap;
+          transition: color 0.2s;
+        }
+        .view-log-link:hover {
+          color: ${COLOURS.magenta};
+        }
 
         .reset-link {
           background: transparent;
@@ -638,6 +695,10 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
     padding: '0.5rem 0 1rem',
     borderBottom: `1px solid ${COLOURS.border}`,
+  },
+  headerTitleGroup: {
+    flex: 1,
+    minWidth: 0,
   },
   headerMark: {
     width: 44,
