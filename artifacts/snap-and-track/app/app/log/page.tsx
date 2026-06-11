@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import UpsellBanner from '../../components/UpsellBanner';
 
 interface FoodItem {
   name: string;
@@ -298,6 +299,8 @@ export default function MealLogPage() {
           color: ${COLOURS.danger};
         }
       `}</style>
+
+      <UpsellBanner />
     </main>
   );
 }

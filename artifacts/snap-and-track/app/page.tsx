@@ -515,6 +515,36 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CROSS-LINK TO METABURN */}
+      <section id="also-from-metaburn" className="section-mid" style={{padding: '4rem 2rem', textAlign: 'center'}}>
+        <div className="container" style={{maxWidth: 720}}>
+          <span className="eyebrow">Also from Metaburn</span>
+          <h2 style={{
+            fontFamily: 'var(--display-font)',
+            fontWeight: 800,
+            fontSize: 'clamp(2rem,3.5vw,3rem)',
+            lineHeight: 1,
+            color: 'var(--white)',
+            marginBottom: '1rem',
+          }}>
+            Want more than macros?
+          </h2>
+          <p style={{
+            fontSize: 16,
+            color: 'rgba(255,255,255,0.65)',
+            lineHeight: 1.7,
+            maxWidth: 560,
+            margin: '0 auto 2rem',
+          }}>
+            Snap &amp; Track is part of the Metaburn coaching ecosystem — personalised programmes, weekly check-ins, and a coach in your corner.
+          </p>
+          <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
+            <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-primary">Explore Metaburn →</a>
+            <a href="#pricing" className="btn-outline">View pricing</a>
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer>
         <div className="footer-brand">

@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import UpsellBanner from '../components/UpsellBanner';
+
+const FREE_SNAP_LIMIT = 3;
+const FREE_SNAP_KEY = 'snaptrack_free_count';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 
@@ -84,6 +88,7 @@ export default function SnapAndTrackApp() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [justLogged, setJustLogged] = useState(false);
+  const [snapCount, setSnapCount] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -111,6 +116,17 @@ export default function SnapAndTrackApp() {
     const id = window.setTimeout(() => setJustLogged(false), 2000);
     return () => window.clearTimeout(id);
   }, [justLogged]);
+
+  // Load free-snap count from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(FREE_SNAP_KEY);
+      const parsed = raw ? parseInt(raw, 10) : 0;
+      setSnapCount(Number.isFinite(parsed) && parsed >= 0 ? parsed : 0);
+    } catch {
+      setSnapCount(0);
+    }
+  }, []);
 
   function pickFile() {
     fileInputRef.current?.click();
@@ -170,6 +186,8 @@ export default function SnapAndTrackApp() {
 
   async function analyse() {
     if (!file) return;
+    // Hard gate — if free quota is used up, do not call the API
+    if (snapCount !== null && snapCount >= FREE_SNAP_LIMIT) return;
     setIsAnalysing(true);
     setError(null);
     setResult(null);
@@ -189,6 +207,15 @@ export default function SnapAndTrackApp() {
         throw new Error(detail);
       }
       setResult(data as AnalyseResponse);
+      setSnapCount((prev) => {
+        const next = (prev ?? 0) + 1;
+        try {
+          window.localStorage.setItem(FREE_SNAP_KEY, String(next));
+        } catch {
+          // best-effort
+        }
+        return next;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong analysing that meal.');
     } finally {
@@ -327,17 +354,34 @@ export default function SnapAndTrackApp() {
           </section>
         )}
 
-        {/* Analyse button — hidden once we have a result */}
+        {/* Analyse button (or subscribe gate if free snaps exhausted) — hidden once we have a result */}
         {!result && (
           <section style={styles.block}>
-            <button
-              type="button"
-              onClick={analyse}
-              disabled={!canAnalyse}
-              className={`analyse-btn${canAnalyse ? '' : ' disabled'}`}
-            >
-              {isAnalysing ? 'Analysing…' : 'Analyse my meal ✦'}
-            </button>
+            {snapCount !== null && snapCount >= FREE_SNAP_LIMIT ? (
+              <div style={styles.subscribeGate}>
+                <div style={styles.gateTitle}>You&apos;ve used your 3 free snaps 🎉</div>
+                <div style={styles.gateSub}>Subscribe for unlimited access — £4.99/month</div>
+                <Link href="/subscribe" className="subscribe-cta">
+                  Subscribe now →
+                </Link>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={analyse}
+                  disabled={!canAnalyse}
+                  className={`analyse-btn${canAnalyse ? '' : ' disabled'}`}
+                >
+                  {isAnalysing ? 'Analysing…' : 'Analyse my meal ✦'}
+                </button>
+                {snapCount === 1 || snapCount === 2 ? (
+                  <div style={styles.freeCounter}>
+                    {snapCount} of {FREE_SNAP_LIMIT} free snaps used
+                  </div>
+                ) : null}
+              </>
+            )}
           </section>
         )}
 
@@ -616,7 +660,31 @@ export default function SnapAndTrackApp() {
             transform: rotate(360deg);
           }
         }
+
+        .subscribe-cta {
+          display: block;
+          width: 100%;
+          background: ${COLOURS.magenta};
+          color: ${COLOURS.white};
+          text-align: center;
+          padding: 14px 24px;
+          border-radius: 999px;
+          text-decoration: none;
+          font-family: var(--body-font), 'Barlow', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          transition: background 0.2s, transform 0.1s;
+          margin-top: 0.5rem;
+        }
+        .subscribe-cta:hover {
+          background: ${COLOURS.magentaDark};
+          transform: translateY(-1px);
+        }
       `}</style>
+
+      <UpsellBanner />
     </main>
   );
 }
@@ -882,5 +950,36 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'rgba(255,255,255,0.85)',
     fontStyle: 'italic',
     margin: 0,
+  },
+  subscribeGate: {
+    background: COLOURS.card,
+    border: `2px solid ${COLOURS.magenta}`,
+    borderRadius: 16,
+    padding: '22px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 6,
+    textAlign: 'center',
+  },
+  gateTitle: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 800,
+    fontSize: 24,
+    lineHeight: 1.15,
+    color: COLOURS.white,
+    letterSpacing: '-0.01em',
+  },
+  gateSub: {
+    fontSize: 14,
+    color: COLOURS.textMuted,
+    marginBottom: 4,
+  },
+  freeCounter: {
+    fontSize: 12,
+    color: COLOURS.textFaint,
+    textAlign: 'center',
+    letterSpacing: '0.04em',
+    paddingTop: 4,
   },
 };
