@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.39.5",
     "next": "14.2.29",
     "react": "19.1.0",
     "react-dom": "19.1.0"
