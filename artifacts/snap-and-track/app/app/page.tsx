@@ -2,7 +2,25 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { UserButton } from '@clerk/nextjs';
 import UpsellBanner from '../components/UpsellBanner';
+
+const userButtonAppearance = {
+  variables: {
+    colorPrimary: '#B0185E',
+    colorBackground: '#1a1a1e',
+    colorText: '#ffffff',
+    colorTextSecondary: '#888888',
+  },
+  elements: {
+    userButtonAvatarBox: { width: 32, height: 32 },
+    userButtonPopoverCard: {
+      background: '#1a1a1e',
+      border: '1px solid #2a2a30',
+    },
+    userButtonPopoverActionButton: { color: '#ffffff' },
+  },
+};
 
 const FREE_SNAP_LIMIT = 3;
 const FREE_SNAP_KEY = 'snaptrack_free_count';
@@ -266,6 +284,7 @@ export default function SnapAndTrackApp() {
           <Link href="/app/log" className="view-log-link">
             View log →
           </Link>
+          <UserButton afterSignOutUrl="/" appearance={userButtonAppearance} />
         </header>
 
         {/* Goal selector */}

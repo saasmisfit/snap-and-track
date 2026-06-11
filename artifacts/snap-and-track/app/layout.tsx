@@ -1,11 +1,5 @@
 import type { Metadata } from 'next';
-import {
-  ClerkProvider,
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from '@clerk/nextjs';
+import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -28,17 +22,7 @@ export default function RootLayout({
             rel="stylesheet"
           />
         </head>
-        <body>
-          <SignedIn>
-            {/* Auth pieces available to any descendant; intentionally not rendered
-                here so existing layouts remain untouched. */}
-            <UserButton />
-          </SignedIn>
-          <SignedOut>
-            <SignInButton />
-          </SignedOut>
-          {children}
-        </body>
+        <body>{children}</body>
       </html>
     </ClerkProvider>
   );
