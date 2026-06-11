@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 const COLOURS = {
@@ -9,9 +12,41 @@ const COLOURS = {
   white: '#ffffff',
   textMuted: 'rgba(255,255,255,0.55)',
   textFaint: 'rgba(255,255,255,0.35)',
+  errorText: '#fca5a5',
+  errorBg: 'rgba(220,38,38,0.10)',
+  errorBorder: 'rgba(220,38,38,0.45)',
 };
 
 export default function SubscribePage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubscribe() {
+    if (isLoading) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/create-checkout', { method: 'POST' });
+      const data: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail =
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : `Request failed (${res.status})`;
+        throw new Error(detail);
+      }
+      const url =
+        data && typeof data === 'object' && 'url' in data
+          ? String((data as { url: unknown }).url)
+          : '';
+      if (!url) throw new Error('No checkout URL returned');
+      window.location.href = url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start checkout.');
+      setIsLoading(false);
+    }
+  }
+
   return (
     <main
       style={{
@@ -95,7 +130,7 @@ export default function SubscribePage() {
               marginTop: '1rem',
             }}
           >
-            Subscribe for £4.99/month — cancel anytime.
+            Start your 3-day free trial — £4.99/month after. Cancel anytime.
           </p>
         </div>
 
@@ -146,15 +181,34 @@ export default function SubscribePage() {
           ))}
         </div>
 
-        {/* Primary CTA — non-functional placeholder until Stripe is wired */}
+        {/* Error state */}
+        {error ? (
+          <div
+            role="alert"
+            style={{
+              width: '100%',
+              background: COLOURS.errorBg,
+              border: `1px solid ${COLOURS.errorBorder}`,
+              borderRadius: 12,
+              padding: '12px 16px',
+              fontSize: 14,
+              color: COLOURS.errorText,
+              textAlign: 'left',
+            }}
+          >
+            {error}
+          </div>
+        ) : null}
+
+        {/* Primary CTA */}
         <button
           type="button"
-          disabled
-          aria-disabled="true"
-          title="Stripe checkout coming soon"
+          onClick={handleSubscribe}
+          disabled={isLoading}
+          aria-busy={isLoading}
           style={{
             width: '100%',
-            background: COLOURS.magenta,
+            background: isLoading ? COLOURS.magentaDark : COLOURS.magenta,
             color: COLOURS.white,
             border: 'none',
             padding: '16px 24px',
@@ -164,15 +218,24 @@ export default function SubscribePage() {
             fontWeight: 700,
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
-            cursor: 'not-allowed',
-            opacity: 0.9,
+            cursor: isLoading ? 'wait' : 'pointer',
+            opacity: isLoading ? 0.85 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            transition: 'background 0.2s',
           }}
         >
-          Subscribe — £4.99/month
+          {isLoading ? (
+            <>
+              <span className="sub-spinner" aria-hidden="true" />
+              Redirecting…
+            </>
+          ) : (
+            'Start 3-day free trial'
+          )}
         </button>
-        <div style={{ fontSize: 12, color: COLOURS.textFaint, marginTop: -8 }}>
-          Stripe checkout coming next — this button isn’t live yet.
-        </div>
 
         {/* Secondary links */}
         <div
@@ -210,6 +273,23 @@ export default function SubscribePage() {
           </Link>
         </div>
       </div>
+
+      <style jsx>{`
+        .sub-spinner {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: 2px solid rgba(255, 255, 255, 0.35);
+          border-top-color: ${COLOURS.white};
+          animation: sub-spin 0.8s linear infinite;
+          display: inline-block;
+        }
+        @keyframes sub-spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </main>
   );
 }
