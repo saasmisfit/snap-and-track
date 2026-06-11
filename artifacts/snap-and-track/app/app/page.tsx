@@ -81,8 +81,10 @@ export default function SnapAndTrackApp() {
   const [loadingIdx, setLoadingIdx] = useState(0);
   const [result, setResult] = useState<AnalyseResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   // Revoke object URLs when they change or component unmounts
   useEffect(() => {
@@ -105,10 +107,11 @@ export default function SnapAndTrackApp() {
     fileInputRef.current?.click();
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
+  function pickCamera() {
+    cameraInputRef.current?.click();
+  }
+
+  function acceptFile(f: File) {
     if (!ACCEPTED_TYPES.includes(f.type)) {
       setError('That file type isn’t supported. Please use JPG, PNG, or WebP.');
       return;
@@ -118,6 +121,32 @@ export default function SnapAndTrackApp() {
     setPreviewUrl(URL.createObjectURL(f));
     setResult(null);
     setError(null);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    acceptFile(f);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    if (!isDragging) setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer?.files?.[0];
+    if (!f) return;
+    acceptFile(f);
   }
 
   function reset(keepGoal = true) {
@@ -213,20 +242,41 @@ export default function SnapAndTrackApp() {
               onChange={handleFileChange}
               style={{ display: 'none' }}
             />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
 
             {!file ? (
-              <button
-                type="button"
-                onClick={pickFile}
-                className="upload-zone"
-                aria-label="Tap to upload your meal"
-              >
-                <div className="upload-icon" aria-hidden="true">
-                  📷
-                </div>
-                <div className="upload-title">Tap to upload your meal</div>
-                <div className="upload-sub">JPG, PNG, or WebP</div>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={pickFile}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`upload-zone${isDragging ? ' dragging' : ''}`}
+                  aria-label="Drag your photo here, tap to upload, or take a photo"
+                >
+                  <div className="upload-icon" aria-hidden="true">
+                    📷
+                  </div>
+                  <div className="upload-title">Drag your photo here, tap to upload, or take a photo</div>
+                  <div className="upload-sub">JPG, PNG, or WebP</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={pickCamera}
+                  className="camera-btn"
+                  aria-label="Take a photo"
+                >
+                  📷 Take a photo
+                </button>
+              </>
             ) : (
               <div style={styles.previewCard}>
                 {previewUrl ? (
@@ -375,6 +425,11 @@ export default function SnapAndTrackApp() {
           background: #1d1d22;
           transform: translateY(-1px);
         }
+        .upload-zone.dragging {
+          border-color: ${COLOURS.magenta};
+          border-style: solid;
+          background: ${COLOURS.magentaSoft};
+        }
         .upload-icon {
           font-size: 36px;
           line-height: 1;
@@ -382,11 +437,33 @@ export default function SnapAndTrackApp() {
         .upload-title {
           font-size: 16px;
           font-weight: 600;
+          text-align: center;
         }
         .upload-sub {
           font-size: 12px;
           color: ${COLOURS.textFaint};
           letter-spacing: 0.04em;
+        }
+
+        .camera-btn {
+          width: 100%;
+          background: transparent;
+          color: ${COLOURS.magenta};
+          border: 2px solid ${COLOURS.magenta};
+          padding: 16px 24px;
+          border-radius: 999px;
+          font-family: var(--body-font), 'Barlow', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s, transform 0.1s;
+        }
+        .camera-btn:hover {
+          background: ${COLOURS.magenta};
+          color: ${COLOURS.white};
+          transform: translateY(-1px);
         }
 
         .change-photo {
