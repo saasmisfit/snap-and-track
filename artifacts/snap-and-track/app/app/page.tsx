@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
+import { UserButton, useUser } from '@clerk/nextjs';
 import UpsellBanner from '../components/UpsellBanner';
 
 const userButtonAppearance = {
@@ -97,6 +97,9 @@ function fmtMacro(n: number): string {
 }
 
 export default function SnapAndTrackApp() {
+  const { user } = useUser();
+  const isSubscribed = user?.publicMetadata?.subscribed === true;
+
   const [goal, setGoal] = useState<Goal>('fat_loss');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -204,8 +207,8 @@ export default function SnapAndTrackApp() {
 
   async function analyse() {
     if (!file) return;
-    // Hard gate — if free quota is used up, do not call the API
-    if (snapCount !== null && snapCount >= FREE_SNAP_LIMIT) return;
+    // Hard gate — if free quota is used up and the user isn't subscribed, do not call the API
+    if (!isSubscribed && snapCount !== null && snapCount >= FREE_SNAP_LIMIT) return;
     setIsAnalysing(true);
     setError(null);
     setResult(null);
@@ -376,7 +379,7 @@ export default function SnapAndTrackApp() {
         {/* Analyse button (or subscribe gate if free snaps exhausted) — hidden once we have a result */}
         {!result && (
           <section style={styles.block}>
-            {snapCount !== null && snapCount >= FREE_SNAP_LIMIT ? (
+            {!isSubscribed && snapCount !== null && snapCount >= FREE_SNAP_LIMIT ? (
               <div style={styles.subscribeGate}>
                 <div style={styles.gateTitle}>You&apos;ve used your 3 free snaps 🎉</div>
                 <div style={styles.gateSub}>Subscribe for unlimited access — £4.99/month</div>
@@ -394,7 +397,9 @@ export default function SnapAndTrackApp() {
                 >
                   {isAnalysing ? 'Analysing…' : 'Analyse my meal ✦'}
                 </button>
-                {snapCount === 1 || snapCount === 2 ? (
+                {isSubscribed ? (
+                  <div style={styles.proBadge}>✦ Pro · unlimited snaps</div>
+                ) : snapCount === 1 || snapCount === 2 ? (
                   <div style={styles.freeCounter}>
                     {snapCount} of {FREE_SNAP_LIMIT} free snaps used
                   </div>
@@ -999,6 +1004,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: COLOURS.textFaint,
     textAlign: 'center',
     letterSpacing: '0.04em',
+    paddingTop: 4,
+  },
+  proBadge: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: COLOURS.magenta,
+    textAlign: 'center',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
     paddingTop: 4,
   },
 };
