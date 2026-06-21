@@ -644,7 +644,7 @@ export default function SnapAndTrackApp() {
         .view-log-link {
           font-size: 12px;
           font-weight: 600;
-          color: ${COLOURS.textMuted};
+          color: ${COLOURS.white};
           text-decoration: none;
           letter-spacing: 0.02em;
           white-space: nowrap;
