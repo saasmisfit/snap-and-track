@@ -15,6 +15,8 @@ const clerkAppearance = {
     card: { border: '1px solid #2a2a30', boxShadow: 'none' },
     headerTitle: { display: 'none' },
     headerSubtitle: { display: 'none' },
+    socialButtonsBlockButton: '!bg-white !text-gray-900 !border !border-gray-300 hover:!bg-gray-50',
+    socialButtonsBlockButtonText: '!text-gray-900 !font-medium',
   },
 };
 
