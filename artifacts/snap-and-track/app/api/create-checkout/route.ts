@@ -6,11 +6,33 @@ export const runtime = 'nodejs';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
-export async function POST() {
+export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const body: unknown = await req.json().catch(() => ({}));
+  const requestedPriceId =
+    body && typeof body === 'object' && 'priceId' in body
+      ? String((body as { priceId: unknown }).priceId ?? '')
+      : '';
+
+  const monthlyPriceId = process.env.STRIPE_PRICE_ID as string;
+  const annualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID as string;
+
+  let priceId: string;
+  if (!requestedPriceId) {
+    priceId = monthlyPriceId;
+  } else if (requestedPriceId === 'annual') {
+    priceId = annualPriceId;
+  } else if (requestedPriceId === 'monthly') {
+    priceId = monthlyPriceId;
+  } else {
+    priceId = requestedPriceId;
+  }
+
+  const isMonthly = priceId === monthlyPriceId;
 
   const user = await currentUser();
   const email = user?.emailAddresses?.find(
@@ -24,9 +46,9 @@ export async function POST() {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [
-        { price: process.env.STRIPE_PRICE_ID as string, quantity: 1 },
+        { price: priceId, quantity: 1 },
       ],
-      subscription_data: { trial_period_days: 3 },
+      ...(isMonthly ? { subscription_data: { trial_period_days: 3 } } : {}),
       success_url: `${appUrl}/subscribe/success`,
       cancel_url: `${appUrl}/subscribe`,
       ...(email ? { customer_email: email } : {}),

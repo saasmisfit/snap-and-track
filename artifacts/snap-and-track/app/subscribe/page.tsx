@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+
+type Plan = 'monthly' | 'annual';
 
 const COLOURS = {
   magenta: '#B0185E',
@@ -18,15 +20,29 @@ const COLOURS = {
 };
 
 export default function SubscribePage() {
+  const [plan, setPlan] = useState<Plan>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('annual') === 'true') setPlan('annual');
+    } catch {
+      // best-effort
+    }
+  }, []);
 
   async function handleSubscribe() {
     if (isLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/create-checkout', { method: 'POST' });
+      const res = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ priceId: plan }),
+      });
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
         const detail =
@@ -130,8 +146,55 @@ export default function SubscribePage() {
               marginTop: '1rem',
             }}
           >
-            Start your 3-day free trial — £4.99/month after. Cancel anytime.
+            {plan === 'annual'
+              ? '£39.99/year — save £20 vs monthly. Cancel anytime.'
+              : 'Start your 3-day free trial — £4.99/month after. Cancel anytime.'}
           </p>
+        </div>
+
+        {/* Plan toggle */}
+        <div
+          role="radiogroup"
+          aria-label="Plan"
+          style={{
+            width: '100%',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 6,
+            background: COLOURS.card,
+            border: `1px solid ${COLOURS.border}`,
+            borderRadius: 999,
+            padding: 4,
+          }}
+        >
+          {(['monthly', 'annual'] as Plan[]).map((p) => {
+            const active = p === plan;
+            return (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setPlan(p)}
+                style={{
+                  background: active ? COLOURS.magenta : 'transparent',
+                  color: active ? COLOURS.white : 'rgba(255,255,255,0.7)',
+                  border: 'none',
+                  padding: '10px 12px',
+                  borderRadius: 999,
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+              >
+                {p === 'monthly' ? 'Monthly · £4.99' : 'Annual · £39.99'}
+              </button>
+            );
+          })}
         </div>
 
         {/* Feature card */}
@@ -232,6 +295,8 @@ export default function SubscribePage() {
               <span className="sub-spinner" aria-hidden="true" />
               Redirecting…
             </>
+          ) : plan === 'annual' ? (
+            'Start annual plan — £39.99'
           ) : (
             'Start 3-day free trial'
           )}

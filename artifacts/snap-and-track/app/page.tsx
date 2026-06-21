@@ -445,7 +445,7 @@ export default function Home() {
                 <li>Best value — 2 months free</li>
                 <li>Priority feature updates</li>
               </ul>
-              <a href="#" className="btn-outline-magenta price-cta">Get annual — £39.99/yr</a>
+              <Link href="/subscribe?annual=true" className="btn-outline-magenta price-cta">Get annual — £39.99/yr</Link>
             </div>
             <div className="price-card">
               <div className="price-name">Lifetime</div>
