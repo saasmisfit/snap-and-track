@@ -284,7 +284,7 @@ export default function SnapAndTrackApp() {
             <div style={styles.headerTitle}>Snap &amp; Track</div>
             <div style={styles.headerSub}>by Metaburn</div>
           </div>
-          <Link href="/app/log" className="view-log-link">
+          <Link href="/app/log" className="view-log-link" style={{ color: '#ffffff' }}>
             View log →
           </Link>
           <UserButton afterSignOutUrl="/" appearance={userButtonAppearance} />
