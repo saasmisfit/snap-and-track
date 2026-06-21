@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function Home() {
           <li><a href="#pricing">Pricing</a></li>
           <li><a href="https://metaburn.app" target="_blank" rel="noopener">Metaburn</a></li>
         </ul>
-        <a href="#pricing" className="btn-primary">Try Free</a>
+        <Link href="/sign-up" className="btn-primary">Try Free</Link>
       </nav>
 
       {/* HERO */}
@@ -89,7 +90,7 @@ export default function Home() {
               </h1>
               <p className="hero-sub">Take a photo of any meal. Get instant calories, protein, carbs, and fat — plus a coaching note from Stacy built around your goal.</p>
               <div className="hero-ctas">
-                <a href="#pricing" className="btn-primary">Start for free</a>
+                <Link href="/sign-up" className="btn-primary">Start for free</Link>
                 <a href="#how" className="btn-outline">See how it works</a>
               </div>
               <p className="hero-trust">3 free snaps — no card needed &nbsp;·&nbsp; Works on any meal</p>
@@ -416,7 +417,7 @@ export default function Home() {
                 <li>Stacy&apos;s coaching note</li>
                 <li>No card required</li>
               </ul>
-              <a href="#" className="btn-outline-magenta price-cta">Start free</a>
+              <Link href="/sign-up" className="btn-outline-magenta price-cta">Start free</Link>
             </div>
             <div className="price-card featured">
               <div className="featured-badge">Most popular</div>
@@ -432,7 +433,7 @@ export default function Home() {
                 <li>Full meal log history</li>
                 <li>Protein focus scoring</li>
               </ul>
-              <a href="#" className="btn-primary price-cta">Get started — £4.99/mo</a>
+              <Link href="/sign-up" className="btn-primary price-cta">Get started — £4.99/mo</Link>
             </div>
             <div className="price-card">
               <div className="price-name">Annual</div>
@@ -508,7 +509,7 @@ export default function Home() {
           <h2 className="final-headline">Stop guessing.<br />Start <span style={{color: 'var(--magenta)'}}>knowing.</span></h2>
           <p className="final-sub">Three free snaps. No card. No commitment. See what you&apos;ve been missing.</p>
           <div className="final-ctas">
-            <a href="#pricing" className="btn-primary" style={{fontSize: '16px', padding: '14px 32px'}}>Start for free — 3 snaps on us</a>
+            <Link href="/sign-up" className="btn-primary" style={{fontSize: '16px', padding: '14px 32px'}}>Start for free — 3 snaps on us</Link>
             <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-outline" style={{fontSize: '16px', padding: '14px 32px'}}>Explore full Metaburn app</a>
           </div>
           <p className="final-note">Join Metaburn App Membership and get Snap &amp; Track included from £24.99/month.</p>
