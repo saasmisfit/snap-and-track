@@ -383,7 +383,26 @@ export default function SnapAndTrackApp() {
               <div style={styles.subscribeGate}>
                 <div style={styles.gateTitle}>You&apos;ve used your 3 free snaps 🎉</div>
                 <div style={styles.gateSub}>Subscribe for unlimited access — £4.99/month</div>
-                <Link href="/subscribe" className="subscribe-cta">
+                <Link
+                  href="/subscribe"
+                  className="subscribe-cta"
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    background: COLOURS.magenta,
+                    color: COLOURS.white,
+                    textAlign: 'center',
+                    padding: '14px 24px',
+                    borderRadius: 999,
+                    textDecoration: 'none',
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    marginTop: '0.5rem',
+                  }}
+                >
                   Subscribe now →
                 </Link>
               </div>
