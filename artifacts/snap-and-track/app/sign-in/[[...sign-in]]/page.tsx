@@ -79,7 +79,7 @@ export default function SignInPage() {
               lineHeight: 1,
             }}
           >
-            S&amp;T
+            MS
           </div>
           <div style={{ textAlign: 'center' }}>
             <div
@@ -92,7 +92,7 @@ export default function SignInPage() {
                 letterSpacing: '-0.01em',
               }}
             >
-              Snap &amp; Track
+              Munch Snapper
             </div>
             <div
               style={{

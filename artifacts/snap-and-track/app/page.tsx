@@ -63,10 +63,10 @@ export default function Home() {
     <>
       {/* NAV */}
       <nav>
-        <a href="#" className="nav-logo" aria-label="Snap &amp; Track by Metaburn home">
-          <div className="nav-logo-mark">S&amp;T</div>
+        <a href="#" className="nav-logo" aria-label="Munch Snapper by Metaburn home">
+          <div className="nav-logo-mark">MS</div>
           <div>
-            <div className="nav-logo-text">Snap &amp; Track</div>
+            <div className="nav-logo-text">Munch Snapper</div>
             <div className="nav-logo-sub">by Metaburn</div>
           </div>
         </a>
@@ -84,7 +84,7 @@ export default function Home() {
         <div className="container">
           <div className="hero-grid">
             <div>
-              <span className="eyebrow">Snap &amp; Track by Metaburn</span>
+              <span className="eyebrow">Munch Snapper by Metaburn</span>
               <h1 className="hero-headline">
                 Know exactly<br />what you&apos;re<br />eating —<br /><span className="accent">in seconds.</span>
               </h1>
@@ -102,7 +102,7 @@ export default function Home() {
                     <div className="phone-header">
                       <div className="phone-header-icon">📸</div>
                       <div>
-                        <div className="phone-header-text">Snap &amp; Track</div>
+                        <div className="phone-header-text">Munch Snapper</div>
                         <div className="phone-header-sub">by Metaburn</div>
                       </div>
                     </div>
@@ -247,7 +247,7 @@ export default function Home() {
               <div className="feature-body">
                 <span className="feature-tag">Metaburn members</span>
                 <div className="feature-title">Connects to the full Metaburn app</div>
-                <p className="feature-desc">App Membership subscribers get Snap &amp; Track included. Your meal log talks to your weekly check-in, your compliance tracker, and Stacy&apos;s coaching dashboard — so nothing lives in a silo. This is the only photo macro tracker on the market that&apos;s part of a real end-to-end coaching ecosystem.</p>
+                <p className="feature-desc">App Membership subscribers get Munch Snapper included. Your meal log talks to your weekly check-in, your compliance tracker, and Stacy&apos;s coaching dashboard — so nothing lives in a silo. This is the only photo macro tracker on the market that&apos;s part of a real end-to-end coaching ecosystem.</p>
               </div>
             </div>
           </div>
@@ -257,14 +257,14 @@ export default function Home() {
       {/* VS COMPETITORS */}
       <section id="vs" className="section-mid" style={{padding: '6rem 0'}}>
         <div className="container">
-          <span className="eyebrow">Why Snap &amp; Track</span>
+          <span className="eyebrow">Why Munch Snapper</span>
           <h2 className="vs-headline">Every other app gives you<br />numbers. We give you <span style={{color: 'var(--magenta)'}}>coaching.</span></h2>
           <div style={{overflowX: 'auto'}}>
             <table className="vs-table">
               <thead>
                 <tr>
                   <th>Feature</th>
-                  <th className="col-snap">Snap &amp; Track</th>
+                  <th className="col-snap">Munch Snapper</th>
                   <th>MyFitnessPal</th>
                   <th>Cal AI</th>
                   <th>MacroFactor</th>
@@ -388,7 +388,7 @@ export default function Home() {
               <h2 className="stacy-headline">Hi, I&apos;m Stacy — and I&apos;ve been where you are.</h2>
               <div className="stacy-body">
                 <p>I started my fitness journey as a 4&apos;11&quot; flat-footed woman in my late 20s with no athletic background. I know exactly what it feels like to not trust what you&apos;re eating, wonder if you&apos;re doing it right, and feel like the numbers never add up.</p>
-                <p>Every coaching note inside Snap &amp; Track is written the way I&apos;d speak to a real client. No shame. No clinical jargon. Just honest, specific guidance that tells you what to do next — not just what the numbers are.</p>
+                <p>Every coaching note inside Munch Snapper is written the way I&apos;d speak to a real client. No shame. No clinical jargon. Just honest, specific guidance that tells you what to do next — not just what the numbers are.</p>
                 <p>As a 37-year-old mum to a neurodiverse child, juggling work, life, and everything in between — I built this for women like us. Because tracking your food shouldn&apos;t feel like another thing on the to-do list.</p>
               </div>
               <div style={{marginTop: '2rem'}}>
@@ -449,7 +449,7 @@ export default function Home() {
             </div>
           </div>
           <div className="upsell-strip">
-            <div className="upsell-text">Want personalised programmes, coaching, and community alongside your nutrition tracking? <span>Metaburn App Membership includes Snap &amp; Track from £24.99/month.</span></div>
+            <div className="upsell-text">Want personalised programmes, coaching, and community alongside your nutrition tracking? <span>Metaburn App Membership includes Munch Snapper from £24.99/month.</span></div>
             <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-primary" style={{whiteSpace: 'nowrap', flexShrink: 0}}>View Metaburn →</a>
           </div>
         </div>
@@ -471,7 +471,7 @@ export default function Home() {
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">Is this separate from the Metaburn app? <span className="faq-arrow">&#8964;</span></button>
-              <div className="faq-a">Snap &amp; Track is available as a standalone product for people who just want nutrition tracking. It&apos;s also built into the full Metaburn app — so if you&apos;re already a Metaburn subscriber on App Membership or above, your meal log is part of your broader coaching experience. No double-paying.</div>
+              <div className="faq-a">Munch Snapper is available as a standalone product for people who just want nutrition tracking. It&apos;s also built into the full Metaburn app — so if you&apos;re already a Metaburn subscriber on App Membership or above, your meal log is part of your broader coaching experience. No double-paying.</div>
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">What is Stacy&apos;s coaching note exactly? <span className="faq-arrow">&#8964;</span></button>
@@ -479,11 +479,11 @@ export default function Home() {
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">Can I cancel at any time? <span className="faq-arrow">&#8964;</span></button>
-              <div className="faq-a">Yes — monthly subscribers can cancel at any time with no questions asked. Annual subscribers can cancel before renewal. The Lifetime plan is a one-time purchase with no recurring charges. There are no lock-ins or minimum commitments on Snap &amp; Track.</div>
+              <div className="faq-a">Yes — monthly subscribers can cancel at any time with no questions asked. Annual subscribers can cancel before renewal. The Lifetime plan is a one-time purchase with no recurring charges. There are no lock-ins or minimum commitments on Munch Snapper.</div>
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">I already use MyFitnessPal — why switch? <span className="faq-arrow">&#8964;</span></button>
-              <div className="faq-a">If you love database logging and stick to it consistently, keep going — it&apos;s working. But if you&apos;ve ever skipped logging because it felt like too much effort, or felt nothing when you got your daily summary, Snap &amp; Track is worth trying. It&apos;s faster for home-cooked meals, cheaper than MFP Premium, and the coaching note makes you feel like someone actually looked at what you ate.</div>
+              <div className="faq-a">If you love database logging and stick to it consistently, keep going — it&apos;s working. But if you&apos;ve ever skipped logging because it felt like too much effort, or felt nothing when you got your daily summary, Munch Snapper is worth trying. It&apos;s faster for home-cooked meals, cheaper than MFP Premium, and the coaching note makes you feel like someone actually looked at what you ate.</div>
             </div>
           </div>
         </div>
@@ -499,7 +499,7 @@ export default function Home() {
             <Link href="/sign-up" className="btn-primary" style={{fontSize: '16px', padding: '14px 32px'}}>Start for free — 3 snaps on us</Link>
             <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-outline" style={{fontSize: '16px', padding: '14px 32px'}}>Explore full Metaburn app</a>
           </div>
-          <p className="final-note">Join Metaburn App Membership and get Snap &amp; Track included from £24.99/month.</p>
+          <p className="final-note">Join Metaburn App Membership and get Munch Snapper included from £24.99/month.</p>
         </div>
       </section>
 
@@ -524,7 +524,7 @@ export default function Home() {
             maxWidth: 560,
             margin: '0 auto 2rem',
           }}>
-            Snap &amp; Track is part of the Metaburn coaching ecosystem — personalised programmes, weekly check-ins, and a coach in your corner.
+            Munch Snapper is part of the Metaburn coaching ecosystem — personalised programmes, weekly check-ins, and a coach in your corner.
           </p>
           <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
             <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-primary">Explore Metaburn →</a>
@@ -537,7 +537,7 @@ export default function Home() {
       <footer>
         <div className="footer-brand">
           <div>
-            <strong>Snap &amp; Track</strong> by Metaburn &nbsp;·&nbsp; © 2026 Metaburn by Stacy Kundu. All rights reserved.
+            <strong>Munch Snapper</strong> by Metaburn &nbsp;·&nbsp; © 2026 Metaburn by Stacy Kundu. All rights reserved.
           </div>
           <div style={{marginTop: '0.5rem'}}>
             Questions? Contact us at <a href="mailto:hello@munchsnapper.com" style={{color: 'var(--magenta)', textDecoration: 'none', fontWeight: 600}}>hello@munchsnapper.com</a>

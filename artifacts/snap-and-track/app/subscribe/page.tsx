@@ -126,7 +126,7 @@ export default function SubscribePage() {
             lineHeight: 1,
           }}
         >
-          S&amp;T
+          MS
         </div>
 
         {/* Headline + sub */}
@@ -142,7 +142,7 @@ export default function SubscribePage() {
               marginBottom: 10,
             }}
           >
-            Snap &amp; Track Pro
+            Munch Snapper Pro
           </span>
           <h1
             style={{
@@ -353,7 +353,7 @@ export default function SubscribePage() {
               fontWeight: 500,
             }}
           >
-            ← Back to Snap &amp; Track
+            ← Back to Munch Snapper
           </Link>
           <div style={{ fontSize: 13, color: COLOURS.textMuted, marginTop: '0.25rem' }}>
             Need help? Email{' '}

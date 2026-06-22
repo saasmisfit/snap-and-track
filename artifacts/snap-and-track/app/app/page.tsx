@@ -281,7 +281,7 @@ export default function SnapAndTrackApp() {
             📸
           </div>
           <div style={styles.headerTitleGroup}>
-            <div style={styles.headerTitle}>Snap &amp; Track</div>
+            <div style={styles.headerTitle}>Munch Snapper</div>
             <div style={styles.headerSub}>by Metaburn</div>
           </div>
           <Link href="/app/log" className="view-log-link" style={{ color: '#ffffff' }}>

@@ -3,7 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Snap & Track by Metaburn — Instant Macros from a Photo',
+  title: 'Munch Snapper by Metaburn — Instant Macros from a Photo',
 };
 
 export default function RootLayout({
