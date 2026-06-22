@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider afterSignInUrl="/app" afterSignUpUrl="/app">
+    <ClerkProvider signInFallbackRedirectUrl="/app" signUpFallbackRedirectUrl="/app">
       <html lang="en">
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
