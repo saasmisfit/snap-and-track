@@ -96,7 +96,7 @@ export default function Home() {
               <p className="hero-trust">3 free snaps — no card needed &nbsp;·&nbsp; Works on any meal</p>
             </div>
             <div className="hero-visual">
-              <div style={{position: 'relative'}}>
+              <div className="phone-wrap">
                 <div className="phone-mock">
                   <div className="phone-inner">
                     <div className="phone-header">
