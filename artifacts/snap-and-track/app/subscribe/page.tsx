@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
 
 type Plan = 'monthly' | 'annual';
 
@@ -20,6 +21,7 @@ const COLOURS = {
 };
 
 export default function SubscribePage() {
+  const { isLoaded, isSignedIn } = useUser();
   const [plan, setPlan] = useState<Plan>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,23 @@ export default function SubscribePage() {
       // best-effort
     }
   }, []);
+
+  useEffect(() => {
+    if (!isLoaded || isSignedIn) return;
+    const here = window.location.pathname + window.location.search;
+    window.location.replace(`/sign-in?redirect_url=${encodeURIComponent(here)}`);
+  }, [isLoaded, isSignedIn]);
+
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          background: COLOURS.nearBlack,
+        }}
+      />
+    );
+  }
 
   async function handleSubscribe() {
     if (isLoading) return;

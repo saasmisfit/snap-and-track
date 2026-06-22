@@ -447,19 +447,6 @@ export default function Home() {
               </ul>
               <Link href="/subscribe?annual=true" className="btn-outline-magenta price-cta">Get annual — £39.99/yr</Link>
             </div>
-            <div className="price-card">
-              <div className="price-name">Lifetime</div>
-              <div className="price-amount"><span className="currency">£</span>49.99</div>
-              <div className="price-period">one-off — launch week only</div>
-              <div className="price-tagline">Pay once. Use forever.</div>
-              <ul className="price-features">
-                <li>Everything in Monthly</li>
-                <li>Never pay again</li>
-                <li>Early adopter perks</li>
-                <li>Removing after launch week</li>
-              </ul>
-              <a href="#" className="btn-outline-magenta price-cta">Get lifetime — £49.99</a>
-            </div>
           </div>
           <div className="upsell-strip">
             <div className="upsell-text">Want personalised programmes, coaching, and community alongside your nutrition tracking? <span>Metaburn App Membership includes Snap &amp; Track from £24.99/month.</span></div>
