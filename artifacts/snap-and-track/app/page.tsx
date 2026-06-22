@@ -433,7 +433,7 @@ export default function Home() {
                 <li>Full meal log history</li>
                 <li>Protein focus scoring</li>
               </ul>
-              <Link href="/sign-up" className="btn-primary price-cta">Get started — £4.99/mo</Link>
+              <Link href="/subscribe" className="btn-primary price-cta">Get started — £4.99/mo</Link>
             </div>
             <div className="price-card">
               <div className="price-name">Annual</div>

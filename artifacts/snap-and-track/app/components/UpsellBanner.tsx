@@ -50,7 +50,7 @@ export default function UpsellBanner() {
           Want programmes, coaching &amp; community?
         </span>
         <a
-          href="https://metaburn.app"
+          href="https://metaburn-app.vercel.app"
           target="_blank"
           rel="noopener noreferrer"
           style={{
