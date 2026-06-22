@@ -226,6 +226,7 @@
     width: 280px;
     height: 560px;
     flex-shrink: 0;
+    overflow: visible;
   }
   .phone-mock {
     width: 280px;
@@ -338,12 +339,13 @@
   }
   .phone-badge {
     position: absolute;
-    top: -12px; right: -16px;
+    top: 8px; right: 8px;
     background: var(--white);
     border-radius: 12px;
     padding: 8px 14px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     animation: floatBadge 3s ease-in-out infinite;
+    z-index: 2;
   }
   .phone-badge-text { font-size: 12px; font-weight: 700; color: var(--near-black); line-height: 1.2; }
   .phone-badge-sub { font-size: 10px; color: var(--mid-grey); }
