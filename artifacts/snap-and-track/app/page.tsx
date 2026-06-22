@@ -536,12 +536,17 @@ export default function Home() {
       {/* FOOTER */}
       <footer>
         <div className="footer-brand">
-          <strong>Snap &amp; Track</strong> by Metaburn &nbsp;·&nbsp; © 2026 Metaburn by Stacy Kundu. All rights reserved.
+          <div>
+            <strong>Snap &amp; Track</strong> by Metaburn &nbsp;·&nbsp; © 2026 Metaburn by Stacy Kundu. All rights reserved.
+          </div>
+          <div style={{marginTop: '0.5rem'}}>
+            Questions? Contact us at <a href="mailto:hello@munchsnapper.com" style={{color: 'var(--magenta)', textDecoration: 'none', fontWeight: 600}}>hello@munchsnapper.com</a>
+          </div>
         </div>
         <ul className="footer-links">
           <li><a href="#">Privacy</a></li>
           <li><a href="#">Terms</a></li>
-          <li><a href="#">Contact</a></li>
+          <li><a href="mailto:hello@munchsnapper.com">Contact</a></li>
           <li><a href="https://metaburn.app" target="_blank" rel="noopener" className="metaburn-link">metaburn.app →</a></li>
         </ul>
       </footer>

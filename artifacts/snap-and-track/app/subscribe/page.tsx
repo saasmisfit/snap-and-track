@@ -355,6 +355,19 @@ export default function SubscribePage() {
           >
             ← Back to Snap &amp; Track
           </Link>
+          <div style={{ fontSize: 13, color: COLOURS.textMuted, marginTop: '0.25rem' }}>
+            Need help? Email{' '}
+            <a
+              href="mailto:hello@munchsnapper.com"
+              style={{
+                color: COLOURS.magenta,
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >
+              hello@munchsnapper.com
+            </a>
+          </div>
         </div>
       </div>
 
