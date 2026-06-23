@@ -267,6 +267,71 @@ function checkAndResetStreak(): Streak {
   return s;
 }
 
+interface SavedLogEntry {
+  id?: string;
+  dish: string;
+  portion_estimate?: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fibre_g?: number;
+  foods_identified?: FoodItem[];
+  stacy_insight?: string;
+  loggedAt?: string;
+  logDate?: string;
+  logTime?: string;
+}
+
+interface RecentMealItem {
+  key: string;
+  dish: string;
+  calories: number;
+  template: SavedLogEntry;
+}
+
+function isSavedLogEntry(v: unknown): v is SavedLogEntry {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.dish === 'string' &&
+    typeof o.calories === 'number' &&
+    typeof o.protein_g === 'number' &&
+    typeof o.carbs_g === 'number' &&
+    typeof o.fat_g === 'number'
+  );
+}
+
+function readLogEntries(): SavedLogEntry[] {
+  try {
+    const raw = window.localStorage.getItem('snaptrack_log');
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isSavedLogEntry) : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildRecentMeals(): { items: RecentMealItem[]; totalCount: number } {
+  const entries = readLogEntries();
+  const sorted = [...entries].sort((a, b) =>
+    String(b.loggedAt ?? '').localeCompare(String(a.loggedAt ?? ''))
+  );
+  const seen = new Set<string>();
+  const items: RecentMealItem[] = [];
+  for (const e of sorted) {
+    const dish = e.dish.trim();
+    if (!dish) continue;
+    const key = dish.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ key, dish, calories: e.calories, template: e });
+    if (items.length >= 5) break;
+  }
+  return { items, totalCount: entries.length };
+}
+
 function recordMealLogged(): { streak: Streak; milestone: number | null } {
   const prev = readStreak();
   const today = todayLocalStr();
@@ -319,6 +384,9 @@ export default function SnapAndTrackApp() {
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | 'unsupported' | 'unknown'>(
     'unknown'
   );
+  const [recentMeals, setRecentMeals] = useState<RecentMealItem[]>([]);
+  const [logEntryCount, setLogEntryCount] = useState(0);
+  const [showRelogToast, setShowRelogToast] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -396,6 +464,20 @@ export default function SnapAndTrackApp() {
   useEffect(() => {
     setStreak(checkAndResetStreak());
   }, []);
+
+  // Hydrate recent meals from log
+  useEffect(() => {
+    const { items, totalCount } = buildRecentMeals();
+    setRecentMeals(items);
+    setLogEntryCount(totalCount);
+  }, []);
+
+  // Auto-hide the "Logged ✓" toast after 2 seconds
+  useEffect(() => {
+    if (!showRelogToast) return;
+    const id = window.setTimeout(() => setShowRelogToast(false), 2000);
+    return () => window.clearTimeout(id);
+  }, [showRelogToast]);
 
   // Notification permission — ask once on first load, remember result
   useEffect(() => {
@@ -676,6 +758,71 @@ export default function SnapAndTrackApp() {
         // best-effort
       }
     }
+
+    const refreshed = buildRecentMeals();
+    setRecentMeals(refreshed.items);
+    setLogEntryCount(refreshed.totalCount);
+  }
+
+  function relogMeal(template: SavedLogEntry) {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const entry = {
+      id: Date.now().toString(),
+      dish: template.dish,
+      portion_estimate: template.portion_estimate ?? '',
+      calories: template.calories,
+      protein_g: template.protein_g,
+      carbs_g: template.carbs_g,
+      fat_g: template.fat_g,
+      fibre_g: typeof template.fibre_g === 'number' ? template.fibre_g : 0,
+      foods_identified: Array.isArray(template.foods_identified) ? template.foods_identified : [],
+      stacy_insight: typeof template.stacy_insight === 'string' ? template.stacy_insight : '',
+      loggedAt: now.toISOString(),
+      logDate: todayStr,
+      logTime: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    };
+    try {
+      const raw = window.localStorage.getItem('snaptrack_log');
+      const existing: unknown = raw ? JSON.parse(raw) : [];
+      const arr = Array.isArray(existing) ? existing : [];
+      arr.push(entry);
+      const cutoff = new Date(now);
+      cutoff.setUTCDate(cutoff.getUTCDate() - 6);
+      const cutoffStr = cutoff.toISOString().split('T')[0];
+      const pruned = arr.filter(
+        (e) =>
+          e &&
+          typeof e === 'object' &&
+          typeof e.logDate === 'string' &&
+          e.logDate >= cutoffStr
+      );
+      window.localStorage.setItem('snaptrack_log', JSON.stringify(pruned));
+    } catch {
+      // best-effort
+    }
+
+    const refreshed = buildRecentMeals();
+    setRecentMeals(refreshed.items);
+    setLogEntryCount(refreshed.totalCount);
+
+    const { streak: nextStreak, milestone } = recordMealLogged();
+    setStreak(nextStreak);
+    if (
+      milestone !== null &&
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'granted'
+    ) {
+      try {
+        new Notification(
+          `🔥 ${milestone} day streak! You're on a roll — keep snapping your meals.`
+        );
+      } catch {
+        // best-effort
+      }
+    }
+
+    setShowRelogToast(true);
   }
 
   const canAnalyse = !!file && !isAnalysing && !result;
@@ -761,6 +908,110 @@ export default function SnapAndTrackApp() {
 
         {/* Streak badge */}
         {!result && <StreakBadge streak={streak} />}
+
+        {/* Recent meals — quick re-log */}
+        {!result && logEntryCount >= 2 && recentMeals.length > 0 && (
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={styles.eyebrow}>Recent meals</div>
+            <div
+              className="recent-scroll"
+              style={{
+                display: 'flex',
+                gap: 10,
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                paddingBottom: 2,
+                marginLeft: -2,
+                marginRight: -2,
+                paddingLeft: 2,
+                paddingRight: 2,
+              }}
+            >
+              {recentMeals.map((m) => (
+                <div
+                  key={m.key}
+                  style={{
+                    flex: '0 0 140px',
+                    background: COLOURS.card,
+                    border: `1px solid ${COLOURS.border}`,
+                    borderRadius: 12,
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <div
+                    title={m.dish}
+                    style={{
+                      fontFamily: "'Barlow', sans-serif",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: COLOURS.white,
+                      lineHeight: 1.25,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      minHeight: '2.5em',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {m.dish}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 800,
+                      fontSize: 22,
+                      color: COLOURS.magenta,
+                      lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 4,
+                    }}
+                  >
+                    {fmtMacro(m.calories)}
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: COLOURS.textFaint,
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      kcal
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => relogMeal(m.template)}
+                    aria-label={`Log ${m.dish} again`}
+                    style={{
+                      marginTop: 'auto',
+                      background: 'transparent',
+                      color: COLOURS.white,
+                      border: `1px solid ${COLOURS.white}`,
+                      borderRadius: 999,
+                      padding: '6px 10px',
+                      fontFamily: "'Barlow', sans-serif",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    ＋ Log again
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Upload / preview — hidden once we have a result */}
         {!result && (
@@ -1345,6 +1596,17 @@ export default function SnapAndTrackApp() {
           background: ${COLOURS.magentaDark};
           transform: translateY(-1px);
         }
+
+        .recent-scroll::-webkit-scrollbar {
+          display: none;
+        }
+
+        @keyframes relogToastFade {
+          0% { opacity: 0; transform: translate(-50%, 8px); }
+          12% { opacity: 1; transform: translate(-50%, 0); }
+          82% { opacity: 1; transform: translate(-50%, 0); }
+          100% { opacity: 0; transform: translate(-50%, -6px); }
+        }
       `}</style>
 
       {showOnboarding && isSignedIn ? (
@@ -1354,6 +1616,35 @@ export default function SnapAndTrackApp() {
           onClose={() => setShowOnboarding(false)}
           onComplete={completeOnboarding}
         />
+      ) : null}
+
+      {showRelogToast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: 28,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: COLOURS.card,
+            border: `1px solid ${COLOURS.magentaTint}`,
+            borderRadius: 999,
+            padding: '10px 22px',
+            color: COLOURS.magenta,
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
+            zIndex: 200,
+            pointerEvents: 'none',
+            animation: 'relogToastFade 2s ease forwards',
+          }}
+        >
+          Logged ✓
+        </div>
       ) : null}
     </main>
   );
