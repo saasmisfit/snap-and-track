@@ -166,8 +166,8 @@ export default function SubscribePage() {
             }}
           >
             {plan === 'annual'
-              ? '£39.99/year — save £20 vs monthly. Cancel anytime.'
-              : 'Start your 3-day free trial — £4.99/month after. Cancel anytime.'}
+              ? '£49.99/year — save £21.89 vs monthly. Cancel anytime.'
+              : 'Start your 3-day free trial — £5.99/month after. Cancel anytime.'}
           </p>
         </div>
 
@@ -210,7 +210,7 @@ export default function SubscribePage() {
                   transition: 'background 0.2s, color 0.2s',
                 }}
               >
-                {p === 'monthly' ? 'Monthly · £4.99' : 'Annual · £39.99'}
+                {p === 'monthly' ? 'Monthly · £5.99' : 'Annual · £49.99'}
               </button>
             );
           })}
@@ -315,7 +315,7 @@ export default function SubscribePage() {
               Redirecting…
             </>
           ) : plan === 'annual' ? (
-            'Start annual plan — £39.99'
+            'Start annual plan — £49.99'
           ) : (
             'Start 3-day free trial'
           )}

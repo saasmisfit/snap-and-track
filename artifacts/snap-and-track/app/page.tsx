@@ -299,7 +299,7 @@ export default function Home() {
                 </tr>
                 <tr className="snap-row">
                   <td>UK price</td>
-                  <td className="col-snap check" style={{color: '#4ade80', fontWeight: 700}}>£4.99/mo</td>
+                  <td className="col-snap check" style={{color: '#4ade80', fontWeight: 700}}>£5.99/mo</td>
                   <td>~£16/mo</td>
                   <td>~£7/mo</td>
                   <td>~£9.50/mo</td>
@@ -413,7 +413,7 @@ export default function Home() {
             <div className="price-card featured">
               <div className="featured-badge">Most popular</div>
               <div className="price-name">Monthly</div>
-              <div className="price-amount"><span className="currency">£</span>4.99</div>
+              <div className="price-amount"><span className="currency">£</span>5.99</div>
               <div className="price-period">per month — cancel anytime</div>
               <div className="price-tagline">Less than a coffee. Unlimited snaps.</div>
               <ul className="price-features">
@@ -424,19 +424,19 @@ export default function Home() {
                 <li>Full meal log history</li>
                 <li>Protein focus scoring</li>
               </ul>
-              <Link href="/subscribe" className="btn-primary price-cta">Get started — £4.99/mo</Link>
+              <Link href="/subscribe" className="btn-primary price-cta">Get started — £5.99/mo</Link>
             </div>
             <div className="price-card">
               <div className="price-name">Annual</div>
-              <div className="price-amount"><span className="currency">£</span>39.99</div>
-              <div className="price-period">per year — save £20</div>
-              <div className="price-tagline">£3.33/month. 2 months free.</div>
+              <div className="price-amount"><span className="currency">£</span>49.99</div>
+              <div className="price-period">per year — save £21.89</div>
+              <div className="price-tagline">£4.17/month. Save 31%.</div>
               <ul className="price-features">
                 <li>Everything in Monthly</li>
-                <li>Best value — 2 months free</li>
+                <li>Best value — save 31%</li>
                 <li>Priority feature updates</li>
               </ul>
-              <Link href="/subscribe?annual=true" className="btn-outline-magenta price-cta">Get annual — £39.99/yr</Link>
+              <Link href="/subscribe?annual=true" className="btn-outline-magenta price-cta">Get annual — £49.99/yr</Link>
             </div>
           </div>
         </div>

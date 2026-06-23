@@ -402,7 +402,7 @@ export default function SnapAndTrackApp() {
             {!isSubscribed && snapCount !== null && snapCount >= FREE_SNAP_LIMIT ? (
               <div style={styles.subscribeGate}>
                 <div style={styles.gateTitle}>You&apos;ve used your 3 free snaps 🎉</div>
-                <div style={styles.gateSub}>Subscribe for unlimited access — £4.99/month</div>
+                <div style={styles.gateSub}>Subscribe for unlimited access — £5.99/month</div>
                 <Link
                   href="/subscribe"
                   className="subscribe-cta"
