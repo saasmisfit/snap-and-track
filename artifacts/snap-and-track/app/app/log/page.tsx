@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
 
 interface FoodItem {
   name: string;
@@ -9,7 +10,7 @@ interface FoodItem {
 }
 
 interface LogEntry {
-  id: string;
+  id: number;
   dish: string;
   portion_estimate: string;
   calories: number;
@@ -24,7 +25,8 @@ interface LogEntry {
   logTime?: string;
 }
 
-const STORAGE_KEY = 'snaptrack_log';
+const LEGACY_LOG_KEY = 'snaptrack_log';
+const LEGACY_MIGRATION_DONE_KEY = 'munchsnapper_log_migrated';
 const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 const WATER_KEY_PREFIX = 'munchsnapper_water_';
 const WATER_NOTIF_KEY = 'munchsnapper_water_notif';
@@ -73,7 +75,7 @@ function isLogEntry(v: unknown): v is LogEntry {
   if (!v || typeof v !== 'object') return false;
   const o = v as Record<string, unknown>;
   return (
-    typeof o.id === 'string' &&
+    typeof o.id === 'number' &&
     typeof o.dish === 'string' &&
     typeof o.loggedAt === 'string' &&
     typeof o.calories === 'number' &&
@@ -81,15 +83,117 @@ function isLogEntry(v: unknown): v is LogEntry {
   );
 }
 
-function readAll(): LogEntry[] {
+async function fetchEntries(userId: string, days = 7): Promise<LogEntry[]> {
+  const res = await fetch(`/api/log?userId=${encodeURIComponent(userId)}&days=${days}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`GET /api/log failed (${res.status})`);
+  const data: unknown = await res.json().catch(() => ({}));
+  const entries =
+    data && typeof data === 'object' && 'entries' in data
+      ? (data as { entries: unknown }).entries
+      : null;
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isLogEntry);
+}
+
+interface LegacyLogEntry {
+  dish: string;
+  portion_estimate?: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fibre_g?: number;
+  foods_identified?: FoodItem[];
+  stacy_insight?: string;
+  loggedAt?: string;
+  logDate?: string;
+  logTime?: string;
+}
+
+function isLegacyLogEntry(v: unknown): v is LegacyLogEntry {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.dish === 'string' &&
+    typeof o.calories === 'number' &&
+    typeof o.protein_g === 'number' &&
+    typeof o.carbs_g === 'number' &&
+    typeof o.fat_g === 'number'
+  );
+}
+
+async function migrateLegacyEntries(userId: string): Promise<boolean> {
+  let raw: string | null = null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isLogEntry) : [];
+    if (window.localStorage.getItem(LEGACY_MIGRATION_DONE_KEY) === '1') return false;
+    raw = window.localStorage.getItem(LEGACY_LOG_KEY);
   } catch {
-    return [];
+    return false;
   }
+  if (!raw) {
+    try {
+      window.localStorage.setItem(LEGACY_MIGRATION_DONE_KEY, '1');
+    } catch {
+      // best-effort
+    }
+    return false;
+  }
+
+  let legacy: LegacyLogEntry[] = [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    legacy = Array.isArray(parsed) ? parsed.filter(isLegacyLogEntry) : [];
+  } catch {
+    legacy = [];
+  }
+
+  if (legacy.length === 0) {
+    try {
+      window.localStorage.removeItem(LEGACY_LOG_KEY);
+      window.localStorage.setItem(LEGACY_MIGRATION_DONE_KEY, '1');
+    } catch {
+      // best-effort
+    }
+    return false;
+  }
+
+  const results = await Promise.allSettled(
+    legacy.map((e) =>
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          logDate: e.logDate ?? new Date().toISOString().split('T')[0],
+          logTime: e.logTime ?? '',
+          mealName: e.dish,
+          description: e.portion_estimate ?? '',
+          calories: e.calories,
+          protein: e.protein_g,
+          carbs: e.carbs_g,
+          fat: e.fat_g,
+          fibre: typeof e.fibre_g === 'number' ? e.fibre_g : 0,
+          ingredients: Array.isArray(e.foods_identified) ? e.foods_identified : [],
+          coachingNote: typeof e.stacy_insight === 'string' ? e.stacy_insight : '',
+        }),
+      }).then((r) => {
+        if (!r.ok) throw new Error(`POST failed (${r.status})`);
+      })
+    )
+  );
+  const allOk = results.every((r) => r.status === 'fulfilled');
+  if (allOk) {
+    try {
+      window.localStorage.removeItem(LEGACY_LOG_KEY);
+      window.localStorage.setItem(LEGACY_MIGRATION_DONE_KEY, '1');
+    } catch {
+      // best-effort
+    }
+    return true;
+  }
+  return false;
 }
 
 function todayUTCStr(): string {
@@ -273,7 +377,9 @@ function dayTotals(entries: LogEntry[], netCarbs: boolean) {
 }
 
 export default function MealLogPage() {
+  const { user, isLoaded, isSignedIn } = useUser();
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [openDates, setOpenDates] = useState<Set<string>>(() => new Set());
   const [netCarbs, setNetCarbs] = useState(false);
@@ -286,8 +392,8 @@ export default function MealLogPage() {
   const [weightLog, setWeightLog] = useState<WeightEntry[]>([]);
   const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
 
+  // One-time hydration for localStorage-backed bits + initial UI state
   useEffect(() => {
-    setEntries(readAll());
     setOpenDates(new Set([todayUTCStr()]));
     try {
       setNetCarbs(window.localStorage.getItem(NET_CARBS_KEY) === '1');
@@ -304,6 +410,29 @@ export default function MealLogPage() {
     setWeightLog(readWeightLog());
     setStreak(checkAndResetStreak());
   }, []);
+
+  // Migrate legacy localStorage entries (one-time) then fetch from API
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user?.id) return;
+    let cancelled = false;
+    const userId = user.id;
+    (async () => {
+      try {
+        await migrateLegacyEntries(userId);
+        const fetched = await fetchEntries(userId, 7);
+        if (cancelled) return;
+        setEntries(fetched);
+        setLoadError(null);
+      } catch {
+        if (cancelled) return;
+        setEntries([]);
+        setLoadError('Could not load meals — please refresh.');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, user?.id]);
 
   // Notification permission — ask once, remember result
   useEffect(() => {
@@ -410,19 +539,22 @@ export default function MealLogPage() {
     setWeightInput('');
   }
 
-  function removeEntry(id: string) {
-    const all = readAll();
-    const remaining = all.filter((e) => e.id !== id);
+  async function removeEntry(id: number) {
+    if (!user?.id) return;
+    setEntries((prev) => (prev ? prev.filter((e) => e.id !== id) : prev));
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
+      await fetch('/api/log', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, userId: user.id }),
+      });
     } catch {
-      // best-effort
+      // best-effort — leave optimistic removal in place
     }
-    setEntries(remaining);
   }
 
-  function toggleExpanded(id: string) {
-    setExpanded((m) => ({ ...m, [id]: !m[id] }));
+  function toggleExpanded(id: number) {
+    setExpanded((m) => ({ ...m, [String(id)]: !m[String(id)] }));
   }
 
   function toggleDate(dateStr: string) {
@@ -838,11 +970,31 @@ export default function MealLogPage() {
           )}
         </section>
 
-        {/* Loading shimmer — only while reading localStorage on first paint */}
-        {entries === null && <div style={styles.loadingHint}>Loading your log…</div>}
+        {/* Loading state — while we fetch entries from the API */}
+        {entries === null && !loadError && (
+          <div style={styles.loadingHint}>Loading your meals...</div>
+        )}
+
+        {/* Error state */}
+        {loadError && (
+          <div
+            role="alert"
+            style={{
+              background: COLOURS.card,
+              border: `1px solid ${COLOURS.border}`,
+              borderRadius: 14,
+              padding: '16px 18px',
+              color: COLOURS.danger,
+              fontSize: 14,
+              textAlign: 'center',
+            }}
+          >
+            {loadError}
+          </div>
+        )}
 
         {/* Empty state */}
-        {entries !== null && entries.length === 0 && (
+        {entries !== null && entries.length === 0 && !loadError && (
           <div style={styles.empty}>
             <div style={styles.emptyIcon} aria-hidden="true">
               📷
@@ -899,11 +1051,11 @@ export default function MealLogPage() {
                             type="button"
                             onClick={() => toggleExpanded(e.id)}
                             className="see-toggle"
-                            aria-expanded={!!expanded[e.id]}
+                            aria-expanded={!!expanded[String(e.id)]}
                           >
-                            What I could see {expanded[e.id] ? '▴' : '▾'}
+                            What I could see {expanded[String(e.id)] ? '▴' : '▾'}
                           </button>
-                          {expanded[e.id] && (
+                          {expanded[String(e.id)] && (
                             <ul style={styles.foodList}>
                               {e.foods_identified.map((f, i) => (
                                 <li key={`${e.id}-${i}`} style={styles.foodItem}>

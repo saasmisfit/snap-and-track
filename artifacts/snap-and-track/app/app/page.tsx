@@ -268,7 +268,7 @@ function checkAndResetStreak(): Streak {
 }
 
 interface SavedLogEntry {
-  id?: string;
+  id?: number;
   dish: string;
   portion_estimate?: string;
   calories: number;
@@ -302,25 +302,10 @@ function isSavedLogEntry(v: unknown): v is SavedLogEntry {
   );
 }
 
-function readLogEntries(): SavedLogEntry[] {
-  try {
-    const raw = window.localStorage.getItem('snaptrack_log');
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isSavedLogEntry) : [];
-  } catch {
-    return [];
-  }
-}
-
-function buildRecentMeals(): { items: RecentMealItem[]; totalCount: number } {
-  const entries = readLogEntries();
-  const sorted = [...entries].sort((a, b) =>
-    String(b.loggedAt ?? '').localeCompare(String(a.loggedAt ?? ''))
-  );
+function buildRecentMealsFromEntries(entries: SavedLogEntry[]): RecentMealItem[] {
   const seen = new Set<string>();
   const items: RecentMealItem[] = [];
-  for (const e of sorted) {
+  for (const e of entries) {
     const dish = e.dish.trim();
     if (!dish) continue;
     const key = dish.toLowerCase();
@@ -329,7 +314,21 @@ function buildRecentMeals(): { items: RecentMealItem[]; totalCount: number } {
     items.push({ key, dish, calories: e.calories, template: e });
     if (items.length >= 5) break;
   }
-  return { items, totalCount: entries.length };
+  return items;
+}
+
+async function fetchLogEntries(userId: string): Promise<SavedLogEntry[]> {
+  const res = await fetch(`/api/log?userId=${encodeURIComponent(userId)}&days=7`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`GET /api/log failed (${res.status})`);
+  const data: unknown = await res.json().catch(() => ({}));
+  const entries =
+    data && typeof data === 'object' && 'entries' in data
+      ? (data as { entries: unknown }).entries
+      : null;
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(isSavedLogEntry);
 }
 
 function recordMealLogged(): { streak: Streak; milestone: number | null } {
@@ -376,7 +375,7 @@ export default function SnapAndTrackApp() {
   const [justLogged, setJustLogged] = useState(false);
   const [snapCount, setSnapCount] = useState<number | null>(null);
   const [editingTile, setEditingTile] = useState<MacroKey | null>(null);
-  const [loggedEntryId, setLoggedEntryId] = useState<string | null>(null);
+  const [loggedEntryId, setLoggedEntryId] = useState<number | null>(null);
   const [netCarbs, setNetCarbs] = useState(false);
   const [goals, setGoals] = useState<UserGoals | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -465,12 +464,23 @@ export default function SnapAndTrackApp() {
     setStreak(checkAndResetStreak());
   }, []);
 
-  // Hydrate recent meals from log
+  // Hydrate recent meals from the API (skips silently if not signed in or on error)
   useEffect(() => {
-    const { items, totalCount } = buildRecentMeals();
-    setRecentMeals(items);
-    setLogEntryCount(totalCount);
-  }, []);
+    if (!isLoaded || !isSignedIn || !user?.id) return;
+    let cancelled = false;
+    fetchLogEntries(user.id)
+      .then((entries) => {
+        if (cancelled) return;
+        setRecentMeals(buildRecentMealsFromEntries(entries));
+        setLogEntryCount(entries.length);
+      })
+      .catch(() => {
+        // best-effort: leave defaults
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, user?.id]);
 
   // Auto-hide the "Logged ✓" toast after 2 seconds
   useEffect(() => {
@@ -587,20 +597,19 @@ export default function SnapAndTrackApp() {
     const parsed = parseFloat(raw);
     const clean = Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : 0;
     setResult((r) => (r ? { ...r, [key]: clean } : r));
-    if (loggedEntryId) {
-      try {
-        const stored = window.localStorage.getItem('snaptrack_log');
-        const existing: unknown = stored ? JSON.parse(stored) : [];
-        const arr = Array.isArray(existing) ? existing : [];
-        const updated = arr.map((e) =>
-          e && typeof e === 'object' && e.id === loggedEntryId
-            ? { ...e, [key]: clean }
-            : e
-        );
-        window.localStorage.setItem('snaptrack_log', JSON.stringify(updated));
-      } catch {
+    if (loggedEntryId !== null && user?.id) {
+      const payload: Record<string, unknown> = { id: loggedEntryId, userId: user.id };
+      if (key === 'calories') payload.calories = clean;
+      else if (key === 'protein_g') payload.protein = clean;
+      else if (key === 'carbs_g') payload.carbs = clean;
+      else if (key === 'fat_g') payload.fat = clean;
+      fetch('/api/log', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => {
         // best-effort
-      }
+      });
     }
     setEditingTile(null);
   }
@@ -694,54 +703,53 @@ export default function SnapAndTrackApp() {
     }
   }
 
-  function logMeal() {
-    if (!result || justLogged) return;
+  async function logMeal() {
+    if (!result || justLogged || !user?.id) return;
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
-    const entryId = Date.now().toString();
-    const entry = {
-      id: entryId,
-      dish: result.dish,
-      portion_estimate: result.portion_estimate,
-      calories: result.calories,
-      protein_g: result.protein_g,
-      carbs_g: result.carbs_g,
-      fat_g: result.fat_g,
-      fibre_g: result.fibre_g,
-      foods_identified: result.foods_identified,
-      stacy_insight: result.stacy_insight,
-      loggedAt: now.toISOString(),
-      logDate: todayStr,
-      logTime: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-    };
+    const logTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     try {
-      const raw = window.localStorage.getItem('snaptrack_log');
-      const existing: unknown = raw ? JSON.parse(raw) : [];
-      const arr = Array.isArray(existing) ? existing : [];
-      arr.push(entry);
-      // Tag legacy entries (no logDate) with today's date instead of dropping them
-      const tagged = arr.map((e) =>
-        e && typeof e === 'object' && typeof e.logDate !== 'string'
-          ? { ...e, logDate: todayStr }
-          : e
-      );
-      // Prune to a 7-day rolling window: today + 6 previous days
-      const cutoff = new Date(now);
-      cutoff.setUTCDate(cutoff.getUTCDate() - 6);
-      const cutoffStr = cutoff.toISOString().split('T')[0];
-      const pruned = tagged.filter(
-        (e) =>
-          e &&
-          typeof e === 'object' &&
-          typeof e.logDate === 'string' &&
-          e.logDate >= cutoffStr
-      );
-      window.localStorage.setItem('snaptrack_log', JSON.stringify(pruned));
-    } catch {
-      // best-effort: still flash the confirmation so the UI feels responsive
+      const res = await fetch('/api/log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          logDate: todayStr,
+          logTime,
+          mealName: result.dish,
+          description: result.portion_estimate,
+          calories: result.calories,
+          protein: result.protein_g,
+          carbs: result.carbs_g,
+          fat: result.fat_g,
+          fibre: result.fibre_g,
+          ingredients: result.foods_identified,
+          coachingNote: result.stacy_insight,
+        }),
+      });
+      if (!res.ok) {
+        const data: unknown = await res.json().catch(() => ({}));
+        const detail =
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : `Save failed (${res.status})`;
+        setError(detail);
+        return;
+      }
+      const data: unknown = await res.json().catch(() => ({}));
+      const entry =
+        data && typeof data === 'object' && 'entry' in data
+          ? (data as { entry: unknown }).entry
+          : null;
+      if (entry && typeof entry === 'object' && 'id' in entry) {
+        const id = (entry as { id: unknown }).id;
+        if (typeof id === 'number') setLoggedEntryId(id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save your meal.');
+      return;
     }
     setJustLogged(true);
-    setLoggedEntryId(entryId);
 
     const { streak: nextStreak, milestone } = recordMealLogged();
     setStreak(nextStreak);
@@ -759,52 +767,51 @@ export default function SnapAndTrackApp() {
       }
     }
 
-    const refreshed = buildRecentMeals();
-    setRecentMeals(refreshed.items);
-    setLogEntryCount(refreshed.totalCount);
+    try {
+      const entries = await fetchLogEntries(user.id);
+      setRecentMeals(buildRecentMealsFromEntries(entries));
+      setLogEntryCount(entries.length);
+    } catch {
+      // best-effort
+    }
   }
 
-  function relogMeal(template: SavedLogEntry) {
+  async function relogMeal(template: SavedLogEntry) {
+    if (!user?.id) return;
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
-    const entry = {
-      id: Date.now().toString(),
-      dish: template.dish,
-      portion_estimate: template.portion_estimate ?? '',
-      calories: template.calories,
-      protein_g: template.protein_g,
-      carbs_g: template.carbs_g,
-      fat_g: template.fat_g,
-      fibre_g: typeof template.fibre_g === 'number' ? template.fibre_g : 0,
-      foods_identified: Array.isArray(template.foods_identified) ? template.foods_identified : [],
-      stacy_insight: typeof template.stacy_insight === 'string' ? template.stacy_insight : '',
-      loggedAt: now.toISOString(),
-      logDate: todayStr,
-      logTime: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-    };
+    const logTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    setShowRelogToast(true);
     try {
-      const raw = window.localStorage.getItem('snaptrack_log');
-      const existing: unknown = raw ? JSON.parse(raw) : [];
-      const arr = Array.isArray(existing) ? existing : [];
-      arr.push(entry);
-      const cutoff = new Date(now);
-      cutoff.setUTCDate(cutoff.getUTCDate() - 6);
-      const cutoffStr = cutoff.toISOString().split('T')[0];
-      const pruned = arr.filter(
-        (e) =>
-          e &&
-          typeof e === 'object' &&
-          typeof e.logDate === 'string' &&
-          e.logDate >= cutoffStr
-      );
-      window.localStorage.setItem('snaptrack_log', JSON.stringify(pruned));
+      await fetch('/api/log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          logDate: todayStr,
+          logTime,
+          mealName: template.dish,
+          description: template.portion_estimate ?? '',
+          calories: template.calories,
+          protein: template.protein_g,
+          carbs: template.carbs_g,
+          fat: template.fat_g,
+          fibre: typeof template.fibre_g === 'number' ? template.fibre_g : 0,
+          ingredients: Array.isArray(template.foods_identified) ? template.foods_identified : [],
+          coachingNote: typeof template.stacy_insight === 'string' ? template.stacy_insight : '',
+        }),
+      });
     } catch {
       // best-effort
     }
 
-    const refreshed = buildRecentMeals();
-    setRecentMeals(refreshed.items);
-    setLogEntryCount(refreshed.totalCount);
+    try {
+      const entries = await fetchLogEntries(user.id);
+      setRecentMeals(buildRecentMealsFromEntries(entries));
+      setLogEntryCount(entries.length);
+    } catch {
+      // best-effort
+    }
 
     const { streak: nextStreak, milestone } = recordMealLogged();
     setStreak(nextStreak);
@@ -821,8 +828,6 @@ export default function SnapAndTrackApp() {
         // best-effort
       }
     }
-
-    setShowRelogToast(true);
   }
 
   const canAnalyse = !!file && !isAnalysing && !result;
