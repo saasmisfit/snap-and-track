@@ -277,11 +277,11 @@ export default function Home() {
                   <td className="cross">✗</td>
                 </tr>
                 <tr className="snap-row">
-                  <td>Built for women specifically</td>
-                  <td className="col-snap check">✓ Women &amp; mums</td>
+                  <td>Motivating coaching tone</td>
+                  <td className="col-snap check">✓ Warm &amp; empowering</td>
                   <td className="cross">✗ Generic</td>
                   <td className="cross">✗ Generic</td>
-                  <td className="cross">✗ Male-coded</td>
+                  <td className="cross">✗ Clinical</td>
                 </tr>
                 <tr className="snap-row">
                   <td>Goal-aware output</td>
