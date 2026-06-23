@@ -45,6 +45,7 @@ interface Streak {
 const EMPTY_STREAK: Streak = { currentStreak: 0, lastLogDate: '', longestStreak: 0 };
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
+type AnalyseMode = 'meal' | 'menu';
 type MacroKey = 'calories' | 'protein_g' | 'carbs_g' | 'fat_g';
 type Sex = 'male' | 'female';
 type Activity = 'sedentary' | 'light' | 'moderate' | 'very';
@@ -387,6 +388,7 @@ export default function SnapAndTrackApp() {
   const [logEntryCount, setLogEntryCount] = useState(0);
   const [showRelogToast, setShowRelogToast] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [mode, setMode] = useState<AnalyseMode>('meal');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -583,14 +585,17 @@ export default function SnapAndTrackApp() {
   }
 
   function pickFile() {
+    setMode('meal');
     fileInputRef.current?.click();
   }
 
   function pickCamera() {
+    setMode('meal');
     cameraInputRef.current?.click();
   }
 
   function pickGallery() {
+    setMode('meal');
     galleryInputRef.current?.click();
   }
 
@@ -599,7 +604,13 @@ export default function SnapAndTrackApp() {
     setFile(null);
     setPreviewUrl(null);
     setError(null);
+    setMode('meal');
     setShowBarcodeScanner(true);
+  }
+
+  function pickMenu() {
+    setMode('menu');
+    cameraInputRef.current?.click();
   }
 
   function handleBarcodeResult(data: AnalyseResponse) {
@@ -610,6 +621,7 @@ export default function SnapAndTrackApp() {
     setError(null);
     setEditingTile(null);
     setLoggedEntryId(null);
+    setMode('meal');
     setResult(data);
     setSnapCount((prev) => {
       const next = (prev ?? 0) + 1;
@@ -678,6 +690,7 @@ export default function SnapAndTrackApp() {
     setIsDragging(false);
     const f = e.dataTransfer?.files?.[0];
     if (!f) return;
+    setMode('meal');
     acceptFile(f);
   }
 
@@ -690,6 +703,7 @@ export default function SnapAndTrackApp() {
     setIsAnalysing(false);
     setEditingTile(null);
     setLoggedEntryId(null);
+    setMode('meal');
     if (!keepGoal) setGoal('fat_loss');
   }
 
@@ -705,7 +719,7 @@ export default function SnapAndTrackApp() {
       const res = await fetch('/api/analyse', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ image: base64, mimeType: file.type, goal }),
+        body: JSON.stringify({ image: base64, mimeType: file.type, goal, mode }),
       });
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -1164,6 +1178,32 @@ export default function SnapAndTrackApp() {
                   </svg>
                   Scan barcode
                 </button>
+                <button
+                  type="button"
+                  onClick={pickMenu}
+                  aria-label="Scan a restaurant menu"
+                  style={{
+                    width: '100%',
+                    background: COLOURS.card,
+                    color: COLOURS.white,
+                    border: `1.5px solid ${COLOURS.border}`,
+                    padding: '14px 24px',
+                    borderRadius: 999,
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>🍽️</span>
+                  Scan menu
+                </button>
               </>
             ) : (
               <div style={styles.previewCard}>
@@ -1173,7 +1213,21 @@ export default function SnapAndTrackApp() {
                 ) : null}
                 <div style={styles.previewRow}>
                   <div style={styles.previewName} title={file.name}>
-                    {file.name}
+                    {mode === 'menu' ? (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          color: COLOURS.magenta,
+                        }}
+                      >
+                        🍽️ Menu mode
+                      </span>
+                    ) : (
+                      file.name
+                    )}
                   </div>
                   <button type="button" onClick={pickFile} className="change-photo">
                     Change photo
@@ -1222,7 +1276,13 @@ export default function SnapAndTrackApp() {
                   disabled={!canAnalyse}
                   className={`analyse-btn${canAnalyse ? '' : ' disabled'}`}
                 >
-                  {isAnalysing ? 'Analysing…' : 'Analyse my meal ✦'}
+                  {isAnalysing
+                    ? mode === 'menu'
+                      ? 'Reading menu…'
+                      : 'Analysing…'
+                    : mode === 'menu'
+                      ? 'Recommend best item ✦'
+                      : 'Analyse my meal ✦'}
                 </button>
                 {isSubscribed ? (
                   <div style={styles.proBadge}>✦ Pro · unlimited snaps</div>
@@ -1405,7 +1465,9 @@ export default function SnapAndTrackApp() {
             </div>
 
             <div style={styles.sectionBlock}>
-              <div style={styles.sectionLabel}>What I can see</div>
+              <div style={styles.sectionLabel}>
+                {mode === 'menu' ? '📋 Menu recommendation' : 'What I can see'}
+              </div>
               <ul style={styles.foodList}>
                 {result.foods_identified.map((f, i) => (
                   <li key={`${f.name}-${i}`} style={styles.foodItem}>

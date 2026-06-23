@@ -3,12 +3,14 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
+type Mode = 'meal' | 'menu';
 
 interface AnalyseRequestBody {
   image?: unknown;
   mimeType?: unknown;
   description?: unknown;
   goal?: unknown;
+  mode?: unknown;
 }
 
 interface FoodItem {
@@ -68,8 +70,32 @@ You MUST respond with ONLY a valid JSON object — no prose, no markdown fences,
 
 All macro fields are numbers (integers or one decimal place). "carbs_g" is TOTAL carbohydrates including fibre; "fibre_g" is dietary fibre in grams (always include — use 0 if the meal genuinely has none). foods_identified lists every distinct food component visible. stacy_insight is 2–3 sentences in Stacy's voice, tailored to the user's stated goal.`;
 
+function menuSystemPrompt(goal: Goal): string {
+  return `You are Stacy Kundu, a certified personal trainer and nutrition coach. The user has photographed a restaurant menu or menu board. Analyse what is visible. Based on their goal (${goal}), recommend the single best menu item for their macros and fat loss / muscle building objective. Provide: recommended dish name, your estimated calories/protein/carbs/fat for a standard restaurant portion, why you chose it for their goal, and one brief tip (e.g. 'ask for sauce on the side' or 'add extra chicken for more protein'). Be direct and practical — this is a coaching recommendation, not a database lookup.
+
+You MUST respond with ONLY a valid JSON object — no prose, no markdown fences, no commentary outside the JSON. The exact shape:
+
+{
+  "dish": string,
+  "portion_estimate": string,
+  "calories": number,
+  "protein_g": number,
+  "carbs_g": number,
+  "fat_g": number,
+  "fibre_g": number,
+  "foods_identified": [{ "name": string, "calories": number }],
+  "stacy_insight": string
+}
+
+"dish" is the recommended menu item by name as it appears on the menu. "portion_estimate" describes the typical restaurant portion (e.g. "standard restaurant portion", "regular bowl", "8oz steak"). "foods_identified" lists 1–3 key components of the recommended dish (e.g. main protein, side, sauce) with approximate calories — these summarise why the choice fits. "stacy_insight" is 2–3 sentences in your warm, direct voice: why this dish wins for the user's goal, plus one practical tip. Reference the actual macro numbers, not generic targets. All macro fields are numbers; "carbs_g" includes fibre; "fibre_g" defaults to 0 if you can't estimate it.`;
+}
+
 function isGoal(value: unknown): value is Goal {
   return typeof value === 'string' && (GOAL_VALUES as readonly string[]).includes(value);
+}
+
+function isMode(value: unknown): value is Mode {
+  return value === 'meal' || value === 'menu';
 }
 
 function extractJson(text: string): string {
@@ -105,7 +131,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { image, mimeType, description, goal } = body;
+  const { image, mimeType, description, goal, mode: rawMode } = body;
 
   if (!isGoal(goal)) {
     return NextResponse.json(
@@ -116,8 +142,16 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
+  const mode: Mode = isMode(rawMode) ? rawMode : 'meal';
+
   const hasImage = typeof image === 'string' && image.length > 0;
   const hasDescription = typeof description === 'string' && description.trim().length > 0;
+  if (mode === 'menu' && !hasImage) {
+    return NextResponse.json(
+      { error: 'Menu mode requires "image" (base64) plus "mimeType"' },
+      { status: 400 }
+    );
+  }
   if (!hasImage && !hasDescription) {
     return NextResponse.json(
       { error: 'Provide either "image" (base64) plus "mimeType", or "description" (text)' },
@@ -142,10 +176,17 @@ export async function POST(req: Request): Promise<NextResponse> {
       type: 'image',
       source: { type: 'base64', media_type: mimeType as string, data: image as string },
     });
-    userContent.push({
-      type: 'text',
-      text: `User goal: ${goal}. ${goalNote}\n\nAnalyse the meal in this photo and return the JSON object now.`,
-    });
+    if (mode === 'menu') {
+      userContent.push({
+        type: 'text',
+        text: `User goal: ${goal}. ${goalNote}\n\nLook at the menu in this photo and recommend the single best item for the user's goal. Return the JSON object now.`,
+      });
+    } else {
+      userContent.push({
+        type: 'text',
+        text: `User goal: ${goal}. ${goalNote}\n\nAnalyse the meal in this photo and return the JSON object now.`,
+      });
+    }
   } else {
     userContent.push({
       type: 'text',
@@ -153,10 +194,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
   }
 
+  const systemPrompt = mode === 'menu' ? menuSystemPrompt(goal) : SYSTEM_PROMPT;
+
   const anthropicPayload = {
     model: 'claude-sonnet-4-6',
     max_tokens: 1000,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     messages: [
       {
         role: 'user',
