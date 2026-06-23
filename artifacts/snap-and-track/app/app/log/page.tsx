@@ -26,6 +26,11 @@ interface LogEntry {
 
 const STORAGE_KEY = 'snaptrack_log';
 const NET_CARBS_KEY = 'munchsnapper_netcarbs';
+const WATER_KEY_PREFIX = 'munchsnapper_water_';
+const WATER_NOTIF_KEY = 'munchsnapper_water_notif';
+const GLASS_GOAL = 8;
+const REMINDER_HOURS = [8, 10, 12, 14, 16, 18, 20];
+const WATER_REMINDER_MESSAGE = "💧 Don't forget to drink water! Tap to log a glass.";
 
 const COLOURS = {
   magenta: '#B0185E',
@@ -68,6 +73,30 @@ function readAll(): LogEntry[] {
 
 function todayUTCStr(): string {
   return new Date().toISOString().split('T')[0];
+}
+
+function todayLocalStr(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
+
+function waterKey(dateStr: string): string {
+  return `${WATER_KEY_PREFIX}${dateStr}`;
+}
+
+function readWaterCount(dateStr: string): number {
+  try {
+    const raw = window.localStorage.getItem(waterKey(dateStr));
+    if (!raw) return 0;
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.min(n, GLASS_GOAL);
+  } catch {
+    return 0;
+  }
 }
 
 function getEntryDate(e: LogEntry): string {
@@ -130,6 +159,10 @@ export default function MealLogPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [openDates, setOpenDates] = useState<Set<string>>(() => new Set());
   const [netCarbs, setNetCarbs] = useState(false);
+  const [waterCount, setWaterCount] = useState(0);
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission | 'unsupported' | 'unknown'>(
+    'unknown'
+  );
 
   useEffect(() => {
     setEntries(readAll());
@@ -139,7 +172,83 @@ export default function MealLogPage() {
     } catch {
       // best-effort
     }
+    setWaterCount(readWaterCount(todayLocalStr()));
   }, []);
+
+  // Notification permission — ask once, remember result
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') {
+      setNotifPerm('unsupported');
+      return;
+    }
+    setNotifPerm(Notification.permission);
+    let asked: string | null = null;
+    try {
+      asked = window.localStorage.getItem(WATER_NOTIF_KEY);
+    } catch {
+      // best-effort
+    }
+    if (asked) return;
+    if (Notification.permission !== 'default') {
+      try {
+        window.localStorage.setItem(WATER_NOTIF_KEY, Notification.permission);
+      } catch {
+        // best-effort
+      }
+      return;
+    }
+    Notification.requestPermission()
+      .then((p) => {
+        setNotifPerm(p);
+        try {
+          window.localStorage.setItem(WATER_NOTIF_KEY, p);
+        } catch {
+          // best-effort
+        }
+      })
+      .catch(() => {
+        // best-effort
+      });
+  }, []);
+
+  // Schedule reminders — every 2h between 8am and 8pm local, skip if goal met
+  useEffect(() => {
+    if (notifPerm !== 'granted') return;
+    if (waterCount >= GLASS_GOAL) return;
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') return;
+
+    const now = new Date();
+    const timers: number[] = [];
+    for (const hour of REMINDER_HOURS) {
+      const slot = new Date(now);
+      slot.setHours(hour, 0, 0, 0);
+      const delay = slot.getTime() - now.getTime();
+      if (delay <= 0) continue;
+      const id = window.setTimeout(() => {
+        const current = readWaterCount(todayLocalStr());
+        if (current >= GLASS_GOAL) return;
+        try {
+          new Notification(WATER_REMINDER_MESSAGE);
+        } catch {
+          // best-effort
+        }
+      }, delay);
+      timers.push(id);
+    }
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [notifPerm, waterCount]);
+
+  function updateWater(n: number) {
+    const clamped = Math.max(0, Math.min(GLASS_GOAL, Math.round(n)));
+    setWaterCount(clamped);
+    try {
+      window.localStorage.setItem(waterKey(todayLocalStr()), String(clamped));
+    } catch {
+      // best-effort
+    }
+  }
 
   function removeEntry(id: string) {
     const all = readAll();
@@ -194,6 +303,135 @@ export default function MealLogPage() {
             ＋ Snap a meal
           </Link>
         </header>
+
+        {/* Water tracker — daily glasses goal */}
+        <section
+          aria-label="Water intake today"
+          style={{
+            background: COLOURS.card,
+            border: `1px solid ${COLOURS.border}`,
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 800,
+                fontSize: 18,
+                color: COLOURS.white,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Water Today
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: COLOURS.magenta,
+              }}
+            >
+              Goal · {GLASS_GOAL} glasses
+            </div>
+          </div>
+
+          <div
+            role="group"
+            aria-label={`${waterCount} of ${GLASS_GOAL} glasses logged`}
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 4,
+            }}
+          >
+            {Array.from({ length: GLASS_GOAL }).map((_, i) => {
+              const filled = i < waterCount;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => updateWater(filled ? i : i + 1)}
+                  aria-label={`Glass ${i + 1} of ${GLASS_GOAL}: ${filled ? 'filled' : 'empty'}`}
+                  aria-pressed={filled}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 2,
+                    margin: 0,
+                    cursor: 'pointer',
+                    lineHeight: 0,
+                    borderRadius: 8,
+                  }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 2 C12 2 5 10 5 15 a7 7 0 0 0 14 0 c0-5-7-13-7-13z"
+                      fill={filled ? COLOURS.magenta : 'transparent'}
+                      stroke={filled ? COLOURS.magenta : COLOURS.border}
+                      strokeWidth={1.5}
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                color: COLOURS.textMuted,
+                fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {waterCount} of {GLASS_GOAL} glasses
+            </div>
+            {waterCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => updateWater(0)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  color: COLOURS.textFaint,
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Reset
+              </button>
+            ) : null}
+          </div>
+        </section>
 
         {/* Loading shimmer — only while reading localStorage on first paint */}
         {entries === null && <div style={styles.loadingHint}>Loading your log…</div>}
