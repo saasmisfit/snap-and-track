@@ -388,6 +388,7 @@ export default function SnapAndTrackApp() {
   const [logEntryCount, setLogEntryCount] = useState(0);
   const [showRelogToast, setShowRelogToast] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showVoiceLog, setShowVoiceLog] = useState(false);
   const [mode, setMode] = useState<AnalyseMode>('meal');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -613,8 +614,38 @@ export default function SnapAndTrackApp() {
     cameraInputRef.current?.click();
   }
 
+  function pickVoice() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setMode('meal');
+    setShowVoiceLog(true);
+  }
+
   function handleBarcodeResult(data: AnalyseResponse) {
     setShowBarcodeScanner(false);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setEditingTile(null);
+    setLoggedEntryId(null);
+    setMode('meal');
+    setResult(data);
+    setSnapCount((prev) => {
+      const next = (prev ?? 0) + 1;
+      try {
+        window.localStorage.setItem(FREE_SNAP_KEY, String(next));
+      } catch {
+        // best-effort
+      }
+      return next;
+    });
+  }
+
+  function handleVoiceResult(data: AnalyseResponse) {
+    setShowVoiceLog(false);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setFile(null);
     setPreviewUrl(null);
@@ -1204,6 +1235,32 @@ export default function SnapAndTrackApp() {
                   <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>🍽️</span>
                   Scan menu
                 </button>
+                <button
+                  type="button"
+                  onClick={pickVoice}
+                  aria-label="Voice log a meal"
+                  style={{
+                    width: '100%',
+                    background: COLOURS.card,
+                    color: COLOURS.white,
+                    border: `1.5px solid ${COLOURS.border}`,
+                    padding: '14px 24px',
+                    borderRadius: 999,
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>🎙️</span>
+                  Voice log
+                </button>
               </>
             ) : (
               <div style={styles.previewCard}>
@@ -1737,6 +1794,22 @@ export default function SnapAndTrackApp() {
           display: none;
         }
 
+        .voice-pulse {
+          box-shadow: 0 0 0 0 rgba(176, 24, 94, 0.55);
+          animation: voicePulse 1.4s ease-out infinite;
+        }
+        @keyframes voicePulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(176, 24, 94, 0.55);
+          }
+          70% {
+            box-shadow: 0 0 0 18px rgba(176, 24, 94, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(176, 24, 94, 0);
+          }
+        }
+
         @keyframes relogToastFade {
           0% { opacity: 0; transform: translate(-50%, 8px); }
           12% { opacity: 1; transform: translate(-50%, 0); }
@@ -1759,6 +1832,14 @@ export default function SnapAndTrackApp() {
           goal={goal}
           onClose={() => setShowBarcodeScanner(false)}
           onResult={handleBarcodeResult}
+        />
+      ) : null}
+
+      {showVoiceLog ? (
+        <VoiceLogModal
+          goal={goal}
+          onClose={() => setShowVoiceLog(false)}
+          onResult={handleVoiceResult}
         />
       ) : null}
 
@@ -2420,6 +2501,380 @@ function BarcodeScannerModal({
             <h2 style={titleStyle}>Camera trouble</h2>
             <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
               {errorMsg || 'Something went wrong starting the camera.'}
+            </p>
+            <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
+              Try again
+            </button>
+            <button type="button" onClick={onClose} style={secondaryBtnStyle}>
+              Close
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+interface SpeechRecognitionResultLike {
+  [index: number]: SpeechRecognitionAlternativeLike;
+  readonly length: number;
+}
+interface SpeechRecognitionResultListLike {
+  [index: number]: SpeechRecognitionResultLike;
+  readonly length: number;
+}
+interface SpeechRecognitionEventLike {
+  results: SpeechRecognitionResultListLike;
+}
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+}
+interface SpeechRecognitionInstance {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+}
+type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
+
+function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  };
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
+type VoicePhase = 'unsupported' | 'listening' | 'transcript' | 'analysing' | 'error';
+
+function VoiceLogModal({
+  goal,
+  onClose,
+  onResult,
+}: {
+  goal: Goal;
+  onClose: () => void;
+  onResult: (data: AnalyseResponse) => void;
+}) {
+  const [phase, setPhase] = useState<VoicePhase>('listening');
+  const [transcript, setTranscript] = useState<string>('');
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+
+  function startListening() {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      setPhase('unsupported');
+      return;
+    }
+    setErrorMsg('');
+    setTranscript('');
+    const rec = new Ctor();
+    rec.lang = 'en-GB';
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onresult = (event) => {
+      const first = event.results[0];
+      const alt = first && first[0];
+      const text = (alt?.transcript ?? '').trim();
+      if (!text) {
+        setErrorMsg("I didn't catch that — try again.");
+        setPhase('error');
+        return;
+      }
+      setTranscript(text);
+      setPhase('transcript');
+    };
+    rec.onerror = (event) => {
+      const code = event.error || '';
+      const friendly =
+        code === 'no-speech'
+          ? "I didn't catch that — try again."
+          : code === 'not-allowed' || code === 'service-not-allowed'
+            ? 'Microphone permission was blocked. Enable it in your browser settings and try again.'
+            : code === 'audio-capture'
+              ? 'No microphone detected. Check your device and try again.'
+              : `Voice error: ${code || 'unknown'}`;
+      setErrorMsg(friendly);
+      setPhase('error');
+    };
+    rec.onend = () => {
+      // If we ended without a result and we're still in listening, surface a soft error
+      // (most browsers fire onresult before onend on success; handled there)
+    };
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setPhase('listening');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Could not start the microphone.');
+      setPhase('error');
+    }
+  }
+
+  useEffect(() => {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      setPhase('unsupported');
+      return;
+    }
+    startListening();
+    return () => {
+      const r = recognitionRef.current;
+      if (r) {
+        try {
+          r.stop();
+        } catch {
+          // best-effort
+        }
+        recognitionRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function confirmTranscript() {
+    if (!transcript) return;
+    setPhase('analysing');
+    try {
+      const res = await fetch('/api/analyse', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ description: transcript, goal, mode: 'voice' }),
+      });
+      if (!res.ok) {
+        const data: unknown = await res.json().catch(() => ({}));
+        const detail =
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : `Request failed (${res.status})`;
+        setErrorMsg(detail);
+        setPhase('error');
+        return;
+      }
+      const data: unknown = await res.json().catch(() => null);
+      if (!data || typeof data !== 'object') {
+        setErrorMsg('Got an empty response from the analyser.');
+        setPhase('error');
+        return;
+      }
+      onResult(data as AnalyseResponse);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Analyse failed.');
+      setPhase('error');
+    }
+  }
+
+  function tryAgain() {
+    // Stop any in-flight recogniser before re-starting
+    const r = recognitionRef.current;
+    if (r) {
+      try {
+        r.stop();
+      } catch {
+        // best-effort
+      }
+      recognitionRef.current = null;
+    }
+    startListening();
+  }
+
+  const overlayStyle: React.CSSProperties = {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(14,14,16,0.96)',
+    zIndex: 110,
+    overflowY: 'auto',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    padding: '2rem 1rem',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    width: '100%',
+    maxWidth: 460,
+    background: COLOURS.card,
+    border: `1px solid ${COLOURS.border}`,
+    borderRadius: 18,
+    padding: '1.75rem 1.5rem 1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    color: COLOURS.white,
+    position: 'relative',
+  };
+
+  const closeBtnStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    background: 'transparent',
+    border: 'none',
+    color: COLOURS.textMuted,
+    fontSize: 20,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 6,
+  };
+
+  const titleStyle: React.CSSProperties = {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 800,
+    fontSize: 22,
+    lineHeight: 1.1,
+    margin: 0,
+    letterSpacing: '-0.01em',
+  };
+
+  const primaryBtnStyle: React.CSSProperties = {
+    width: '100%',
+    background: COLOURS.magenta,
+    color: COLOURS.white,
+    border: 'none',
+    padding: '14px 24px',
+    borderRadius: 999,
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: 14,
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  };
+
+  const secondaryBtnStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'transparent',
+    color: COLOURS.textMuted,
+    border: `1px solid ${COLOURS.border}`,
+    padding: '12px 24px',
+    borderRadius: 999,
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: 13,
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Voice log" style={overlayStyle}>
+      <div style={cardStyle}>
+        <button type="button" onClick={onClose} aria-label="Close voice log" style={closeBtnStyle}>
+          ✕
+        </button>
+
+        {phase === 'unsupported' && (
+          <>
+            <h2 style={titleStyle}>Voice logging unavailable</h2>
+            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+              Voice logging works best on Chrome or Safari. Try the photo or gallery options instead.
+            </p>
+            <button type="button" onClick={onClose} style={primaryBtnStyle}>
+              Got it
+            </button>
+          </>
+        )}
+
+        {phase === 'listening' && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 18,
+              padding: '1.5rem 0.5rem 0.5rem',
+            }}
+          >
+            <div
+              aria-hidden="true"
+              className="voice-pulse"
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: '50%',
+                background: COLOURS.magenta,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: COLOURS.white,
+                fontSize: 30,
+                lineHeight: 1,
+              }}
+            >
+              🎙️
+            </div>
+            <div
+              style={{
+                fontFamily: "'Barlow', sans-serif",
+                fontSize: 15,
+                color: COLOURS.white,
+                textAlign: 'center',
+                letterSpacing: '0.02em',
+              }}
+            >
+              Listening… say your meal
+            </div>
+            <button type="button" onClick={onClose} style={secondaryBtnStyle}>
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {phase === 'transcript' && (
+          <>
+            <h2 style={titleStyle}>I heard</h2>
+            <div
+              style={{
+                background: COLOURS.nearBlack,
+                border: `1px solid ${COLOURS.border}`,
+                borderRadius: 12,
+                padding: '14px 16px',
+                fontSize: 15,
+                lineHeight: 1.5,
+                color: COLOURS.white,
+              }}
+            >
+              {transcript}
+            </div>
+            <button type="button" onClick={confirmTranscript} style={primaryBtnStyle}>
+              Confirm
+            </button>
+            <button type="button" onClick={tryAgain} style={secondaryBtnStyle}>
+              Try again
+            </button>
+          </>
+        )}
+
+        {phase === 'analysing' && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 14,
+              padding: '2.5rem 1rem',
+            }}
+          >
+            <div className="spinner" aria-hidden="true" />
+            <div style={{ fontSize: 14, color: COLOURS.textMuted }}>Estimating macros…</div>
+          </div>
+        )}
+
+        {phase === 'error' && (
+          <>
+            <h2 style={titleStyle}>Hmm</h2>
+            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+              {errorMsg || 'Something went wrong.'}
             </p>
             <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
               Try again

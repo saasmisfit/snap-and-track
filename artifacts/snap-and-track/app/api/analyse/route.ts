@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
-type Mode = 'meal' | 'menu';
+type Mode = 'meal' | 'menu' | 'voice';
 
 interface AnalyseRequestBody {
   image?: unknown;
@@ -70,6 +70,24 @@ You MUST respond with ONLY a valid JSON object — no prose, no markdown fences,
 
 All macro fields are numbers (integers or one decimal place). "carbs_g" is TOTAL carbohydrates including fibre; "fibre_g" is dietary fibre in grams (always include — use 0 if the meal genuinely has none). foods_identified lists every distinct food component visible. stacy_insight is 2–3 sentences in Stacy's voice, tailored to the user's stated goal.`;
 
+const VOICE_SYSTEM_PROMPT = `You are Stacy Kundu, a certified personal trainer. The user has described a meal by voice. Estimate the calories, protein, carbs, fat, and fibre for what they described. Make reasonable assumptions about portion sizes for a typical adult. Be specific: list each component you are estimating.
+
+You MUST respond with ONLY a valid JSON object — no prose, no markdown fences, no commentary outside the JSON. The exact shape:
+
+{
+  "dish": string,
+  "portion_estimate": string,
+  "calories": number,
+  "protein_g": number,
+  "carbs_g": number,
+  "fat_g": number,
+  "fibre_g": number,
+  "foods_identified": [{ "name": string, "calories": number }],
+  "stacy_insight": string
+}
+
+"dish" is a short name summarising what they ate. "portion_estimate" is the portion assumption in plain language (e.g. "approx 200g chicken, 150g cooked rice"). "foods_identified" lists each component you estimated (one item per food, with the assumed portion in the name) and its approximate calories. "stacy_insight" is 2–3 sentences in your warm, direct voice — reference the actual protein number and tailor to the user's goal. "carbs_g" includes fibre; "fibre_g" defaults to 0 if you can't estimate it.`;
+
 function menuSystemPrompt(goal: Goal): string {
   return `You are Stacy Kundu, a certified personal trainer and nutrition coach. The user has photographed a restaurant menu or menu board. Analyse what is visible. Based on their goal (${goal}), recommend the single best menu item for their macros and fat loss / muscle building objective. Provide: recommended dish name, your estimated calories/protein/carbs/fat for a standard restaurant portion, why you chose it for their goal, and one brief tip (e.g. 'ask for sauce on the side' or 'add extra chicken for more protein'). Be direct and practical — this is a coaching recommendation, not a database lookup.
 
@@ -95,7 +113,7 @@ function isGoal(value: unknown): value is Goal {
 }
 
 function isMode(value: unknown): value is Mode {
-  return value === 'meal' || value === 'menu';
+  return value === 'meal' || value === 'menu' || value === 'voice';
 }
 
 function extractJson(text: string): string {
@@ -152,6 +170,12 @@ export async function POST(req: Request): Promise<NextResponse> {
       { status: 400 }
     );
   }
+  if (mode === 'voice' && !hasDescription) {
+    return NextResponse.json(
+      { error: 'Voice mode requires "description" (transcript text)' },
+      { status: 400 }
+    );
+  }
   if (!hasImage && !hasDescription) {
     return NextResponse.json(
       { error: 'Provide either "image" (base64) plus "mimeType", or "description" (text)' },
@@ -166,6 +190,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const goalNote = GOAL_CONTEXT[goal];
+  const descText = hasDescription ? (description as string).trim() : '';
 
   const userContent: Array<
     | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
@@ -187,14 +212,22 @@ export async function POST(req: Request): Promise<NextResponse> {
         text: `User goal: ${goal}. ${goalNote}\n\nAnalyse the meal in this photo and return the JSON object now.`,
       });
     }
+  } else if (mode === 'voice') {
+    userContent.push({
+      type: 'text',
+      text: `User goal: ${goal}. ${goalNote}\n\nI ate: ${descText}\n\nReturn the JSON object now.`,
+    });
   } else {
     userContent.push({
       type: 'text',
-      text: `User goal: ${goal}. ${goalNote}\n\nMeal description: ${(description as string).trim()}\n\nReturn the JSON object now. If macro values are provided in the description, use them exactly as the ground truth.`,
+      text: `User goal: ${goal}. ${goalNote}\n\nMeal description: ${descText}\n\nReturn the JSON object now. If macro values are provided in the description, use them exactly as the ground truth.`,
     });
   }
 
-  const systemPrompt = mode === 'menu' ? menuSystemPrompt(goal) : SYSTEM_PROMPT;
+  let systemPrompt: string;
+  if (mode === 'menu') systemPrompt = menuSystemPrompt(goal);
+  else if (mode === 'voice') systemPrompt = VOICE_SYSTEM_PROMPT;
+  else systemPrompt = SYSTEM_PROMPT;
 
   const anthropicPayload = {
     model: 'claude-sonnet-4-6',
