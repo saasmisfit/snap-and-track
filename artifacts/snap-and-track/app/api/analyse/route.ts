@@ -7,6 +7,7 @@ type Goal = 'fat_loss' | 'maintain' | 'build';
 interface AnalyseRequestBody {
   image?: unknown;
   mimeType?: unknown;
+  description?: unknown;
   goal?: unknown;
 }
 
@@ -49,7 +50,7 @@ const GOAL_CONTEXT: Record<Goal, string> = {
 
 const SYSTEM_PROMPT = `You are Stacy Kundu — a Level 3 Personal Trainer, Level 2 Fitness Instructor, HYROX Group Instructor, and the coach behind Metaburn. You write the way you'd speak to a real client: warm, direct, specific, never shame-based, never clinical jargon. You sound like a quick text from a PT who actually cares.
 
-You are analysing a photo of a meal. Identify the dish, estimate the portion size, and return a macro breakdown. Then write a 2–3 sentence coaching note ("stacy_insight") in your own voice — goal-aware, specific to the actual numbers (reference real protein values, not generic targets), never preachy.
+You are analysing a meal — supplied either as a photo or a text description. Identify the dish, estimate the portion size, and return a macro breakdown. If the description already lists macros, treat those numbers as ground truth rather than re-estimating them. Then write a 2–3 sentence coaching note ("stacy_insight") in your own voice — goal-aware, specific to the actual numbers (reference real protein values, not generic targets), never preachy.
 
 You MUST respond with ONLY a valid JSON object — no prose, no markdown fences, no commentary outside the JSON. The exact shape:
 
@@ -104,20 +105,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { image, mimeType, goal } = body;
+  const { image, mimeType, description, goal } = body;
 
-  if (typeof image !== 'string' || image.length === 0) {
-    return NextResponse.json(
-      { error: 'Missing or invalid "image" (expected base64 string)' },
-      { status: 400 }
-    );
-  }
-  if (typeof mimeType !== 'string' || mimeType.length === 0) {
-    return NextResponse.json(
-      { error: 'Missing or invalid "mimeType" (expected string, e.g. "image/jpeg")' },
-      { status: 400 }
-    );
-  }
   if (!isGoal(goal)) {
     return NextResponse.json(
       {
@@ -127,7 +116,42 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
+  const hasImage = typeof image === 'string' && image.length > 0;
+  const hasDescription = typeof description === 'string' && description.trim().length > 0;
+  if (!hasImage && !hasDescription) {
+    return NextResponse.json(
+      { error: 'Provide either "image" (base64) plus "mimeType", or "description" (text)' },
+      { status: 400 }
+    );
+  }
+  if (hasImage && (typeof mimeType !== 'string' || mimeType.length === 0)) {
+    return NextResponse.json(
+      { error: 'Missing or invalid "mimeType" (expected string, e.g. "image/jpeg")' },
+      { status: 400 }
+    );
+  }
+
   const goalNote = GOAL_CONTEXT[goal];
+
+  const userContent: Array<
+    | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+    | { type: 'text'; text: string }
+  > = [];
+  if (hasImage) {
+    userContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: mimeType as string, data: image as string },
+    });
+    userContent.push({
+      type: 'text',
+      text: `User goal: ${goal}. ${goalNote}\n\nAnalyse the meal in this photo and return the JSON object now.`,
+    });
+  } else {
+    userContent.push({
+      type: 'text',
+      text: `User goal: ${goal}. ${goalNote}\n\nMeal description: ${(description as string).trim()}\n\nReturn the JSON object now. If macro values are provided in the description, use them exactly as the ground truth.`,
+    });
+  }
 
   const anthropicPayload = {
     model: 'claude-sonnet-4-6',
@@ -136,20 +160,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     messages: [
       {
         role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mimeType,
-              data: image,
-            },
-          },
-          {
-            type: 'text',
-            text: `User goal: ${goal}. ${goalNote}\n\nAnalyse the meal in this photo and return the JSON object now.`,
-          },
-        ],
+        content: userContent,
       },
     ],
   };

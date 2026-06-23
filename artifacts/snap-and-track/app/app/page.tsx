@@ -386,6 +386,7 @@ export default function SnapAndTrackApp() {
   const [recentMeals, setRecentMeals] = useState<RecentMealItem[]>([]);
   const [logEntryCount, setLogEntryCount] = useState(0);
   const [showRelogToast, setShowRelogToast] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -591,6 +592,34 @@ export default function SnapAndTrackApp() {
 
   function pickGallery() {
     galleryInputRef.current?.click();
+  }
+
+  function pickBarcode() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setShowBarcodeScanner(true);
+  }
+
+  function handleBarcodeResult(data: AnalyseResponse) {
+    setShowBarcodeScanner(false);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setEditingTile(null);
+    setLoggedEntryId(null);
+    setResult(data);
+    setSnapCount((prev) => {
+      const next = (prev ?? 0) + 1;
+      try {
+        window.localStorage.setItem(FREE_SNAP_KEY, String(next));
+      } catch {
+        // best-effort
+      }
+      return next;
+    });
   }
 
   function updateMacro(key: MacroKey, raw: string) {
@@ -1094,6 +1123,46 @@ export default function SnapAndTrackApp() {
                 >
                   <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>🖼️</span>
                   Upload from gallery
+                </button>
+                <button
+                  type="button"
+                  onClick={pickBarcode}
+                  aria-label="Scan a barcode"
+                  style={{
+                    width: '100%',
+                    background: COLOURS.card,
+                    color: COLOURS.white,
+                    border: `1.5px solid ${COLOURS.border}`,
+                    padding: '14px 24px',
+                    borderRadius: 999,
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="6" width="2" height="12" />
+                    <rect x="6" y="6" width="1" height="12" />
+                    <rect x="9" y="6" width="3" height="12" />
+                    <rect x="13" y="6" width="1" height="12" />
+                    <rect x="15" y="6" width="2" height="12" />
+                    <rect x="18" y="6" width="1" height="12" />
+                    <rect x="20" y="6" width="2" height="12" />
+                  </svg>
+                  Scan barcode
                 </button>
               </>
             ) : (
@@ -1623,6 +1692,14 @@ export default function SnapAndTrackApp() {
         />
       ) : null}
 
+      {showBarcodeScanner ? (
+        <BarcodeScannerModal
+          goal={goal}
+          onClose={() => setShowBarcodeScanner(false)}
+          onResult={handleBarcodeResult}
+        />
+      ) : null}
+
       {showRelogToast ? (
         <div
           role="status"
@@ -1850,6 +1927,447 @@ function StreakBadge({ streak }: { streak: Streak }) {
           Start your streak today
         </span>
       )}
+    </div>
+  );
+}
+
+type ScannerPhase = 'scanning' | 'looking-up' | 'serving' | 'not-found' | 'error';
+type ScannerControlsLike = { stop: () => void };
+
+interface OffPer100g {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fibre: number;
+}
+
+function offNumber(v: unknown): number {
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v) : NaN;
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function BarcodeScannerModal({
+  goal,
+  onClose,
+  onResult,
+}: {
+  goal: Goal;
+  onClose: () => void;
+  onResult: (data: AnalyseResponse) => void;
+}) {
+  const [phase, setPhase] = useState<ScannerPhase>('scanning');
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [productName, setProductName] = useState<string>('');
+  const [per100g, setPer100g] = useState<OffPer100g | null>(null);
+  const [servingGrams, setServingGrams] = useState<string>('100');
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (phase !== 'scanning') return;
+    let cancelled = false;
+    let controls: ScannerControlsLike | null = null;
+
+    (async () => {
+      try {
+        const zxing = await import('@zxing/browser');
+        if (cancelled) return;
+        const reader = new zxing.BrowserMultiFormatReader();
+        const video = videoRef.current;
+        if (!video) return;
+        const result = await reader.decodeFromVideoDevice(
+          undefined,
+          video,
+          (decoded, _err, ctrls) => {
+            if (cancelled || !decoded) return;
+            try {
+              ctrls.stop();
+            } catch {
+              // best-effort
+            }
+            const text = decoded.getText();
+            setPhase('looking-up');
+            void lookupBarcode(text);
+          }
+        );
+        controls = result as unknown as ScannerControlsLike;
+      } catch (e) {
+        if (cancelled) return;
+        setErrorMsg(
+          e instanceof Error
+            ? e.message
+            : 'Could not start the camera. Check permissions and try again.'
+        );
+        setPhase('error');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (controls) {
+        try {
+          controls.stop();
+        } catch {
+          // best-effort
+        }
+      }
+    };
+  }, [phase]);
+
+  async function lookupBarcode(barcode: string) {
+    try {
+      const res = await fetch(
+        `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`
+      );
+      const data: unknown = await res.json().catch(() => null);
+      const ok =
+        !!data &&
+        typeof data === 'object' &&
+        (data as { status?: unknown }).status === 1 &&
+        !!(data as { product?: unknown }).product;
+      if (!ok) {
+        setPhase('not-found');
+        return;
+      }
+      const product = (data as { product: Record<string, unknown> }).product;
+      const rawName =
+        typeof product.product_name === 'string' && product.product_name.trim()
+          ? (product.product_name as string).trim()
+          : typeof product.product_name_en === 'string' && (product.product_name_en as string).trim()
+            ? (product.product_name_en as string).trim()
+            : '';
+      if (!rawName) {
+        setPhase('not-found');
+        return;
+      }
+      const nutriments = (product.nutriments ?? {}) as Record<string, unknown>;
+      setProductName(rawName);
+      setPer100g({
+        calories: offNumber(nutriments['energy-kcal_100g']),
+        protein: offNumber(nutriments['proteins_100g']),
+        carbs: offNumber(nutriments['carbohydrates_100g']),
+        fat: offNumber(nutriments['fat_100g']),
+        fibre: offNumber(nutriments['fiber_100g']),
+      });
+      setServingGrams('100');
+      setPhase('serving');
+    } catch {
+      setPhase('not-found');
+    }
+  }
+
+  function tryAgain() {
+    setErrorMsg('');
+    setProductName('');
+    setPer100g(null);
+    setServingGrams('100');
+    setPhase('scanning');
+  }
+
+  const servingValue = parseFloat(servingGrams);
+  const servingValid = Number.isFinite(servingValue) && servingValue > 0;
+  const preview = per100g && servingValid
+    ? {
+        calories: Math.round((per100g.calories * servingValue) / 100),
+        protein: Math.round((per100g.protein * servingValue) / 100),
+        carbs: Math.round((per100g.carbs * servingValue) / 100),
+        fat: Math.round((per100g.fat * servingValue) / 100),
+        fibre: Math.round((per100g.fibre * servingValue) / 100),
+      }
+    : null;
+
+  async function confirmServing() {
+    if (!per100g || !preview || isFinalizing) return;
+    setIsFinalizing(true);
+    const description = `${productName} — ${servingValue}g serving. Known macros: ${preview.calories} kcal, ${preview.protein}g protein, ${preview.carbs}g carbs, ${preview.fat}g fat, ${preview.fibre}g fibre. Treat these macros as ground truth.`;
+
+    let coaching = '';
+    try {
+      const res = await fetch('/api/analyse', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ description, goal }),
+      });
+      if (res.ok) {
+        const data: unknown = await res.json().catch(() => null);
+        if (
+          data &&
+          typeof data === 'object' &&
+          typeof (data as { stacy_insight?: unknown }).stacy_insight === 'string'
+        ) {
+          coaching = (data as { stacy_insight: string }).stacy_insight;
+        }
+      }
+    } catch {
+      // best-effort — fall back to a generic note
+    }
+
+    setIsFinalizing(false);
+    onResult({
+      dish: productName,
+      portion_estimate: `${servingValue}g serving`,
+      calories: preview.calories,
+      protein_g: preview.protein,
+      carbs_g: preview.carbs,
+      fat_g: preview.fat,
+      fibre_g: preview.fibre,
+      foods_identified: [
+        {
+          name: `Scanned: ${productName} — ${servingValue}g serving`,
+          calories: preview.calories,
+        },
+      ],
+      stacy_insight:
+        coaching ||
+        'Logged from a barcode scan. Adjust the serving size if it does not match what you ate.',
+    });
+  }
+
+  const overlayStyle: React.CSSProperties = {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(14,14,16,0.96)',
+    zIndex: 110,
+    overflowY: 'auto',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    padding: '2rem 1rem',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    width: '100%',
+    maxWidth: 480,
+    background: COLOURS.card,
+    border: `1px solid ${COLOURS.border}`,
+    borderRadius: 18,
+    padding: '1.75rem 1.5rem 1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    color: COLOURS.white,
+    position: 'relative',
+  };
+
+  const closeBtnStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    background: 'transparent',
+    border: 'none',
+    color: COLOURS.textMuted,
+    fontSize: 20,
+    lineHeight: 1,
+    cursor: 'pointer',
+    padding: 6,
+  };
+
+  const titleStyle: React.CSSProperties = {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 800,
+    fontSize: 22,
+    lineHeight: 1.1,
+    margin: 0,
+    letterSpacing: '-0.01em',
+  };
+
+  const primaryBtnStyle: React.CSSProperties = {
+    width: '100%',
+    background: COLOURS.magenta,
+    color: COLOURS.white,
+    border: 'none',
+    padding: '14px 24px',
+    borderRadius: 999,
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: 14,
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  };
+
+  const secondaryBtnStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'transparent',
+    color: COLOURS.textMuted,
+    border: `1px solid ${COLOURS.border}`,
+    padding: '12px 24px',
+    borderRadius: 999,
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: 13,
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Scan a barcode" style={overlayStyle}>
+      <div style={cardStyle}>
+        <button type="button" onClick={onClose} aria-label="Close scanner" style={closeBtnStyle}>
+          ✕
+        </button>
+
+        {phase === 'scanning' && (
+          <>
+            <h2 style={titleStyle}>Scan a barcode</h2>
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                borderRadius: 12,
+                overflow: 'hidden',
+                background: '#000',
+              }}
+            >
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                autoPlay
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '55vh',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+            <p style={{ fontSize: 13, color: COLOURS.textMuted, margin: 0, textAlign: 'center' }}>
+              Point your camera at a product barcode
+            </p>
+          </>
+        )}
+
+        {phase === 'looking-up' && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 14,
+              padding: '2.5rem 1rem',
+            }}
+          >
+            <div className="spinner" aria-hidden="true" />
+            <div style={{ fontSize: 14, color: COLOURS.textMuted }}>Looking up product…</div>
+          </div>
+        )}
+
+        {phase === 'serving' && per100g && (
+          <>
+            <h2 style={titleStyle}>{productName}</h2>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: COLOURS.textMuted,
+              }}
+            >
+              How much did you eat?
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step="1"
+                value={servingGrams}
+                onChange={(e) => setServingGrams(e.target.value)}
+                autoFocus
+                style={{
+                  flex: 1,
+                  background: COLOURS.nearBlack,
+                  color: COLOURS.white,
+                  border: `1px solid ${COLOURS.border}`,
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 16,
+                  outline: 'none',
+                  appearance: 'textfield',
+                }}
+              />
+              <span style={{ color: COLOURS.white, fontSize: 14 }}>g</span>
+            </div>
+            {preview && (
+              <div
+                style={{
+                  background: COLOURS.magentaSoft,
+                  border: `1px solid ${COLOURS.magentaTint}`,
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  fontSize: 13,
+                  color: COLOURS.white,
+                  lineHeight: 1.5,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: COLOURS.magenta,
+                    marginBottom: 4,
+                  }}
+                >
+                  This serving
+                </div>
+                {preview.calories} kcal · {preview.protein}g protein · {preview.carbs}g carbs ·{' '}
+                {preview.fat}g fat
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={confirmServing}
+              disabled={!servingValid || isFinalizing}
+              style={{
+                ...primaryBtnStyle,
+                opacity: !servingValid || isFinalizing ? 0.6 : 1,
+                cursor: !servingValid || isFinalizing ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isFinalizing ? 'Generating coaching note…' : 'Confirm'}
+            </button>
+          </>
+        )}
+
+        {phase === 'not-found' && (
+          <>
+            <h2 style={titleStyle}>Hmm, no match</h2>
+            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+              Product not found. Try scanning again or snap a photo instead.
+            </p>
+            <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
+              Try again
+            </button>
+            <button type="button" onClick={onClose} style={secondaryBtnStyle}>
+              Close
+            </button>
+          </>
+        )}
+
+        {phase === 'error' && (
+          <>
+            <h2 style={titleStyle}>Camera trouble</h2>
+            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+              {errorMsg || 'Something went wrong starting the camera.'}
+            </p>
+            <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
+              Try again
+            </button>
+            <button type="button" onClick={onClose} style={secondaryBtnStyle}>
+              Close
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
