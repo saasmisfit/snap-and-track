@@ -39,6 +39,16 @@ const WEIGHT_MAX_DAYS = 90;
 const WEIGHT_GRAPH_DAYS = 30;
 const STREAK_KEY = 'munchsnapper_streak';
 const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
+const PROGRESS_PHOTOS_KEY = 'munchsnapper_progress_photos';
+const PROGRESS_PHOTOS_MAX = 12;
+const PROGRESS_PHOTO_MAX_WIDTH = 800;
+const PROGRESS_PHOTO_JPEG_QUALITY = 0.85;
+
+interface ProgressPhoto {
+  date: string;
+  weekLabel: string;
+  dataUrl: string;
+}
 const COACH_INITIAL_QUESTION =
   'Give me a brief overview of how my nutrition has looked this week and one thing to focus on.';
 
@@ -317,6 +327,99 @@ function writeStreak(s: Streak): void {
   }
 }
 
+function startOfWeekLocal(d: Date): Date {
+  const result = new Date(d);
+  const day = result.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diff = day === 0 ? 6 : day - 1;
+  result.setDate(result.getDate() - diff);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+function weekIdLocal(d: Date = new Date()): string {
+  const start = startOfWeekLocal(d);
+  const y = start.getFullYear();
+  const m = String(start.getMonth() + 1).padStart(2, '0');
+  const da = String(start.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
+
+function weekLabelLocal(d: Date = new Date()): string {
+  const start = startOfWeekLocal(d);
+  const day = start.getDate();
+  const month = start.toLocaleDateString('en-GB', { month: 'long' });
+  return `Week of ${day} ${month}`;
+}
+
+function isProgressPhoto(v: unknown): v is ProgressPhoto {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.date === 'string' &&
+    typeof o.weekLabel === 'string' &&
+    typeof o.dataUrl === 'string' &&
+    o.dataUrl.startsWith('data:')
+  );
+}
+
+function readProgressPhotos(): ProgressPhoto[] {
+  try {
+    const raw = window.localStorage.getItem(PROGRESS_PHOTOS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isProgressPhoto) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeProgressPhotos(photos: ProgressPhoto[]): boolean {
+  try {
+    window.localStorage.setItem(PROGRESS_PHOTOS_KEY, JSON.stringify(photos));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function fileToCompressedDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read photo'));
+    reader.onload = () => {
+      const src = typeof reader.result === 'string' ? reader.result : '';
+      if (!src) {
+        reject(new Error('Empty file'));
+        return;
+      }
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.onload = () => {
+        const ratio =
+          img.width > PROGRESS_PHOTO_MAX_WIDTH ? PROGRESS_PHOTO_MAX_WIDTH / img.width : 1;
+        const w = Math.max(1, Math.round(img.width * ratio));
+        const h = Math.max(1, Math.round(img.height * ratio));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas not available'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        try {
+          resolve(canvas.toDataURL('image/jpeg', PROGRESS_PHOTO_JPEG_QUALITY));
+        } catch (e) {
+          reject(e instanceof Error ? e : new Error('Canvas export failed'));
+        }
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function checkAndResetStreak(): Streak {
   const s = readStreak();
   if (!s.lastLogDate || s.currentStreak === 0) return s;
@@ -328,6 +431,17 @@ function checkAndResetStreak(): Streak {
     return next;
   }
   return s;
+}
+
+function fmtPhotoDate(dateStr: string): string {
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const yr = Number(parts[0]);
+  const mo = Number(parts[1]);
+  const da = Number(parts[2]);
+  if (!Number.isFinite(yr) || !Number.isFinite(mo) || !Number.isFinite(da)) return dateStr;
+  const d = new Date(yr, mo - 1, da);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 function fmtShortDate(dateStr: string): string {
@@ -436,6 +550,12 @@ export default function MealLogPage() {
   const [weightLog, setWeightLog] = useState<WeightEntry[]>([]);
   const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
   const [coachGoal, setCoachGoal] = useState<CoachGoal>('maintain');
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const [progressPhotos, setProgressPhotos] = useState<ProgressPhoto[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -462,6 +582,7 @@ export default function MealLogPage() {
     setWeightLog(readWeightLog());
     setStreak(checkAndResetStreak());
     setCoachGoal(readActiveGoal());
+    setProgressPhotos(readProgressPhotos());
   }, []);
 
   // Migrate legacy localStorage entries (one-time) then fetch from API
@@ -617,6 +738,43 @@ export default function MealLogPage() {
       else next.add(dateStr);
       return next;
     });
+  }
+
+  async function handleProgressPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      setPhotoError('Please pick an image file.');
+      return;
+    }
+    if (f.size > 20_000_000) {
+      setPhotoError('Photo too large (over 20MB).');
+      return;
+    }
+    setPhotoError(null);
+    setPhotoUploading(true);
+    try {
+      const dataUrl = await fileToCompressedDataUrl(f);
+      const now = new Date();
+      const date = weekIdLocal(now);
+      const weekLabel = weekLabelLocal(now);
+      const filtered = progressPhotos.filter((p) => p.date !== date);
+      const next = [...filtered, { date, weekLabel, dataUrl }].sort((a, b) =>
+        a.date.localeCompare(b.date)
+      );
+      const pruned = next.slice(-PROGRESS_PHOTOS_MAX);
+      const stored = writeProgressPhotos(pruned);
+      if (!stored) {
+        setPhotoError("Couldn't save the photo — your browser storage may be full.");
+        return;
+      }
+      setProgressPhotos(pruned);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : 'Could not process that photo.');
+    } finally {
+      setPhotoUploading(false);
+    }
   }
 
   async function sendChat(question: string) {
@@ -1356,6 +1514,218 @@ export default function MealLogPage() {
           )}
         </section>
 
+        {/* Progress photos — weekly photo + side-by-side compare */}
+        <section
+          aria-label="Progress photos"
+          style={{
+            background: COLOURS.card,
+            border: `1px solid ${COLOURS.border}`,
+            borderRadius: 16,
+            padding: photosOpen ? '14px 16px 16px' : '12px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotosOpen((o) => !o)}
+            aria-expanded={photosOpen}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              color: COLOURS.white,
+              fontFamily: "'Barlow', sans-serif",
+              textAlign: 'left',
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <span aria-hidden="true" style={{ fontSize: 18, lineHeight: 1 }}>
+                📸
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  letterSpacing: '-0.01em',
+                  color: COLOURS.white,
+                }}
+              >
+                Progress photos
+              </span>
+              {progressPhotos.length > 0 ? (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: COLOURS.magenta,
+                  }}
+                >
+                  {progressPhotos.length}
+                </span>
+              ) : null}
+            </span>
+            <span style={{ color: COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
+              {photosOpen ? '▾' : '▸'}
+            </span>
+          </button>
+
+          {photosOpen && (
+            <>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleProgressPhotoSelected}
+                style={{ display: 'none' }}
+              />
+
+              {progressPhotos.length === 0 ? (
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: COLOURS.textMuted,
+                    lineHeight: 1.55,
+                    padding: '8px 4px',
+                  }}
+                >
+                  Track your transformation — add a weekly progress photo to see how far you&apos;ve come.
+                </div>
+              ) : (
+                <div
+                  className="progress-scroll"
+                  style={{
+                    display: 'flex',
+                    gap: 10,
+                    overflowX: 'auto',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    paddingBottom: 2,
+                    marginLeft: -2,
+                    marginRight: -2,
+                    paddingLeft: 2,
+                    paddingRight: 2,
+                  }}
+                >
+                  {progressPhotos.map((p) => (
+                    <div
+                      key={p.date}
+                      style={{
+                        flex: '0 0 auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                        alignItems: 'center',
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.dataUrl}
+                        alt={p.weekLabel}
+                        style={{
+                          width: 90,
+                          height: 120,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                          border: `1px solid ${COLOURS.border}`,
+                          display: 'block',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: COLOURS.textMuted,
+                          fontVariantNumeric: 'tabular-nums',
+                          textAlign: 'center',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {fmtPhotoDate(p.date)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'stretch',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoUploading}
+                  style={{
+                    flex: '1 1 200px',
+                    background: COLOURS.magenta,
+                    color: COLOURS.white,
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '12px 18px',
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    cursor: photoUploading ? 'wait' : 'pointer',
+                    opacity: photoUploading ? 0.7 : 1,
+                  }}
+                >
+                  {photoUploading ? 'Adding…' : "＋ Add this week's photo"}
+                </button>
+                {progressPhotos.length >= 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setCompareOpen(true)}
+                    style={{
+                      flex: '0 0 auto',
+                      background: 'transparent',
+                      color: COLOURS.white,
+                      border: `1px solid ${COLOURS.border}`,
+                      borderRadius: 10,
+                      padding: '12px 18px',
+                      fontFamily: "'Barlow', sans-serif",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Compare
+                  </button>
+                )}
+              </div>
+
+              {photoError && (
+                <div
+                  role="alert"
+                  style={{
+                    fontSize: 12,
+                    color: COLOURS.danger,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {photoError}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
         {/* Loading state — while we fetch entries from the API */}
         {entries === null && !loadError && (
           <div style={styles.loadingHint}>Loading your meals...</div>
@@ -1593,7 +1963,143 @@ export default function MealLogPage() {
           0%, 60%, 100% { opacity: 0.3; }
           30% { opacity: 1; }
         }
+
+        .progress-scroll::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
+
+      {compareOpen && progressPhotos.length >= 2
+        ? (() => {
+            const sorted = [...progressPhotos].sort((a, b) => a.date.localeCompare(b.date));
+            const newest = sorted[sorted.length - 1];
+            const older = sorted[sorted.length - 2];
+            return (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Progress photo comparison"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(14,14,16,0.96)',
+                  zIndex: 120,
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '1.5rem 1rem',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setCompareOpen(false)}
+                  aria-label="Close comparison"
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    background: 'transparent',
+                    border: 'none',
+                    color: COLOURS.white,
+                    fontSize: 16,
+                    fontFamily: "'Barlow', sans-serif",
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                    padding: 8,
+                  }}
+                >
+                  × Close
+                </button>
+                <div
+                  style={{
+                    width: '100%',
+                    maxWidth: 720,
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <figure
+                    style={{
+                      flex: 1,
+                      margin: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 8,
+                      minWidth: 0,
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={older.dataUrl}
+                      alt={`Older photo from ${older.weekLabel}`}
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        maxHeight: '70vh',
+                        objectFit: 'contain',
+                        borderRadius: 10,
+                        background: '#000',
+                      }}
+                    />
+                    <figcaption
+                      style={{
+                        fontSize: 12,
+                        color: COLOURS.textMuted,
+                        textAlign: 'center',
+                        letterSpacing: '0.02em',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {older.weekLabel}
+                    </figcaption>
+                  </figure>
+                  <figure
+                    style={{
+                      flex: 1,
+                      margin: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 8,
+                      minWidth: 0,
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={newest.dataUrl}
+                      alt={`Most recent photo from ${newest.weekLabel}`}
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        maxHeight: '70vh',
+                        objectFit: 'contain',
+                        borderRadius: 10,
+                        background: '#000',
+                      }}
+                    />
+                    <figcaption
+                      style={{
+                        fontSize: 12,
+                        color: COLOURS.textMuted,
+                        textAlign: 'center',
+                        letterSpacing: '0.02em',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {newest.weekLabel}
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+            );
+          })()
+        : null}
     </main>
   );
 }
