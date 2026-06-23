@@ -24,9 +24,49 @@ const userButtonAppearance = {
 const FREE_SNAP_LIMIT = 3;
 const FREE_SNAP_KEY = 'snaptrack_free_count';
 const NET_CARBS_KEY = 'munchsnapper_netcarbs';
+const ONBOARDING_KEY = 'munchsnapper_onboarding_complete';
+const GOALS_KEY = 'munchsnapper_goals';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type MacroKey = 'calories' | 'protein_g' | 'carbs_g' | 'fat_g';
+type Sex = 'male' | 'female';
+type Activity = 'sedentary' | 'light' | 'moderate' | 'very';
+type WeightUnit = 'kg' | 'lbs';
+type HeightUnit = 'cm' | 'ftin';
+
+interface UserGoals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  netcarbs_fibre: number;
+}
+
+interface OnboardingForm {
+  age: string;
+  weightValue: string;
+  weightUnit: WeightUnit;
+  heightUnit: HeightUnit;
+  heightCm: string;
+  heightFt: string;
+  heightIn: string;
+  sex: Sex | null;
+  activity: Activity | null;
+  goal: Goal | null;
+}
+
+const ACTIVITY_OPTIONS: Array<{ value: Activity; label: string; multiplier: number }> = [
+  { value: 'sedentary', label: 'Sedentary', multiplier: 1.2 },
+  { value: 'light', label: 'Lightly active', multiplier: 1.375 },
+  { value: 'moderate', label: 'Moderately active', multiplier: 1.55 },
+  { value: 'very', label: 'Very active', multiplier: 1.725 },
+];
+
+const GOAL_ADJUSTMENT: Record<Goal, number> = {
+  fat_loss: 0.8,
+  maintain: 1.0,
+  build: 1.15,
+};
 
 interface FoodItem {
   name: string;
@@ -98,8 +138,60 @@ function fmtMacro(n: number): string {
   return Math.round(n).toString();
 }
 
+function parsePositive(raw: string): number | null {
+  const n = parseFloat(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function weightToKg(value: number, unit: WeightUnit): number {
+  return unit === 'kg' ? value : value * 0.45359237;
+}
+
+function heightToCm(form: OnboardingForm): number | null {
+  if (form.heightUnit === 'cm') {
+    return parsePositive(form.heightCm);
+  }
+  const ft = parsePositive(form.heightFt);
+  if (ft === null) return null;
+  const inches = form.heightIn.trim() === '' ? 0 : parseFloat(form.heightIn);
+  if (!Number.isFinite(inches) || inches < 0) return null;
+  return ft * 30.48 + inches * 2.54;
+}
+
+function computeGoals(form: OnboardingForm): UserGoals | null {
+  const age = parsePositive(form.age);
+  const weightVal = parsePositive(form.weightValue);
+  const cm = heightToCm(form);
+  if (age === null || weightVal === null || cm === null || !form.sex || !form.activity || !form.goal) {
+    return null;
+  }
+  const kg = weightToKg(weightVal, form.weightUnit);
+  const bmr =
+    form.sex === 'male'
+      ? 10 * kg + 6.25 * cm - 5 * age + 5
+      : 10 * kg + 6.25 * cm - 5 * age - 161;
+  const multiplier = ACTIVITY_OPTIONS.find((a) => a.value === form.activity)?.multiplier ?? 1.2;
+  const tdee = bmr * multiplier;
+  const calories = Math.round(tdee * GOAL_ADJUSTMENT[form.goal]);
+  const protein = Math.round((2.0 * kg) / 5) * 5;
+  const fat = Math.round((calories * 0.3) / 9);
+  const carbs = Math.max(0, Math.round((calories - protein * 4 - fat * 9) / 4));
+  return { calories, protein, carbs, fat, netcarbs_fibre: 0 };
+}
+
+function isUserGoals(v: unknown): v is UserGoals {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.calories === 'number' &&
+    typeof o.protein === 'number' &&
+    typeof o.carbs === 'number' &&
+    typeof o.fat === 'number'
+  );
+}
+
 export default function SnapAndTrackApp() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const isSubscribed = user?.publicMetadata?.subscribed === true;
 
   const [goal, setGoal] = useState<Goal>('fat_loss');
@@ -115,6 +207,8 @@ export default function SnapAndTrackApp() {
   const [editingTile, setEditingTile] = useState<MacroKey | null>(null);
   const [loggedEntryId, setLoggedEntryId] = useState<string | null>(null);
   const [netCarbs, setNetCarbs] = useState(false);
+  const [goals, setGoals] = useState<UserGoals | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -163,6 +257,42 @@ export default function SnapAndTrackApp() {
       // best-effort
     }
   }, []);
+
+  // Load saved goals on mount
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(GOALS_KEY);
+      if (!raw) return;
+      const parsed: unknown = JSON.parse(raw);
+      if (isUserGoals(parsed)) setGoals(parsed);
+    } catch {
+      // best-effort
+    }
+  }, []);
+
+  // Trigger onboarding the first time an authenticated user opens the app
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    try {
+      if (window.localStorage.getItem(ONBOARDING_KEY) !== '1') {
+        setShowOnboarding(true);
+      }
+    } catch {
+      // best-effort
+    }
+  }, [isLoaded, isSignedIn]);
+
+  function completeOnboarding(next: UserGoals, chosenGoal: Goal) {
+    try {
+      window.localStorage.setItem(GOALS_KEY, JSON.stringify(next));
+      window.localStorage.setItem(ONBOARDING_KEY, '1');
+    } catch {
+      // best-effort
+    }
+    setGoals(next);
+    setGoal(chosenGoal);
+    setShowOnboarding(false);
+  }
 
   function toggleNetCarbs() {
     setNetCarbs((prev) => {
@@ -390,6 +520,45 @@ export default function SnapAndTrackApp() {
             })}
           </div>
         </section>
+
+        {/* Daily target bar — pulled from saved goals */}
+        {!result && (
+          <div
+            style={{
+              fontSize: 12,
+              color: COLOURS.textMuted,
+              textAlign: 'center',
+              letterSpacing: '0.02em',
+              padding: '6px 4px',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {goals ? (
+              <>
+                Daily target: {goals.calories.toLocaleString('en-GB')} kcal &middot;{' '}
+                {goals.protein}g protein &middot; {goals.carbs}g carbs &middot; {goals.fat}g fat
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowOnboarding(true)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: COLOURS.magenta,
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Set your targets →
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Upload / preview — hidden once we have a result */}
         {!result && (
@@ -976,6 +1145,14 @@ export default function SnapAndTrackApp() {
         }
       `}</style>
 
+      {showOnboarding && isSignedIn ? (
+        <OnboardingOverlay
+          initialGoal={goal}
+          allowClose={goals !== null}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={completeOnboarding}
+        />
+      ) : null}
     </main>
   );
 }
@@ -1111,6 +1288,439 @@ function MacroTile({
       >
         {label}
       </div>
+    </div>
+  );
+}
+
+function OnboardingOverlay({
+  initialGoal,
+  onComplete,
+  onClose,
+  allowClose,
+}: {
+  initialGoal: Goal;
+  onComplete: (goals: UserGoals, chosenGoal: Goal) => void;
+  onClose: () => void;
+  allowClose: boolean;
+}) {
+  const [form, setForm] = useState<OnboardingForm>({
+    age: '',
+    weightValue: '',
+    weightUnit: 'kg',
+    heightUnit: 'cm',
+    heightCm: '',
+    heightFt: '',
+    heightIn: '',
+    sex: null,
+    activity: null,
+    goal: initialGoal,
+  });
+
+  function patch<K extends keyof OnboardingForm>(key: K, value: OnboardingForm[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  const computed = computeGoals(form);
+  const canSubmit = computed !== null;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!computed || !form.goal) return;
+    onComplete(computed, form.goal);
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: COLOURS.nearBlack,
+    color: COLOURS.white,
+    border: `1px solid ${COLOURS.border}`,
+    borderRadius: 10,
+    padding: '12px 14px',
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: 15,
+    outline: 'none',
+    appearance: 'textfield',
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(14,14,16,0.96)',
+        zIndex: 100,
+        overflowY: 'auto',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: '2rem 1rem',
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          background: COLOURS.card,
+          border: `1px solid ${COLOURS.border}`,
+          borderRadius: 18,
+          padding: '1.75rem 1.5rem 1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem',
+          color: COLOURS.white,
+          position: 'relative',
+        }}
+      >
+        {allowClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              background: 'transparent',
+              border: 'none',
+              color: COLOURS.textMuted,
+              fontSize: 20,
+              lineHeight: 1,
+              cursor: 'pointer',
+              padding: 6,
+            }}
+          >
+            ✕
+          </button>
+        ) : null}
+
+        <header>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: COLOURS.magenta,
+              marginBottom: 6,
+            }}
+          >
+            Welcome to Munch Snapper
+          </div>
+          <h2
+            id="onboarding-title"
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 800,
+              fontSize: 26,
+              lineHeight: 1.1,
+              margin: 0,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Set your daily target
+          </h2>
+          <p
+            style={{
+              fontSize: 13,
+              color: COLOURS.textMuted,
+              margin: '6px 0 0',
+              lineHeight: 1.5,
+            }}
+          >
+            Quick stats so we can calculate calories and macros for you. Stays on your device.
+          </p>
+        </header>
+
+        <OnboardField label="Age">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={form.age}
+            onChange={(e) => patch('age', e.target.value)}
+            placeholder="e.g. 32"
+            style={inputStyle}
+          />
+        </OnboardField>
+
+        <OnboardField label="Weight">
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={1}
+              value={form.weightValue}
+              onChange={(e) => patch('weightValue', e.target.value)}
+              placeholder={form.weightUnit === 'kg' ? 'e.g. 68' : 'e.g. 150'}
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <UnitToggle
+              options={[
+                { value: 'kg', label: 'kg' },
+                { value: 'lbs', label: 'lbs' },
+              ]}
+              value={form.weightUnit}
+              onChange={(v) => patch('weightUnit', v as WeightUnit)}
+            />
+          </div>
+        </OnboardField>
+
+        <OnboardField label="Height">
+          {form.heightUnit === 'cm' ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={1}
+                value={form.heightCm}
+                onChange={(e) => patch('heightCm', e.target.value)}
+                placeholder="e.g. 170"
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <UnitToggle
+                options={[
+                  { value: 'cm', label: 'cm' },
+                  { value: 'ftin', label: 'ft/in' },
+                ]}
+                value={form.heightUnit}
+                onChange={(v) => patch('heightUnit', v as HeightUnit)}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={form.heightFt}
+                onChange={(e) => patch('heightFt', e.target.value)}
+                placeholder="ft"
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={form.heightIn}
+                onChange={(e) => patch('heightIn', e.target.value)}
+                placeholder="in"
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <UnitToggle
+                options={[
+                  { value: 'cm', label: 'cm' },
+                  { value: 'ftin', label: 'ft/in' },
+                ]}
+                value={form.heightUnit}
+                onChange={(v) => patch('heightUnit', v as HeightUnit)}
+              />
+            </div>
+          )}
+        </OnboardField>
+
+        <OnboardField label="Sex assigned at birth">
+          <PillGroup
+            cols={2}
+            options={[
+              { value: 'male', label: 'Male' },
+              { value: 'female', label: 'Female' },
+            ]}
+            value={form.sex}
+            onChange={(v) => patch('sex', v as Sex)}
+          />
+        </OnboardField>
+
+        <OnboardField label="Activity level">
+          <PillGroup
+            cols={2}
+            options={ACTIVITY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            value={form.activity}
+            onChange={(v) => patch('activity', v as Activity)}
+          />
+        </OnboardField>
+
+        <OnboardField label="Goal">
+          <PillGroup
+            cols={3}
+            options={GOALS.map((g) => ({ value: g.value, label: g.label }))}
+            value={form.goal}
+            onChange={(v) => patch('goal', v as Goal)}
+          />
+        </OnboardField>
+
+        {computed ? (
+          <div
+            style={{
+              background: COLOURS.magentaSoft,
+              border: `1px solid ${COLOURS.magentaTint}`,
+              borderRadius: 12,
+              padding: '12px 14px',
+              fontSize: 13,
+              color: COLOURS.white,
+              lineHeight: 1.5,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: COLOURS.magenta,
+                marginBottom: 4,
+              }}
+            >
+              Your target
+            </div>
+            {computed.calories.toLocaleString('en-GB')} kcal · {computed.protein}g protein ·{' '}
+            {computed.carbs}g carbs · {computed.fat}g fat
+          </div>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          style={{
+            width: '100%',
+            background: canSubmit ? COLOURS.magenta : '#2a2a30',
+            color: canSubmit ? COLOURS.white : 'rgba(255,255,255,0.4)',
+            border: 'none',
+            padding: '16px 24px',
+            borderRadius: 999,
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+          }}
+        >
+          Save my target
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function OnboardField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: COLOURS.textMuted,
+        }}
+      >
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function UnitToggle({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        background: COLOURS.nearBlack,
+        border: `1px solid ${COLOURS.border}`,
+        borderRadius: 10,
+        padding: 3,
+        gap: 2,
+      }}
+    >
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            style={{
+              background: active ? COLOURS.magenta : 'transparent',
+              color: active ? COLOURS.white : COLOURS.textMuted,
+              border: 'none',
+              padding: '8px 12px',
+              borderRadius: 8,
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s',
+              minWidth: 44,
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PillGroup({
+  cols,
+  options,
+  value,
+  onChange,
+}: {
+  cols: number;
+  options: Array<{ value: string; label: string }>;
+  value: string | null;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gap: 8,
+      }}
+    >
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            style={{
+              background: active ? COLOURS.magenta : 'transparent',
+              color: active ? COLOURS.white : 'rgba(255,255,255,0.85)',
+              border: `1.5px solid ${active ? COLOURS.magenta : COLOURS.border}`,
+              borderRadius: 999,
+              padding: '11px 12px',
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
