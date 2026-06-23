@@ -26,6 +26,23 @@ const FREE_SNAP_KEY = 'snaptrack_free_count';
 const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 const ONBOARDING_KEY = 'munchsnapper_onboarding_complete';
 const GOALS_KEY = 'munchsnapper_goals';
+const STREAK_KEY = 'munchsnapper_streak';
+const NOTIF_ASKED_KEY = 'munchsnapper_notif_asked';
+const DAILY_SCHEDULED_PREFIX = 'munchsnapper_daily_reminders_scheduled_';
+const STREAK_MILESTONES: readonly number[] = [3, 7, 14, 30];
+const DAILY_REMINDERS: ReadonlyArray<{ hour: number; minute: number; message: string }> = [
+  { hour: 8, minute: 0, message: "🍳 Good morning! Don't forget to log your breakfast." },
+  { hour: 13, minute: 0, message: '🥗 Lunchtime! Snap your meal and stay on track.' },
+  { hour: 19, minute: 0, message: '🍽️ Log your dinner to keep your streak alive.' },
+];
+
+interface Streak {
+  currentStreak: number;
+  lastLogDate: string;
+  longestStreak: number;
+}
+
+const EMPTY_STREAK: Streak = { currentStreak: 0, lastLogDate: '', longestStreak: 0 };
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type MacroKey = 'calories' | 'protein_g' | 'carbs_g' | 'fat_g';
@@ -190,6 +207,95 @@ function isUserGoals(v: unknown): v is UserGoals {
   );
 }
 
+function todayLocalStr(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
+
+function daysAgoLocalStr(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
+
+function isStreak(v: unknown): v is Streak {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.currentStreak === 'number' &&
+    typeof o.lastLogDate === 'string' &&
+    typeof o.longestStreak === 'number'
+  );
+}
+
+function readStreak(): Streak {
+  try {
+    const raw = window.localStorage.getItem(STREAK_KEY);
+    if (!raw) return { ...EMPTY_STREAK };
+    const parsed: unknown = JSON.parse(raw);
+    if (isStreak(parsed)) return parsed;
+  } catch {
+    // best-effort
+  }
+  return { ...EMPTY_STREAK };
+}
+
+function writeStreak(s: Streak): void {
+  try {
+    window.localStorage.setItem(STREAK_KEY, JSON.stringify(s));
+  } catch {
+    // best-effort
+  }
+}
+
+function checkAndResetStreak(): Streak {
+  const s = readStreak();
+  if (!s.lastLogDate || s.currentStreak === 0) return s;
+  const today = todayLocalStr();
+  const yesterday = daysAgoLocalStr(1);
+  if (s.lastLogDate !== today && s.lastLogDate !== yesterday) {
+    const next: Streak = { ...s, currentStreak: 0 };
+    writeStreak(next);
+    return next;
+  }
+  return s;
+}
+
+function recordMealLogged(): { streak: Streak; milestone: number | null } {
+  const prev = readStreak();
+  const today = todayLocalStr();
+  const yesterday = daysAgoLocalStr(1);
+  let next: Streak;
+  if (prev.lastLogDate === today) {
+    next = prev;
+  } else if (prev.lastLogDate === yesterday) {
+    const newCur = prev.currentStreak + 1;
+    next = {
+      currentStreak: newCur,
+      lastLogDate: today,
+      longestStreak: Math.max(prev.longestStreak, newCur),
+    };
+  } else {
+    next = {
+      currentStreak: 1,
+      lastLogDate: today,
+      longestStreak: Math.max(prev.longestStreak, 1),
+    };
+  }
+  if (next !== prev) writeStreak(next);
+  const milestone =
+    next.currentStreak !== prev.currentStreak && STREAK_MILESTONES.includes(next.currentStreak)
+      ? next.currentStreak
+      : null;
+  return { streak: next, milestone };
+}
+
 export default function SnapAndTrackApp() {
   const { user, isLoaded, isSignedIn } = useUser();
   const isSubscribed = user?.publicMetadata?.subscribed === true;
@@ -209,6 +315,10 @@ export default function SnapAndTrackApp() {
   const [netCarbs, setNetCarbs] = useState(false);
   const [goals, setGoals] = useState<UserGoals | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission | 'unsupported' | 'unknown'>(
+    'unknown'
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -281,6 +391,79 @@ export default function SnapAndTrackApp() {
       // best-effort
     }
   }, [isLoaded, isSignedIn]);
+
+  // Hydrate streak + apply break-reset if last log is older than yesterday
+  useEffect(() => {
+    setStreak(checkAndResetStreak());
+  }, []);
+
+  // Notification permission — ask once on first load, remember result
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') {
+      setNotifPerm('unsupported');
+      return;
+    }
+    setNotifPerm(Notification.permission);
+    let asked: string | null = null;
+    try {
+      asked = window.localStorage.getItem(NOTIF_ASKED_KEY);
+    } catch {
+      // best-effort
+    }
+    if (asked) return;
+    if (Notification.permission !== 'default') {
+      try {
+        window.localStorage.setItem(NOTIF_ASKED_KEY, Notification.permission);
+      } catch {
+        // best-effort
+      }
+      return;
+    }
+    Notification.requestPermission()
+      .then((p) => {
+        setNotifPerm(p);
+        try {
+          window.localStorage.setItem(NOTIF_ASKED_KEY, p);
+        } catch {
+          // best-effort
+        }
+      })
+      .catch(() => {
+        // best-effort
+      });
+  }, []);
+
+  // Schedule daily meal reminders — best-effort, once per session per day
+  useEffect(() => {
+    if (notifPerm !== 'granted') return;
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') return;
+    const today = todayLocalStr();
+    const sessionKey = `${DAILY_SCHEDULED_PREFIX}${today}`;
+    try {
+      if (window.sessionStorage.getItem(sessionKey)) return;
+    } catch {
+      // best-effort
+    }
+    const now = new Date();
+    for (const r of DAILY_REMINDERS) {
+      const slot = new Date(now);
+      slot.setHours(r.hour, r.minute, 0, 0);
+      const delay = slot.getTime() - now.getTime();
+      if (delay <= 0) continue;
+      window.setTimeout(() => {
+        try {
+          new Notification(r.message);
+        } catch {
+          // best-effort
+        }
+      }, delay);
+    }
+    try {
+      window.sessionStorage.setItem(sessionKey, '1');
+    } catch {
+      // best-effort
+    }
+  }, [notifPerm]);
 
   function completeOnboarding(next: UserGoals, chosenGoal: Goal) {
     try {
@@ -477,6 +660,22 @@ export default function SnapAndTrackApp() {
     }
     setJustLogged(true);
     setLoggedEntryId(entryId);
+
+    const { streak: nextStreak, milestone } = recordMealLogged();
+    setStreak(nextStreak);
+    if (
+      milestone !== null &&
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'granted'
+    ) {
+      try {
+        new Notification(
+          `🔥 ${milestone} day streak! You're on a roll — keep snapping your meals.`
+        );
+      } catch {
+        // best-effort
+      }
+    }
   }
 
   const canAnalyse = !!file && !isAnalysing && !result;
@@ -559,6 +758,9 @@ export default function SnapAndTrackApp() {
             )}
           </div>
         )}
+
+        {/* Streak badge */}
+        {!result && <StreakBadge streak={streak} />}
 
         {/* Upload / preview — hidden once we have a result */}
         {!result && (
@@ -1288,6 +1490,70 @@ function MacroTile({
       >
         {label}
       </div>
+    </div>
+  );
+}
+
+function StreakBadge({ streak }: { streak: Streak }) {
+  const active = streak.currentStreak > 0;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        padding: '8px 14px',
+        background: COLOURS.card,
+        border: `1px solid ${COLOURS.border}`,
+        borderRadius: 999,
+        alignSelf: 'center',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+      aria-label={
+        active
+          ? `${streak.currentStreak} day logging streak`
+          : 'No active streak — start today'
+      }
+    >
+      {active ? (
+        <>
+          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>
+            🔥
+          </span>
+          <span
+            style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 13,
+              fontWeight: 700,
+              color: COLOURS.white,
+              letterSpacing: '0.02em',
+            }}
+          >
+            {streak.currentStreak} day streak
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              color: COLOURS.textMuted,
+              letterSpacing: '0.02em',
+            }}
+          >
+            · Keep it going
+          </span>
+        </>
+      ) : (
+        <span
+          style={{
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 12,
+            color: COLOURS.textMuted,
+            letterSpacing: '0.02em',
+          }}
+        >
+          Start your streak today
+        </span>
+      )}
     </div>
   );
 }

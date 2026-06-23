@@ -35,6 +35,15 @@ const WEIGHT_UNIT_KEY = 'munchsnapper_weight_unit';
 const WEIGHT_LOG_KEY = 'munchsnapper_weight_log';
 const WEIGHT_MAX_DAYS = 90;
 const WEIGHT_GRAPH_DAYS = 30;
+const STREAK_KEY = 'munchsnapper_streak';
+
+interface Streak {
+  currentStreak: number;
+  lastLogDate: string;
+  longestStreak: number;
+}
+
+const EMPTY_STREAK: Streak = { currentStreak: 0, lastLogDate: '', longestStreak: 0 };
 
 type WeightUnit = 'kg' | 'lbs';
 
@@ -154,6 +163,49 @@ function fmtWeight(n: number): string {
   return (Math.round(n * 10) / 10).toString();
 }
 
+function isStreak(v: unknown): v is Streak {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.currentStreak === 'number' &&
+    typeof o.lastLogDate === 'string' &&
+    typeof o.longestStreak === 'number'
+  );
+}
+
+function readStreak(): Streak {
+  try {
+    const raw = window.localStorage.getItem(STREAK_KEY);
+    if (!raw) return { ...EMPTY_STREAK };
+    const parsed: unknown = JSON.parse(raw);
+    if (isStreak(parsed)) return parsed;
+  } catch {
+    // best-effort
+  }
+  return { ...EMPTY_STREAK };
+}
+
+function writeStreak(s: Streak): void {
+  try {
+    window.localStorage.setItem(STREAK_KEY, JSON.stringify(s));
+  } catch {
+    // best-effort
+  }
+}
+
+function checkAndResetStreak(): Streak {
+  const s = readStreak();
+  if (!s.lastLogDate || s.currentStreak === 0) return s;
+  const today = todayLocalStr();
+  const yesterday = daysAgoLocalStr(1);
+  if (s.lastLogDate !== today && s.lastLogDate !== yesterday) {
+    const next: Streak = { ...s, currentStreak: 0 };
+    writeStreak(next);
+    return next;
+  }
+  return s;
+}
+
 function fmtShortDate(dateStr: string): string {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return dateStr;
@@ -232,6 +284,7 @@ export default function MealLogPage() {
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
   const [weightInput, setWeightInput] = useState<string>('');
   const [weightLog, setWeightLog] = useState<WeightEntry[]>([]);
+  const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
 
   useEffect(() => {
     setEntries(readAll());
@@ -249,6 +302,7 @@ export default function MealLogPage() {
       // best-effort
     }
     setWeightLog(readWeightLog());
+    setStreak(checkAndResetStreak());
   }, []);
 
   // Notification permission — ask once, remember result
@@ -417,6 +471,9 @@ export default function MealLogPage() {
             ＋ Snap a meal
           </Link>
         </header>
+
+        {/* Streak badge */}
+        <StreakBadge streak={streak} />
 
         {/* Water tracker — daily glasses goal */}
         <section
@@ -981,6 +1038,70 @@ export default function MealLogPage() {
         }
       `}</style>
     </main>
+  );
+}
+
+function StreakBadge({ streak }: { streak: Streak }) {
+  const active = streak.currentStreak > 0;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        padding: '8px 14px',
+        background: COLOURS.card,
+        border: `1px solid ${COLOURS.border}`,
+        borderRadius: 999,
+        alignSelf: 'center',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+      aria-label={
+        active
+          ? `${streak.currentStreak} day logging streak`
+          : 'No active streak — start today'
+      }
+    >
+      {active ? (
+        <>
+          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>
+            🔥
+          </span>
+          <span
+            style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 13,
+              fontWeight: 700,
+              color: COLOURS.white,
+              letterSpacing: '0.02em',
+            }}
+          >
+            {streak.currentStreak} day streak
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              color: COLOURS.textMuted,
+              letterSpacing: '0.02em',
+            }}
+          >
+            · Keep it going
+          </span>
+        </>
+      ) : (
+        <span
+          style={{
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 12,
+            color: COLOURS.textMuted,
+            letterSpacing: '0.02em',
+          }}
+        >
+          Start your streak today
+        </span>
+      )}
+    </div>
   );
 }
 
