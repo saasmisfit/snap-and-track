@@ -457,12 +457,16 @@ export default function Home() {
               <div className="faq-a">Yes — that&apos;s actually where it works best. Unlike database-based apps that struggle with anything home-cooked, photo analysis works regardless of what&apos;s on the plate. UK foods, family dinners, restaurant meals, batch-cooked prep — it handles all of it.</div>
             </div>
             <div className="faq-item">
+              <button className="faq-q" aria-expanded="false">Is this separate from the Metaburn app? <span className="faq-arrow">&#8964;</span></button>
+              <div className="faq-a">Munch Snapper is a completely standalone product — no Metaburn subscription needed. It works on its own for anyone who wants quick, accurate macro tracking from a photo. If you are also a Metaburn app subscriber, you can add Munch Snapper as a bolt-on and receive 30% off your monthly or annual plan. Details available inside the Metaburn app.</div>
+            </div>
+            <div className="faq-item">
               <button className="faq-q" aria-expanded="false">What is Stacy&apos;s coaching note exactly? <span className="faq-arrow">&#8964;</span></button>
               <div className="faq-a">Every meal result includes a 2–3 sentence note written in Stacy&apos;s voice. It&apos;s goal-aware — so a fat-loss client and a building client get different commentary on the same meal. It&apos;s specific (it references your actual protein number, not a generic target), and it never shames. Think of it as a quick message from your PT every time you log.</div>
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">Can I cancel at any time? <span className="faq-arrow">&#8964;</span></button>
-              <div className="faq-a">Yes — monthly subscribers can cancel at any time with no questions asked. Annual subscribers can cancel before renewal. The Lifetime plan is a one-time purchase with no recurring charges. There are no lock-ins or minimum commitments on Munch Snapper.</div>
+              <div className="faq-a">Yes — monthly subscribers can cancel at any time with no questions asked. Annual subscribers can cancel before renewal. There are no lock-ins or minimum commitments on Munch Snapper.</div>
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">I already use MyFitnessPal — why switch? <span className="faq-arrow">&#8964;</span></button>
