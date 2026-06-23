@@ -63,18 +63,17 @@ export default function Home() {
     <>
       {/* NAV */}
       <nav>
-        <a href="#" className="nav-logo" aria-label="Munch Snapper by Metaburn home">
+        <a href="#" className="nav-logo" aria-label="Munch Snapper home">
           <div className="nav-logo-mark">MS</div>
           <div>
             <div className="nav-logo-text">Munch Snapper</div>
-            <div className="nav-logo-sub">by Metaburn</div>
+            <div className="nav-logo-sub">by Stacy Kundu</div>
           </div>
         </a>
         <ul className="nav-links">
           <li><a href="#how">How it works</a></li>
           <li><a href="#features">Features</a></li>
           <li><a href="#pricing">Pricing</a></li>
-          <li><a href="https://metaburn.app" target="_blank" rel="noopener">Metaburn</a></li>
         </ul>
         <Link href="/sign-up" className="btn-primary">Try Free</Link>
       </nav>
@@ -84,7 +83,7 @@ export default function Home() {
         <div className="container">
           <div className="hero-grid">
             <div>
-              <span className="eyebrow">Munch Snapper by Metaburn</span>
+              <span className="eyebrow">Munch Snapper</span>
               <h1 className="hero-headline">
                 Know exactly<br />what you&apos;re<br />eating —<br /><span className="accent">in seconds.</span>
               </h1>
@@ -103,7 +102,7 @@ export default function Home() {
                       <div className="phone-header-icon">📸</div>
                       <div>
                         <div className="phone-header-text">Munch Snapper</div>
-                        <div className="phone-header-sub">by Metaburn</div>
+                        <div className="phone-header-sub">by Stacy Kundu</div>
                       </div>
                     </div>
                     <div className="phone-meal-img">
@@ -242,14 +241,6 @@ export default function Home() {
                 <p className="feature-desc">Your meal log shows running totals for the day — total kcal, total protein, total carbs, total fat. Clean, simple. No overwhelm. You see exactly where you stand without a spreadsheet.</p>
               </div>
             </div>
-            <div className="feature-card full">
-              <div className="feature-icon">🔗</div>
-              <div className="feature-body">
-                <span className="feature-tag">Metaburn members</span>
-                <div className="feature-title">Connects to the full Metaburn app</div>
-                <p className="feature-desc">App Membership subscribers get Munch Snapper included. Your meal log talks to your weekly check-in, your compliance tracker, and Stacy&apos;s coaching dashboard — so nothing lives in a silo. This is the only photo macro tracker on the market that&apos;s part of a real end-to-end coaching ecosystem.</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -301,7 +292,7 @@ export default function Home() {
                 </tr>
                 <tr className="snap-row">
                   <td>Connected to coaching ecosystem</td>
-                  <td className="col-snap check">✓ Metaburn app</td>
+                  <td className="col-snap check">✓ Yes</td>
                   <td className="cross">✗</td>
                   <td className="cross">✗</td>
                   <td className="partial">~ Workout bolt-on</td>
@@ -448,10 +439,6 @@ export default function Home() {
               <Link href="/subscribe?annual=true" className="btn-outline-magenta price-cta">Get annual — £39.99/yr</Link>
             </div>
           </div>
-          <div className="upsell-strip">
-            <div className="upsell-text">Want personalised programmes, coaching, and community alongside your nutrition tracking? <span>Metaburn App Membership includes Munch Snapper from £24.99/month.</span></div>
-            <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-primary" style={{whiteSpace: 'nowrap', flexShrink: 0}}>View Metaburn →</a>
-          </div>
         </div>
       </section>
 
@@ -468,10 +455,6 @@ export default function Home() {
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">Does it work with home-cooked meals and UK foods? <span className="faq-arrow">&#8964;</span></button>
               <div className="faq-a">Yes — that&apos;s actually where it works best. Unlike database-based apps that struggle with anything home-cooked, photo analysis works regardless of what&apos;s on the plate. UK foods, family dinners, restaurant meals, batch-cooked prep — it handles all of it.</div>
-            </div>
-            <div className="faq-item">
-              <button className="faq-q" aria-expanded="false">Is this separate from the Metaburn app? <span className="faq-arrow">&#8964;</span></button>
-              <div className="faq-a">Munch Snapper is available as a standalone product for people who just want nutrition tracking. It&apos;s also built into the full Metaburn app — so if you&apos;re already a Metaburn subscriber on App Membership or above, your meal log is part of your broader coaching experience. No double-paying.</div>
             </div>
             <div className="faq-item">
               <button className="faq-q" aria-expanded="false">What is Stacy&apos;s coaching note exactly? <span className="faq-arrow">&#8964;</span></button>
@@ -497,38 +480,6 @@ export default function Home() {
           <p className="final-sub">Three free snaps. No card. No commitment. See what you&apos;ve been missing.</p>
           <div className="final-ctas">
             <Link href="/sign-up" className="btn-primary" style={{fontSize: '16px', padding: '14px 32px'}}>Start for free — 3 snaps on us</Link>
-            <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-outline" style={{fontSize: '16px', padding: '14px 32px'}}>Explore full Metaburn app</a>
-          </div>
-          <p className="final-note">Join Metaburn App Membership and get Munch Snapper included from £24.99/month.</p>
-        </div>
-      </section>
-
-      {/* CROSS-LINK TO METABURN */}
-      <section id="also-from-metaburn" className="section-mid" style={{padding: '4rem 2rem', textAlign: 'center'}}>
-        <div className="container" style={{maxWidth: 720}}>
-          <span className="eyebrow">Also from Metaburn</span>
-          <h2 style={{
-            fontFamily: 'var(--display-font)',
-            fontWeight: 800,
-            fontSize: 'clamp(2rem,3.5vw,3rem)',
-            lineHeight: 1,
-            color: 'var(--white)',
-            marginBottom: '1rem',
-          }}>
-            Want more than macros?
-          </h2>
-          <p style={{
-            fontSize: 16,
-            color: 'rgba(255,255,255,0.65)',
-            lineHeight: 1.7,
-            maxWidth: 560,
-            margin: '0 auto 2rem',
-          }}>
-            Munch Snapper is part of the Metaburn coaching ecosystem — personalised programmes, weekly check-ins, and a coach in your corner.
-          </p>
-          <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
-            <a href="https://metaburn.app" target="_blank" rel="noopener" className="btn-primary">Explore Metaburn →</a>
-            <a href="#pricing" className="btn-outline">View pricing</a>
           </div>
         </div>
       </section>
@@ -537,7 +488,7 @@ export default function Home() {
       <footer>
         <div className="footer-brand">
           <div>
-            <strong>Munch Snapper</strong> by Metaburn &nbsp;·&nbsp; © 2026 Metaburn by Stacy Kundu. All rights reserved.
+            <strong>Munch Snapper</strong> &nbsp;·&nbsp; © 2026 Stacy Kundu. All rights reserved.
           </div>
           <div style={{marginTop: '0.5rem'}}>
             Questions? Contact us at <a href="mailto:hello@munchsnapper.com" style={{color: 'var(--magenta)', textDecoration: 'none', fontWeight: 600}}>hello@munchsnapper.com</a>
@@ -547,7 +498,6 @@ export default function Home() {
           <li><a href="#">Privacy</a></li>
           <li><a href="#">Terms</a></li>
           <li><a href="mailto:hello@munchsnapper.com">Contact</a></li>
-          <li><a href="https://metaburn.app" target="_blank" rel="noopener" className="metaburn-link">metaburn.app →</a></li>
         </ul>
       </footer>
     </>

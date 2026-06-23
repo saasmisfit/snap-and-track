@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { UserButton, useUser } from '@clerk/nextjs';
-import UpsellBanner from '../components/UpsellBanner';
 
 const userButtonAppearance = {
   variables: {
@@ -282,7 +281,7 @@ export default function SnapAndTrackApp() {
           </div>
           <div style={styles.headerTitleGroup}>
             <div style={styles.headerTitle}>Munch Snapper</div>
-            <div style={styles.headerSub}>by Metaburn</div>
+            <div style={styles.headerSub}>by Stacy Kundu</div>
           </div>
           <Link href="/app/log" className="view-log-link" style={{ color: '#ffffff' }}>
             View log →
@@ -727,7 +726,6 @@ export default function SnapAndTrackApp() {
         }
       `}</style>
 
-      <UpsellBanner />
     </main>
   );
 }

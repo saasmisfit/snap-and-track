@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import UpsellBanner from '../../components/UpsellBanner';
 
 interface FoodItem {
   name: string;
@@ -130,7 +129,7 @@ export default function MealLogPage() {
           </div>
           <div style={styles.headerTitleGroup}>
             <div style={styles.headerTitle}>Today&apos;s Log</div>
-            <div style={styles.headerSub}>by Metaburn</div>
+            <div style={styles.headerSub}>by Stacy Kundu</div>
           </div>
           <Link href="/app" className="snap-link">
             ＋ Snap a meal
@@ -299,8 +298,6 @@ export default function MealLogPage() {
           color: ${COLOURS.danger};
         }
       `}</style>
-
-      <UpsellBanner />
     </main>
   );
 }

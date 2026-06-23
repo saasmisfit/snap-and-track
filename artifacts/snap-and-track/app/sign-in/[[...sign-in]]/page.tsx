@@ -104,7 +104,7 @@ export default function SignInPage() {
                 marginTop: 6,
               }}
             >
-              by Metaburn
+              by Stacy Kundu
             </div>
           </div>
         </div>
