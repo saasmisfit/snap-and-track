@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 interface FoodItem {
@@ -19,6 +19,8 @@ interface LogEntry {
   foods_identified: FoodItem[];
   stacy_insight: string;
   loggedAt: string;
+  logDate?: string;
+  logTime?: string;
 }
 
 const STORAGE_KEY = 'snaptrack_log';
@@ -35,6 +37,7 @@ const COLOURS = {
   white: '#ffffff',
   textMuted: 'rgba(255,255,255,0.55)',
   textFaint: 'rgba(255,255,255,0.35)',
+  textLight: '#cccccc',
   danger: '#fca5a5',
 };
 
@@ -61,14 +64,39 @@ function readAll(): LogEntry[] {
   }
 }
 
-function filterToday(all: LogEntry[]): LogEntry[] {
-  const todayStr = new Date().toDateString();
-  return all
-    .filter((e) => {
-      const d = new Date(e.loggedAt);
-      return !Number.isNaN(d.valueOf()) && d.toDateString() === todayStr;
-    })
-    .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
+function todayUTCStr(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getEntryDate(e: LogEntry): string {
+  return typeof e.logDate === 'string' && e.logDate ? e.logDate : todayUTCStr();
+}
+
+function getEntryTime(e: LogEntry): string {
+  if (typeof e.logTime === 'string' && e.logTime) return e.logTime;
+  const d = new Date(e.loggedAt);
+  if (Number.isNaN(d.valueOf())) return '';
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDateLabel(dateStr: string): string {
+  const today = todayUTCStr();
+  if (dateStr === today) return 'Today';
+
+  const y = new Date();
+  y.setUTCDate(y.getUTCDate() - 1);
+  if (dateStr === y.toISOString().split('T')[0]) return 'Yesterday';
+
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const yr = Number(parts[0]);
+  const mo = Number(parts[1]);
+  const da = Number(parts[2]);
+  if (!Number.isFinite(yr) || !Number.isFinite(mo) || !Number.isFinite(da)) return dateStr;
+  const date = new Date(Date.UTC(yr, mo - 1, da));
+  const weekday = date.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
+  const month = date.toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' });
+  return `${weekday} ${da} ${month}`;
 }
 
 function fmtMacro(n: number): string {
@@ -76,22 +104,26 @@ function fmtMacro(n: number): string {
   return Math.round(n).toString();
 }
 
-function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.valueOf())) return '';
-  return d.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+function dayTotals(entries: LogEntry[]) {
+  return entries.reduce(
+    (acc, e) => ({
+      calories: acc.calories + (Number.isFinite(e.calories) ? e.calories : 0),
+      protein_g: acc.protein_g + (Number.isFinite(e.protein_g) ? e.protein_g : 0),
+      carbs_g: acc.carbs_g + (Number.isFinite(e.carbs_g) ? e.carbs_g : 0),
+      fat_g: acc.fat_g + (Number.isFinite(e.fat_g) ? e.fat_g : 0),
+    }),
+    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+  );
 }
 
 export default function MealLogPage() {
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [openDates, setOpenDates] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    setEntries(filterToday(readAll()));
+    setEntries(readAll());
+    setOpenDates(new Set([todayUTCStr()]));
   }, []);
 
   function removeEntry(id: string) {
@@ -102,22 +134,34 @@ export default function MealLogPage() {
     } catch {
       // best-effort
     }
-    setEntries(filterToday(remaining));
+    setEntries(remaining);
   }
 
   function toggleExpanded(id: string) {
     setExpanded((m) => ({ ...m, [id]: !m[id] }));
   }
 
-  const totals = (entries ?? []).reduce(
-    (acc, e) => ({
-      calories: acc.calories + (Number.isFinite(e.calories) ? e.calories : 0),
-      protein_g: acc.protein_g + (Number.isFinite(e.protein_g) ? e.protein_g : 0),
-      carbs_g: acc.carbs_g + (Number.isFinite(e.carbs_g) ? e.carbs_g : 0),
-      fat_g: acc.fat_g + (Number.isFinite(e.fat_g) ? e.fat_g : 0),
-    }),
-    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
-  );
+  function toggleDate(dateStr: string) {
+    setOpenDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(dateStr)) next.delete(dateStr);
+      else next.add(dateStr);
+      return next;
+    });
+  }
+
+  const dateGroups = useMemo<Array<[string, LogEntry[]]>>(() => {
+    if (!entries) return [];
+    const groups = new Map<string, LogEntry[]>();
+    entries.forEach((e) => {
+      const d = getEntryDate(e);
+      const list = groups.get(d);
+      if (list) list.push(e);
+      else groups.set(d, [e]);
+    });
+    groups.forEach((arr) => arr.sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)));
+    return Array.from(groups.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [entries]);
 
   return (
     <main style={styles.page}>
@@ -136,16 +180,6 @@ export default function MealLogPage() {
           </Link>
         </header>
 
-        {/* Sticky daily totals — only shown when there are entries */}
-        {entries !== null && entries.length > 0 && (
-          <div style={styles.totalsBar}>
-            <Stat label="Calories" value={fmtMacro(totals.calories)} unit="kcal" accent />
-            <Stat label="Protein" value={fmtMacro(totals.protein_g)} unit="g" />
-            <Stat label="Carbs" value={fmtMacro(totals.carbs_g)} unit="g" />
-            <Stat label="Fat" value={fmtMacro(totals.fat_g)} unit="g" />
-          </div>
-        )}
-
         {/* Loading shimmer — only while reading localStorage on first paint */}
         {entries === null && <div style={styles.loadingHint}>Loading your log…</div>}
 
@@ -163,62 +197,89 @@ export default function MealLogPage() {
           </div>
         )}
 
-        {/* Entries list */}
+        {/* Date-grouped collapsible sections */}
         {entries !== null && entries.length > 0 && (
-          <div style={styles.entriesList}>
-            {entries.map((e) => (
-              <article key={e.id} style={styles.entryCard}>
-                <div>
-                  <div style={styles.entryDish}>{e.dish}</div>
-                  <div style={styles.entryMeta}>
-                    Logged at {fmtTime(e.loggedAt)}
-                    {e.portion_estimate ? ` · ${e.portion_estimate}` : ''}
-                  </div>
-                </div>
-
-                <div style={styles.macroPills}>
-                  <MacroPill value={fmtMacro(e.calories)} unit="kcal" accent />
-                  <MacroPill value={`${fmtMacro(e.protein_g)}g`} unit="protein" />
-                  <MacroPill value={`${fmtMacro(e.carbs_g)}g`} unit="carbs" />
-                  <MacroPill value={`${fmtMacro(e.fat_g)}g`} unit="fat" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => toggleExpanded(e.id)}
-                  className="see-toggle"
-                  aria-expanded={!!expanded[e.id]}
-                >
-                  What I could see {expanded[e.id] ? '▴' : '▾'}
-                </button>
-                {expanded[e.id] && (
-                  <ul style={styles.foodList}>
-                    {e.foods_identified.map((f, i) => (
-                      <li key={`${e.id}-${i}`} style={styles.foodItem}>
-                        <span style={styles.foodName}>{f.name}</span>
-                        <span style={styles.foodCal}>{fmtMacro(f.calories)} kcal</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {e.stacy_insight ? <p style={{ ...styles.insight, color: '#ffffff' }}>{e.stacy_insight}</p> : null}
-
-                <div style={styles.entryFoot}>
+          <div style={styles.dateGroups}>
+            {dateGroups.map(([dateStr, dayEntries]) => {
+              const t = dayTotals(dayEntries);
+              const isOpen = openDates.has(dateStr);
+              return (
+                <section key={dateStr} style={styles.dateSection}>
                   <button
                     type="button"
-                    onClick={() => removeEntry(e.id)}
-                    className="remove-link"
+                    onClick={() => toggleDate(dateStr)}
+                    className="date-header"
+                    aria-expanded={isOpen}
                   >
-                    Remove
+                    <span style={styles.dateHeaderLeft}>
+                      <span style={styles.chevron} aria-hidden="true">
+                        {isOpen ? '▾' : '▸'}
+                      </span>
+                      <span style={styles.dateLabel}>{formatDateLabel(dateStr)}</span>
+                    </span>
+                    <span style={styles.dateTotals}>
+                      {fmtMacro(t.calories)} kcal &nbsp;·&nbsp; {fmtMacro(t.protein_g)}g protein &nbsp;·&nbsp; {fmtMacro(t.carbs_g)}g carbs &nbsp;·&nbsp; {fmtMacro(t.fat_g)}g fat
+                    </span>
                   </button>
-                </div>
-              </article>
-            ))}
+                  {isOpen && (
+                    <div style={styles.entriesList}>
+                      {dayEntries.map((e) => (
+                        <article key={e.id} style={styles.entryCard}>
+                          <div style={styles.entryTopRow}>
+                            <div style={styles.entryDish}>{e.dish}</div>
+                            <div style={styles.entryTime}>{getEntryTime(e)}</div>
+                          </div>
+
+                          <div style={styles.macroPills}>
+                            <MacroPill value={fmtMacro(e.calories)} unit="kcal" accent />
+                            <MacroPill value={`${fmtMacro(e.protein_g)}g`} unit="protein" />
+                            <MacroPill value={`${fmtMacro(e.carbs_g)}g`} unit="carbs" />
+                            <MacroPill value={`${fmtMacro(e.fat_g)}g`} unit="fat" />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(e.id)}
+                            className="see-toggle"
+                            aria-expanded={!!expanded[e.id]}
+                          >
+                            What I could see {expanded[e.id] ? '▴' : '▾'}
+                          </button>
+                          {expanded[e.id] && (
+                            <ul style={styles.foodList}>
+                              {e.foods_identified.map((f, i) => (
+                                <li key={`${e.id}-${i}`} style={styles.foodItem}>
+                                  <span style={styles.foodName}>{f.name}</span>
+                                  <span style={styles.foodCal}>{fmtMacro(f.calories)} kcal</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {e.stacy_insight ? (
+                            <p style={{ ...styles.insight, color: '#ffffff' }}>{e.stacy_insight}</p>
+                          ) : null}
+
+                          <div style={styles.entryFoot}>
+                            <button
+                              type="button"
+                              onClick={() => removeEntry(e.id)}
+                              className="remove-link"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         )}
 
-        <div style={styles.footerNote}>Log resets at midnight each day</div>
+        <div style={styles.footerNote}>Meals are kept for 7 days</div>
       </div>
 
       <style jsx>{`
@@ -265,6 +326,26 @@ export default function MealLogPage() {
           transform: translateY(-1px);
         }
 
+        .date-header {
+          width: 100%;
+          background: ${COLOURS.card};
+          border: 1px solid ${COLOURS.border};
+          border-radius: 14px;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          cursor: pointer;
+          font-family: var(--body-font), 'Barlow', sans-serif;
+          color: ${COLOURS.white};
+          text-align: left;
+          transition: background 0.15s;
+        }
+        .date-header:hover {
+          background: ${COLOURS.cardRaised};
+        }
+
         .see-toggle {
           background: transparent;
           color: ${COLOURS.magenta};
@@ -299,58 +380,6 @@ export default function MealLogPage() {
         }
       `}</style>
     </main>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  unit,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
-        flex: 1,
-        minWidth: 0,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-        <span
-          style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontWeight: 800,
-            fontSize: 24,
-            lineHeight: 1,
-            color: accent ? COLOURS.magenta : COLOURS.white,
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {value}
-        </span>
-        <span style={{ fontSize: 10, color: COLOURS.textFaint }}>{unit}</span>
-      </div>
-      <div
-        style={{
-          fontSize: 10,
-          fontWeight: 600,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.5)',
-        }}
-      >
-        {label}
-      </div>
-    </div>
   );
 }
 
@@ -445,20 +474,6 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     color: COLOURS.magenta,
   },
-  totalsBar: {
-    position: 'sticky',
-    top: 0,
-    zIndex: 10,
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
-    borderRadius: 14,
-    padding: '12px 12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    gap: 8,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-  },
   loadingHint: {
     color: COLOURS.textMuted,
     fontSize: 13,
@@ -493,6 +508,42 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     color: COLOURS.textMuted,
   },
+  dateGroups: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  dateSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  dateHeaderLeft: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+  chevron: {
+    color: COLOURS.textMuted,
+    fontSize: 13,
+    width: 14,
+    display: 'inline-block',
+    textAlign: 'center',
+  },
+  dateLabel: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 800,
+    fontSize: 18,
+    color: COLOURS.white,
+    letterSpacing: '-0.01em',
+  },
+  dateTotals: {
+    fontSize: 12,
+    color: COLOURS.textLight,
+    fontVariantNumeric: 'tabular-nums',
+    textAlign: 'right',
+  },
   entriesList: {
     display: 'flex',
     flexDirection: 'column',
@@ -507,6 +558,12 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: 12,
   },
+  entryTopRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   entryDish: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
@@ -515,10 +572,12 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.15,
     letterSpacing: '-0.01em',
   },
-  entryMeta: {
+  entryTime: {
     fontSize: 12,
     color: COLOURS.textFaint,
-    marginTop: 4,
+    fontVariantNumeric: 'tabular-nums',
+    flexShrink: 0,
+    paddingTop: 4,
   },
   macroPills: {
     display: 'flex',

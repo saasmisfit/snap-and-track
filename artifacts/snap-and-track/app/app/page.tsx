@@ -245,6 +245,8 @@ export default function SnapAndTrackApp() {
 
   function logMeal() {
     if (!result || justLogged) return;
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
     const entry = {
       id: Date.now().toString(),
       dish: result.dish,
@@ -255,14 +257,33 @@ export default function SnapAndTrackApp() {
       fat_g: result.fat_g,
       foods_identified: result.foods_identified,
       stacy_insight: result.stacy_insight,
-      loggedAt: new Date().toISOString(),
+      loggedAt: now.toISOString(),
+      logDate: todayStr,
+      logTime: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     };
     try {
       const raw = window.localStorage.getItem('snaptrack_log');
       const existing: unknown = raw ? JSON.parse(raw) : [];
       const arr = Array.isArray(existing) ? existing : [];
       arr.push(entry);
-      window.localStorage.setItem('snaptrack_log', JSON.stringify(arr));
+      // Tag legacy entries (no logDate) with today's date instead of dropping them
+      const tagged = arr.map((e) =>
+        e && typeof e === 'object' && typeof e.logDate !== 'string'
+          ? { ...e, logDate: todayStr }
+          : e
+      );
+      // Prune to a 7-day rolling window: today + 6 previous days
+      const cutoff = new Date(now);
+      cutoff.setUTCDate(cutoff.getUTCDate() - 6);
+      const cutoffStr = cutoff.toISOString().split('T')[0];
+      const pruned = tagged.filter(
+        (e) =>
+          e &&
+          typeof e === 'object' &&
+          typeof e.logDate === 'string' &&
+          e.logDate >= cutoffStr
+      );
+      window.localStorage.setItem('snaptrack_log', JSON.stringify(pruned));
     } catch {
       // best-effort: still flash the confirmation so the UI feels responsive
     }
