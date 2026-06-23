@@ -112,6 +112,7 @@ export default function SnapAndTrackApp() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   // Revoke object URLs when they change or component unmounts
   useEffect(() => {
@@ -154,6 +155,10 @@ export default function SnapAndTrackApp() {
 
   function pickCamera() {
     cameraInputRef.current?.click();
+  }
+
+  function pickGallery() {
+    galleryInputRef.current?.click();
   }
 
   function acceptFile(f: File) {
@@ -350,6 +355,13 @@ export default function SnapAndTrackApp() {
               onChange={handleFileChange}
               style={{ display: 'none' }}
             />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
 
             {!file ? (
               <>
@@ -375,6 +387,32 @@ export default function SnapAndTrackApp() {
                   aria-label="Take a photo"
                 >
                   📷 Take a photo
+                </button>
+                <button
+                  type="button"
+                  onClick={pickGallery}
+                  aria-label="Upload from gallery"
+                  style={{
+                    width: '100%',
+                    background: COLOURS.card,
+                    color: COLOURS.white,
+                    border: `1.5px solid ${COLOURS.border}`,
+                    padding: '14px 24px',
+                    borderRadius: 999,
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>🖼️</span>
+                  Upload from gallery
                 </button>
               </>
             ) : (
