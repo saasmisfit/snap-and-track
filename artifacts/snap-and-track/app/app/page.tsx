@@ -928,6 +928,9 @@ export default function SnapAndTrackApp() {
             <div style={styles.headerTitle}>Munch Snapper</div>
             <div style={styles.headerSub}>by Stacy Kundu</div>
           </div>
+          <Link href="/app/plans" className="view-log-link" style={{ color: '#ffffff' }}>
+            Meal plans →
+          </Link>
           <Link href="/app/log" className="view-log-link" style={{ color: '#ffffff' }}>
             View log →
           </Link>
