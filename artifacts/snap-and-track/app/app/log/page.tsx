@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 
@@ -38,6 +38,26 @@ const WEIGHT_LOG_KEY = 'munchsnapper_weight_log';
 const WEIGHT_MAX_DAYS = 90;
 const WEIGHT_GRAPH_DAYS = 30;
 const STREAK_KEY = 'munchsnapper_streak';
+const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
+const COACH_INITIAL_QUESTION =
+  'Give me a brief overview of how my nutrition has looked this week and one thing to focus on.';
+
+type CoachGoal = 'fat_loss' | 'maintain' | 'build';
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
+function readActiveGoal(): CoachGoal {
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_GOAL_KEY);
+    if (raw === 'fat_loss' || raw === 'maintain' || raw === 'build') return raw;
+  } catch {
+    // best-effort
+  }
+  return 'maintain';
+}
 
 interface Streak {
   currentStreak: number;
@@ -364,6 +384,30 @@ function carbsForDisplay(e: LogEntry, netCarbs: boolean): number {
   return Math.max(0, carbs - fibre);
 }
 
+function buildMealHistorySummary(entries: LogEntry[] | null): string {
+  if (!entries || entries.length === 0) return '';
+  const groups = new Map<string, LogEntry[]>();
+  entries.forEach((e) => {
+    const d = getEntryDate(e);
+    const list = groups.get(d);
+    if (list) list.push(e);
+    else groups.set(d, [e]);
+  });
+  const sorted = Array.from(groups.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  return sorted
+    .map(([date, meals]) => {
+      const label = formatDateLabel(date);
+      const items = meals
+        .map(
+          (m) =>
+            `${m.dish} ${fmtMacro(m.calories)}kcal/${fmtMacro(m.protein_g)}p/${fmtMacro(m.carbs_g)}c/${fmtMacro(m.fat_g)}f`
+        )
+        .join(', ');
+      return `${label}: ${items}`;
+    })
+    .join('\n');
+}
+
 function dayTotals(entries: LogEntry[], netCarbs: boolean) {
   return entries.reduce(
     (acc, e) => ({
@@ -391,6 +435,14 @@ export default function MealLogPage() {
   const [weightInput, setWeightInput] = useState<string>('');
   const [weightLog, setWeightLog] = useState<WeightEntry[]>([]);
   const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
+  const [coachGoal, setCoachGoal] = useState<CoachGoal>('maintain');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const autoQuestionFiredRef = useRef(false);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // One-time hydration for localStorage-backed bits + initial UI state
   useEffect(() => {
@@ -409,6 +461,7 @@ export default function MealLogPage() {
     }
     setWeightLog(readWeightLog());
     setStreak(checkAndResetStreak());
+    setCoachGoal(readActiveGoal());
   }, []);
 
   // Migrate legacy localStorage entries (one-time) then fetch from API
@@ -566,6 +619,65 @@ export default function MealLogPage() {
     });
   }
 
+  async function sendChat(question: string) {
+    if (!user?.id) return;
+    const trimmed = question.trim();
+    if (!trimmed) return;
+    setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
+    setChatInput('');
+    setIsChatLoading(true);
+    setChatError(null);
+    try {
+      const mealHistory = buildMealHistorySummary(entries);
+      const res = await fetch('/api/coach', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          question: trimmed,
+          mealHistory,
+          goal: coachGoal,
+        }),
+      });
+      if (!res.ok) {
+        const data: unknown = await res.json().catch(() => ({}));
+        const detail =
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : `Coach error (${res.status})`;
+        throw new Error(detail);
+      }
+      const data: unknown = await res.json().catch(() => null);
+      const reply =
+        data && typeof data === 'object' && 'reply' in data
+          ? String((data as { reply: unknown }).reply)
+          : '';
+      if (!reply) throw new Error('Empty reply from coach');
+      setChatMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+    } catch (e) {
+      setChatError(e instanceof Error ? e.message : 'Coach failed.');
+    } finally {
+      setIsChatLoading(false);
+    }
+  }
+
+  // First time the chat opens (and entries are loaded), auto-fire the opening question
+  useEffect(() => {
+    if (!chatOpen) return;
+    if (autoQuestionFiredRef.current) return;
+    if (!user?.id) return;
+    if (entries === null) return;
+    autoQuestionFiredRef.current = true;
+    void sendChat(COACH_INITIAL_QUESTION);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatOpen, user?.id, entries]);
+
+  // Keep the chat scrolled to the latest message as it grows
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chatMessages, isChatLoading, chatError]);
+
   const weightGraphData = useMemo<Array<{ date: string; value: number }>>(() => {
     const cutoff = daysAgoLocalStr(WEIGHT_GRAPH_DAYS - 1);
     return weightLog
@@ -606,6 +718,280 @@ export default function MealLogPage() {
 
         {/* Streak badge */}
         <StreakBadge streak={streak} />
+
+        {/* Ask Stacy — AI coach chat */}
+        <section
+          aria-label="Ask Stacy"
+          style={{
+            background: COLOURS.card,
+            border: `1px solid ${COLOURS.border}`,
+            borderRadius: 16,
+            padding: chatOpen ? '14px 16px 16px' : '12px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setChatOpen((o) => !o)}
+            aria-expanded={chatOpen}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              color: COLOURS.white,
+              fontFamily: "'Barlow', sans-serif",
+              textAlign: 'left',
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <span aria-hidden="true" style={{ fontSize: 18, lineHeight: 1 }}>
+                💬
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  letterSpacing: '-0.01em',
+                  color: COLOURS.white,
+                }}
+              >
+                Ask Stacy
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: COLOURS.magenta,
+                }}
+              >
+                AI coach
+              </span>
+            </span>
+            <span style={{ color: COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
+              {chatOpen ? '▾' : '▸'}
+            </span>
+          </button>
+
+          {chatOpen && (
+            <>
+              <div
+                ref={chatScrollRef}
+                style={{
+                  maxHeight: 320,
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  paddingRight: 2,
+                }}
+              >
+                {chatMessages.length === 0 && !isChatLoading ? (
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: COLOURS.textMuted,
+                      padding: '12px 4px',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Loading your weekly snapshot…
+                  </div>
+                ) : null}
+
+                {chatMessages.map((m, i) =>
+                  m.role === 'user' ? (
+                    <div
+                      key={i}
+                      style={{
+                        alignSelf: 'flex-end',
+                        maxWidth: '85%',
+                        background: COLOURS.cardRaised,
+                        border: `1px solid ${COLOURS.border}`,
+                        borderRadius: 14,
+                        padding: '10px 14px',
+                        color: COLOURS.white,
+                        fontSize: 13.5,
+                        lineHeight: 1.5,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {m.text}
+                    </div>
+                  ) : (
+                    <div
+                      key={i}
+                      style={{
+                        alignSelf: 'flex-start',
+                        maxWidth: '85%',
+                        display: 'flex',
+                        gap: 8,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          flexShrink: 0,
+                          width: 24,
+                          height: 24,
+                          background: COLOURS.magenta,
+                          borderRadius: 6,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontWeight: 800,
+                          fontSize: 10,
+                          color: COLOURS.white,
+                          letterSpacing: '-0.02em',
+                          lineHeight: 1,
+                        }}
+                      >
+                        MS
+                      </div>
+                      <div
+                        style={{
+                          background: 'transparent',
+                          color: COLOURS.white,
+                          fontSize: 13.5,
+                          lineHeight: 1.55,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          paddingTop: 2,
+                        }}
+                      >
+                        {m.text}
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {isChatLoading && (
+                  <div
+                    style={{
+                      alignSelf: 'flex-start',
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
+                      color: COLOURS.textMuted,
+                      fontSize: 12,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        flexShrink: 0,
+                        width: 24,
+                        height: 24,
+                        background: COLOURS.magenta,
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 800,
+                        fontSize: 10,
+                        color: COLOURS.white,
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1,
+                        opacity: 0.85,
+                      }}
+                    >
+                      MS
+                    </div>
+                    <span>Stacy is typing</span>
+                    <span className="coach-typing-dots" aria-hidden="true">
+                      <span>.</span>
+                      <span>.</span>
+                      <span>.</span>
+                    </span>
+                  </div>
+                )}
+
+                {chatError && (
+                  <div
+                    role="alert"
+                    style={{
+                      alignSelf: 'flex-start',
+                      maxWidth: '85%',
+                      fontSize: 12,
+                      color: COLOURS.danger,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {chatError}
+                  </div>
+                )}
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (isChatLoading) return;
+                  void sendChat(chatInput);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'stretch',
+                  gap: 8,
+                }}
+              >
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask me anything about your nutrition this week..."
+                  aria-label="Ask Stacy a question"
+                  disabled={isChatLoading}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    background: COLOURS.nearBlack,
+                    color: COLOURS.white,
+                    border: `1px solid ${COLOURS.border}`,
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 14,
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isChatLoading || !chatInput.trim()}
+                  style={{
+                    background: COLOURS.magenta,
+                    color: COLOURS.white,
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '10px 16px',
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    cursor: isChatLoading || !chatInput.trim() ? 'not-allowed' : 'pointer',
+                    opacity: isChatLoading || !chatInput.trim() ? 0.5 : 1,
+                  }}
+                >
+                  Send
+                </button>
+              </form>
+            </>
+          )}
+        </section>
 
         {/* Water tracker — daily glasses goal */}
         <section
@@ -1187,6 +1573,25 @@ export default function MealLogPage() {
         }
         .remove-link:hover {
           color: ${COLOURS.danger};
+        }
+
+        .coach-typing-dots {
+          display: inline-flex;
+          gap: 1px;
+        }
+        .coach-typing-dots span {
+          animation: coachDotPulse 1.2s infinite;
+          opacity: 0.3;
+        }
+        .coach-typing-dots span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .coach-typing-dots span:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+        @keyframes coachDotPulse {
+          0%, 60%, 100% { opacity: 0.3; }
+          30% { opacity: 1; }
         }
       `}</style>
     </main>

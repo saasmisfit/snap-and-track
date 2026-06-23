@@ -26,6 +26,7 @@ const FREE_SNAP_KEY = 'snaptrack_free_count';
 const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 const ONBOARDING_KEY = 'munchsnapper_onboarding_complete';
 const GOALS_KEY = 'munchsnapper_goals';
+const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
 const STREAK_KEY = 'munchsnapper_streak';
 const NOTIF_ASKED_KEY = 'munchsnapper_notif_asked';
 const DAILY_SCHEDULED_PREFIX = 'munchsnapper_daily_reminders_scheduled_';
@@ -467,6 +468,15 @@ export default function SnapAndTrackApp() {
   useEffect(() => {
     setStreak(checkAndResetStreak());
   }, []);
+
+  // Persist the active goal so other pages (log/coach) can read it
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ACTIVE_GOAL_KEY, goal);
+    } catch {
+      // best-effort
+    }
+  }, [goal]);
 
   // Hydrate recent meals from the API (skips silently if not signed in or on error)
   useEffect(() => {
