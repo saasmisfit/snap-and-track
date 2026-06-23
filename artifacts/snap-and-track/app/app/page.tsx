@@ -446,6 +446,21 @@ export default function SnapAndTrackApp() {
         {/* Results */}
         {result && (
           <section style={styles.resultsWrap} aria-live="polite">
+            {previewUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt={result.dish}
+                style={{
+                  width: '100%',
+                  maxHeight: '280px',
+                  objectFit: 'cover',
+                  borderRadius: '12px',
+                  marginBottom: '16px',
+                  display: 'block',
+                }}
+              />
+            )}
             <div style={styles.resultHeader}>
               <div style={styles.resultDish}>{result.dish}</div>
               <div style={styles.resultPortion}>{result.portion_estimate}</div>
