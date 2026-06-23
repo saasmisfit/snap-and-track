@@ -131,7 +131,7 @@ export default function MealLogPage() {
             <div style={styles.headerTitle}>Today&apos;s Log</div>
             <div style={styles.headerSub}>by Stacy Kundu</div>
           </div>
-          <Link href="/app" className="snap-link">
+          <Link href="/app" className="snap-link" style={{ color: '#ffffff', textDecoration: 'none' }}>
             ＋ Snap a meal
           </Link>
         </header>
@@ -157,7 +157,7 @@ export default function MealLogPage() {
             </div>
             <div style={styles.emptyTitle}>Nothing logged yet</div>
             <div style={styles.emptySub}>Snap your first meal to get started</div>
-            <Link href="/app" className="snap-cta">
+            <Link href="/app" className="snap-cta" style={{ color: '#ffffff', textDecoration: 'none' }}>
               Snap a meal →
             </Link>
           </div>
@@ -202,7 +202,7 @@ export default function MealLogPage() {
                   </ul>
                 )}
 
-                {e.stacy_insight ? <p style={styles.insight}>{e.stacy_insight}</p> : null}
+                {e.stacy_insight ? <p style={{ ...styles.insight, color: '#ffffff' }}>{e.stacy_insight}</p> : null}
 
                 <div style={styles.entryFoot}>
                   <button
