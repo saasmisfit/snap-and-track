@@ -23,6 +23,7 @@ const userButtonAppearance = {
 
 const FREE_SNAP_LIMIT = 3;
 const FREE_SNAP_KEY = 'snaptrack_free_count';
+const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type MacroKey = 'calories' | 'protein_g' | 'carbs_g' | 'fat_g';
@@ -39,6 +40,7 @@ interface AnalyseResponse {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  fibre_g: number;
   foods_identified: FoodItem[];
   stacy_insight: string;
 }
@@ -112,6 +114,7 @@ export default function SnapAndTrackApp() {
   const [snapCount, setSnapCount] = useState<number | null>(null);
   const [editingTile, setEditingTile] = useState<MacroKey | null>(null);
   const [loggedEntryId, setLoggedEntryId] = useState<string | null>(null);
+  const [netCarbs, setNetCarbs] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -151,6 +154,27 @@ export default function SnapAndTrackApp() {
       setSnapCount(0);
     }
   }, []);
+
+  // Load Net carbs preference on mount
+  useEffect(() => {
+    try {
+      setNetCarbs(window.localStorage.getItem(NET_CARBS_KEY) === '1');
+    } catch {
+      // best-effort
+    }
+  }, []);
+
+  function toggleNetCarbs() {
+    setNetCarbs((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(NET_CARBS_KEY, next ? '1' : '0');
+      } catch {
+        // best-effort
+      }
+      return next;
+    });
+  }
 
   function pickFile() {
     fileInputRef.current?.click();
@@ -288,6 +312,7 @@ export default function SnapAndTrackApp() {
       protein_g: result.protein_g,
       carbs_g: result.carbs_g,
       fat_g: result.fat_g,
+      fibre_g: result.fibre_g,
       foods_identified: result.foods_identified,
       stacy_insight: result.stacy_insight,
       loggedAt: now.toISOString(),
@@ -573,12 +598,29 @@ export default function SnapAndTrackApp() {
                 onCommit={(raw) => updateMacro('protein_g', raw)}
               />
               <MacroTile
-                label="Carbs"
-                value={result.carbs_g}
+                label={netCarbs ? 'Net carbs' : 'Carbs'}
+                value={
+                  netCarbs
+                    ? Math.max(
+                        0,
+                        (Number.isFinite(result.carbs_g) ? result.carbs_g : 0) -
+                          (Number.isFinite(result.fibre_g) ? result.fibre_g : 0)
+                      )
+                    : result.carbs_g
+                }
                 unit="g"
                 isEditing={editingTile === 'carbs_g'}
                 onStartEdit={() => setEditingTile('carbs_g')}
-                onCommit={(raw) => updateMacro('carbs_g', raw)}
+                onCommit={(raw) => {
+                  if (netCarbs) {
+                    const parsed = parseFloat(raw);
+                    const clean = Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : 0;
+                    const fibre = Number.isFinite(result.fibre_g) ? Math.round(result.fibre_g) : 0;
+                    updateMacro('carbs_g', String(clean + fibre));
+                  } else {
+                    updateMacro('carbs_g', raw);
+                  }
+                }}
               />
               <MacroTile
                 label="Fat"
@@ -588,6 +630,71 @@ export default function SnapAndTrackApp() {
                 onStartEdit={() => setEditingTile('fat_g')}
                 onCommit={(raw) => updateMacro('fat_g', raw)}
               />
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: -2,
+              }}
+            >
+              <button
+                type="button"
+                role="switch"
+                aria-checked={netCarbs}
+                aria-label="Net carbs"
+                onClick={toggleNetCarbs}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  fontFamily: "'Barlow', sans-serif",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: netCarbs ? COLOURS.magenta : COLOURS.textMuted,
+                  }}
+                >
+                  Net carbs
+                </span>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'relative',
+                    width: 40,
+                    height: 22,
+                    background: netCarbs ? COLOURS.magenta : COLOURS.border,
+                    borderRadius: 999,
+                    transition: 'background 0.2s',
+                    flexShrink: 0,
+                    display: 'inline-block',
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      left: netCarbs ? 20 : 2,
+                      width: 18,
+                      height: 18,
+                      background: COLOURS.white,
+                      borderRadius: '50%',
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    }}
+                  />
+                </span>
+              </button>
             </div>
             <div
               style={{

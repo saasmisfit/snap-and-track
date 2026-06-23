@@ -16,6 +16,7 @@ interface LogEntry {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  fibre_g?: number;
   foods_identified: FoodItem[];
   stacy_insight: string;
   loggedAt: string;
@@ -24,6 +25,7 @@ interface LogEntry {
 }
 
 const STORAGE_KEY = 'snaptrack_log';
+const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 
 const COLOURS = {
   magenta: '#B0185E',
@@ -104,12 +106,19 @@ function fmtMacro(n: number): string {
   return Math.round(n).toString();
 }
 
-function dayTotals(entries: LogEntry[]) {
+function carbsForDisplay(e: LogEntry, netCarbs: boolean): number {
+  const carbs = Number.isFinite(e.carbs_g) ? e.carbs_g : 0;
+  if (!netCarbs) return carbs;
+  const fibre = typeof e.fibre_g === 'number' && Number.isFinite(e.fibre_g) ? e.fibre_g : 0;
+  return Math.max(0, carbs - fibre);
+}
+
+function dayTotals(entries: LogEntry[], netCarbs: boolean) {
   return entries.reduce(
     (acc, e) => ({
       calories: acc.calories + (Number.isFinite(e.calories) ? e.calories : 0),
       protein_g: acc.protein_g + (Number.isFinite(e.protein_g) ? e.protein_g : 0),
-      carbs_g: acc.carbs_g + (Number.isFinite(e.carbs_g) ? e.carbs_g : 0),
+      carbs_g: acc.carbs_g + carbsForDisplay(e, netCarbs),
       fat_g: acc.fat_g + (Number.isFinite(e.fat_g) ? e.fat_g : 0),
     }),
     { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
@@ -120,10 +129,16 @@ export default function MealLogPage() {
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [openDates, setOpenDates] = useState<Set<string>>(() => new Set());
+  const [netCarbs, setNetCarbs] = useState(false);
 
   useEffect(() => {
     setEntries(readAll());
     setOpenDates(new Set([todayUTCStr()]));
+    try {
+      setNetCarbs(window.localStorage.getItem(NET_CARBS_KEY) === '1');
+    } catch {
+      // best-effort
+    }
   }, []);
 
   function removeEntry(id: string) {
@@ -201,7 +216,7 @@ export default function MealLogPage() {
         {entries !== null && entries.length > 0 && (
           <div style={styles.dateGroups}>
             {dateGroups.map(([dateStr, dayEntries]) => {
-              const t = dayTotals(dayEntries);
+              const t = dayTotals(dayEntries, netCarbs);
               const isOpen = openDates.has(dateStr);
               return (
                 <section key={dateStr} style={styles.dateSection}>
@@ -218,7 +233,7 @@ export default function MealLogPage() {
                       <span style={styles.dateLabel}>{formatDateLabel(dateStr)}</span>
                     </span>
                     <span style={styles.dateTotals}>
-                      {fmtMacro(t.calories)} kcal &nbsp;·&nbsp; {fmtMacro(t.protein_g)}g protein &nbsp;·&nbsp; {fmtMacro(t.carbs_g)}g carbs &nbsp;·&nbsp; {fmtMacro(t.fat_g)}g fat
+                      {fmtMacro(t.calories)} kcal &nbsp;·&nbsp; {fmtMacro(t.protein_g)}g protein &nbsp;·&nbsp; {fmtMacro(t.carbs_g)}g {netCarbs ? 'net carbs' : 'carbs'} &nbsp;·&nbsp; {fmtMacro(t.fat_g)}g fat
                     </span>
                   </button>
                   {isOpen && (
@@ -233,7 +248,7 @@ export default function MealLogPage() {
                           <div style={styles.macroPills}>
                             <MacroPill value={fmtMacro(e.calories)} unit="kcal" accent />
                             <MacroPill value={`${fmtMacro(e.protein_g)}g`} unit="protein" />
-                            <MacroPill value={`${fmtMacro(e.carbs_g)}g`} unit="carbs" />
+                            <MacroPill value={`${fmtMacro(carbsForDisplay(e, netCarbs))}g`} unit={netCarbs ? 'net carbs' : 'carbs'} />
                             <MacroPill value={`${fmtMacro(e.fat_g)}g`} unit="fat" />
                           </div>
 

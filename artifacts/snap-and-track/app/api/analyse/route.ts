@@ -22,6 +22,7 @@ interface AnalyseResponse {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  fibre_g: number;
   foods_identified: FoodItem[];
   stacy_insight: string;
 }
@@ -59,11 +60,12 @@ You MUST respond with ONLY a valid JSON object — no prose, no markdown fences,
   "protein_g": number,
   "carbs_g": number,
   "fat_g": number,
+  "fibre_g": number,
   "foods_identified": [{ "name": string, "calories": number }],
   "stacy_insight": string
 }
 
-All macro fields are numbers (integers or one decimal place). foods_identified lists every distinct food component visible. stacy_insight is 2–3 sentences in Stacy's voice, tailored to the user's stated goal.`;
+All macro fields are numbers (integers or one decimal place). "carbs_g" is TOTAL carbohydrates including fibre; "fibre_g" is dietary fibre in grams (always include — use 0 if the meal genuinely has none). foods_identified lists every distinct food component visible. stacy_insight is 2–3 sentences in Stacy's voice, tailored to the user's stated goal.`;
 
 function isGoal(value: unknown): value is Goal {
   return typeof value === 'string' && (GOAL_VALUES as readonly string[]).includes(value);
