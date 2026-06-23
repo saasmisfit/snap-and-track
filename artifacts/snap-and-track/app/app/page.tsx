@@ -25,6 +25,7 @@ const FREE_SNAP_LIMIT = 3;
 const FREE_SNAP_KEY = 'snaptrack_free_count';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
+type MacroKey = 'calories' | 'protein_g' | 'carbs_g' | 'fat_g';
 
 interface FoodItem {
   name: string;
@@ -109,6 +110,8 @@ export default function SnapAndTrackApp() {
   const [isDragging, setIsDragging] = useState(false);
   const [justLogged, setJustLogged] = useState(false);
   const [snapCount, setSnapCount] = useState<number | null>(null);
+  const [editingTile, setEditingTile] = useState<MacroKey | null>(null);
+  const [loggedEntryId, setLoggedEntryId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -161,6 +164,28 @@ export default function SnapAndTrackApp() {
     galleryInputRef.current?.click();
   }
 
+  function updateMacro(key: MacroKey, raw: string) {
+    const parsed = parseFloat(raw);
+    const clean = Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : 0;
+    setResult((r) => (r ? { ...r, [key]: clean } : r));
+    if (loggedEntryId) {
+      try {
+        const stored = window.localStorage.getItem('snaptrack_log');
+        const existing: unknown = stored ? JSON.parse(stored) : [];
+        const arr = Array.isArray(existing) ? existing : [];
+        const updated = arr.map((e) =>
+          e && typeof e === 'object' && e.id === loggedEntryId
+            ? { ...e, [key]: clean }
+            : e
+        );
+        window.localStorage.setItem('snaptrack_log', JSON.stringify(updated));
+      } catch {
+        // best-effort
+      }
+    }
+    setEditingTile(null);
+  }
+
   function acceptFile(f: File) {
     if (!ACCEPTED_TYPES.includes(f.type)) {
       setError('That file type isn’t supported. Please use JPG, PNG, or WebP.');
@@ -206,6 +231,8 @@ export default function SnapAndTrackApp() {
     setResult(null);
     setError(null);
     setIsAnalysing(false);
+    setEditingTile(null);
+    setLoggedEntryId(null);
     if (!keepGoal) setGoal('fat_loss');
   }
 
@@ -252,8 +279,9 @@ export default function SnapAndTrackApp() {
     if (!result || justLogged) return;
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
+    const entryId = Date.now().toString();
     const entry = {
-      id: Date.now().toString(),
+      id: entryId,
       dish: result.dish,
       portion_estimate: result.portion_estimate,
       calories: result.calories,
@@ -293,6 +321,7 @@ export default function SnapAndTrackApp() {
       // best-effort: still flash the confirmation so the UI feels responsive
     }
     setJustLogged(true);
+    setLoggedEntryId(entryId);
   }
 
   const canAnalyse = !!file && !isAnalysing && !result;
@@ -526,10 +555,50 @@ export default function SnapAndTrackApp() {
             </div>
 
             <div style={styles.macroGrid}>
-              <MacroTile label="Calories" value={fmtMacro(result.calories)} unit="kcal" accent />
-              <MacroTile label="Protein" value={fmtMacro(result.protein_g)} unit="g" />
-              <MacroTile label="Carbs" value={fmtMacro(result.carbs_g)} unit="g" />
-              <MacroTile label="Fat" value={fmtMacro(result.fat_g)} unit="g" />
+              <MacroTile
+                label="Calories"
+                value={result.calories}
+                unit="kcal"
+                accent
+                isEditing={editingTile === 'calories'}
+                onStartEdit={() => setEditingTile('calories')}
+                onCommit={(raw) => updateMacro('calories', raw)}
+              />
+              <MacroTile
+                label="Protein"
+                value={result.protein_g}
+                unit="g"
+                isEditing={editingTile === 'protein_g'}
+                onStartEdit={() => setEditingTile('protein_g')}
+                onCommit={(raw) => updateMacro('protein_g', raw)}
+              />
+              <MacroTile
+                label="Carbs"
+                value={result.carbs_g}
+                unit="g"
+                isEditing={editingTile === 'carbs_g'}
+                onStartEdit={() => setEditingTile('carbs_g')}
+                onCommit={(raw) => updateMacro('carbs_g', raw)}
+              />
+              <MacroTile
+                label="Fat"
+                value={result.fat_g}
+                unit="g"
+                isEditing={editingTile === 'fat_g'}
+                onStartEdit={() => setEditingTile('fat_g')}
+                onCommit={(raw) => updateMacro('fat_g', raw)}
+              />
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: COLOURS.textFaint,
+                textAlign: 'center',
+                letterSpacing: '0.04em',
+                marginTop: -4,
+              }}
+            >
+              Tap to edit
             </div>
 
             <div style={styles.sectionBlock}>
@@ -809,33 +878,119 @@ function MacroTile({
   value,
   unit,
   accent = false,
+  isEditing,
+  onStartEdit,
+  onCommit,
 }: {
   label: string;
-  value: string;
+  value: number;
   unit: string;
   accent?: boolean;
+  isEditing: boolean;
+  onStartEdit: () => void;
+  onCommit: (raw: string) => void;
 }) {
+  const [draft, setDraft] = useState<string>('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    setDraft(Number.isFinite(value) ? String(Math.round(value)) : '');
+    const id = window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [isEditing, value]);
+
+  const valueColour = accent ? COLOURS.magenta : COLOURS.white;
+
   return (
     <div
+      role={isEditing ? undefined : 'button'}
+      tabIndex={isEditing ? -1 : 0}
+      aria-label={isEditing ? undefined : `${label}: ${fmtMacro(value)} ${unit}. Tap to edit.`}
+      onClick={isEditing ? undefined : onStartEdit}
+      onKeyDown={
+        isEditing
+          ? undefined
+          : (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onStartEdit();
+              }
+            }
+      }
       style={{
+        position: 'relative',
         background: COLOURS.card,
         border: `1px solid ${COLOURS.border}`,
         borderRadius: 14,
         padding: '18px 16px',
         textAlign: 'center',
+        cursor: isEditing ? 'text' : 'pointer',
       }}
     >
-      <div
+      <span
+        aria-hidden="true"
         style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 800,
-          fontSize: 36,
+          position: 'absolute',
+          top: 8,
+          right: 10,
+          fontSize: 11,
+          color: COLOURS.textFaint,
           lineHeight: 1,
-          color: accent ? COLOURS.magenta : COLOURS.white,
+          pointerEvents: 'none',
+          opacity: 0.7,
         }}
       >
-        {value}
-      </div>
+        ✏️
+      </span>
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => onCommit(draft)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              (e.currentTarget as HTMLInputElement).blur();
+            }
+          }}
+          style={{
+            width: '100%',
+            minWidth: 80,
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            padding: 0,
+            margin: 0,
+            textAlign: 'center',
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 800,
+            fontSize: 36,
+            lineHeight: 1,
+            color: valueColour,
+            appearance: 'textfield',
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 800,
+            fontSize: 36,
+            lineHeight: 1,
+            color: valueColour,
+          }}
+        >
+          {fmtMacro(value)}
+        </div>
+      )}
       <div style={{ fontSize: 11, color: COLOURS.textFaint, marginTop: 4 }}>{unit}</div>
       <div
         style={{
