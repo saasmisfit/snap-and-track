@@ -39,6 +39,28 @@ const WEIGHT_MAX_DAYS = 90;
 const WEIGHT_GRAPH_DAYS = 30;
 const STREAK_KEY = 'munchsnapper_streak';
 const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
+const FAST_KEY = 'munchsnapper_fast';
+const FAST_COMPLETE_MESSAGE =
+  '⏰ Your fast is complete! Your eating window is now open.';
+
+type FastPlan = '16:8' | '18:6' | '20:4' | 'custom';
+type FastPhase = 'fasting' | 'eating';
+
+interface FastState {
+  active: boolean;
+  startTime: string;
+  planHours: number;
+  eatingWindowHours: number;
+  notifiedComplete?: boolean;
+}
+
+const FAST_PRESETS: Array<{ plan: FastPlan; label: string; fastHours: number; eatHours: number }> = [
+  { plan: '16:8', label: '16:8', fastHours: 16, eatHours: 8 },
+  { plan: '18:6', label: '18:6', fastHours: 18, eatHours: 6 },
+  { plan: '20:4', label: '20:4', fastHours: 20, eatHours: 4 },
+  { plan: 'custom', label: 'Custom', fastHours: 16, eatHours: 8 },
+];
+
 const PROGRESS_PHOTOS_KEY = 'munchsnapper_progress_photos';
 const PROGRESS_PHOTOS_MAX = 12;
 const PROGRESS_PHOTO_MAX_WIDTH = 800;
@@ -327,6 +349,73 @@ function writeStreak(s: Streak): void {
   }
 }
 
+function isFastState(v: unknown): v is FastState {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.active === 'boolean' &&
+    typeof o.startTime === 'string' &&
+    typeof o.planHours === 'number' &&
+    Number.isFinite(o.planHours) &&
+    typeof o.eatingWindowHours === 'number' &&
+    Number.isFinite(o.eatingWindowHours)
+  );
+}
+
+function readFastState(): FastState | null {
+  try {
+    const raw = window.localStorage.getItem(FAST_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isFastState(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeFastState(state: FastState | null): void {
+  try {
+    if (state) {
+      window.localStorage.setItem(FAST_KEY, JSON.stringify(state));
+    } else {
+      window.localStorage.removeItem(FAST_KEY);
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+function fastEndMs(state: FastState): number {
+  return new Date(state.startTime).getTime() + state.planHours * 3_600_000;
+}
+
+function eatingEndMs(state: FastState): number {
+  return fastEndMs(state) + state.eatingWindowHours * 3_600_000;
+}
+
+function currentFastPhase(state: FastState, nowMs: number): FastPhase | null {
+  if (!state.active) return null;
+  const startMs = new Date(state.startTime).getTime();
+  if (!Number.isFinite(startMs)) return null;
+  if (nowMs < fastEndMs(state)) return 'fasting';
+  if (nowMs < eatingEndMs(state)) return 'eating';
+  return null;
+}
+
+function fmtRemaining(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 60_000));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${String(m).padStart(2, '0')}m`;
+}
+
+function fmtClock(ms: number): string {
+  const d = new Date(ms);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 function startOfWeekLocal(d: Date): Date {
   const result = new Date(d);
   const day = result.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
@@ -550,6 +639,13 @@ export default function MealLogPage() {
   const [weightLog, setWeightLog] = useState<WeightEntry[]>([]);
   const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
   const [coachGoal, setCoachGoal] = useState<CoachGoal>('maintain');
+  const [fastOpen, setFastOpen] = useState(false);
+  const [fastState, setFastState] = useState<FastState | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<FastPlan>('16:8');
+  const [customFastHours, setCustomFastHours] = useState<string>('16');
+  const [customEatingHours, setCustomEatingHours] = useState<string>('8');
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  const previousPhaseRef = useRef<FastPhase | null>(null);
   const [photosOpen, setPhotosOpen] = useState(false);
   const [progressPhotos, setProgressPhotos] = useState<ProgressPhoto[]>([]);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -583,7 +679,60 @@ export default function MealLogPage() {
     setStreak(checkAndResetStreak());
     setCoachGoal(readActiveGoal());
     setProgressPhotos(readProgressPhotos());
+
+    const stored = readFastState();
+    if (stored && stored.active) {
+      const phase = currentFastPhase(stored, Date.now());
+      if (phase === null) {
+        writeFastState(null);
+        setFastState(null);
+      } else {
+        previousPhaseRef.current = phase;
+        setFastState(stored);
+      }
+    }
   }, []);
+
+  // Tick every 60 seconds while a fast is active so the countdown re-renders
+  useEffect(() => {
+    if (!fastState?.active) return;
+    setNowTick(Date.now());
+    const id = window.setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, [fastState?.active, fastState?.startTime]);
+
+  // When the fast transitions fasting → eating, fire a single notification.
+  // When eating completes, clear the active fast.
+  useEffect(() => {
+    if (!fastState?.active) return;
+    const phase = currentFastPhase(fastState, nowTick);
+    if (phase === null) {
+      previousPhaseRef.current = null;
+      writeFastState(null);
+      setFastState(null);
+      return;
+    }
+    if (
+      previousPhaseRef.current === 'fasting' &&
+      phase === 'eating' &&
+      !fastState.notifiedComplete
+    ) {
+      if (
+        typeof Notification !== 'undefined' &&
+        Notification.permission === 'granted'
+      ) {
+        try {
+          new Notification(FAST_COMPLETE_MESSAGE);
+        } catch {
+          // best-effort
+        }
+      }
+      const updated: FastState = { ...fastState, notifiedComplete: true };
+      writeFastState(updated);
+      setFastState(updated);
+    }
+    previousPhaseRef.current = phase;
+  }, [fastState, nowTick]);
 
   // Migrate legacy localStorage entries (one-time) then fetch from API
   useEffect(() => {
@@ -738,6 +887,41 @@ export default function MealLogPage() {
       else next.add(dateStr);
       return next;
     });
+  }
+
+  function startFast() {
+    let fastHours = 16;
+    let eatHours = 8;
+    if (selectedPlan === 'custom') {
+      const fh = parseFloat(customFastHours);
+      const eh = parseFloat(customEatingHours);
+      if (!Number.isFinite(fh) || fh <= 0 || fh > 48) return;
+      if (!Number.isFinite(eh) || eh <= 0 || eh > 24) return;
+      fastHours = fh;
+      eatHours = eh;
+    } else {
+      const preset = FAST_PRESETS.find((p) => p.plan === selectedPlan);
+      if (!preset) return;
+      fastHours = preset.fastHours;
+      eatHours = preset.eatHours;
+    }
+    const next: FastState = {
+      active: true,
+      startTime: new Date().toISOString(),
+      planHours: fastHours,
+      eatingWindowHours: eatHours,
+      notifiedComplete: false,
+    };
+    writeFastState(next);
+    previousPhaseRef.current = 'fasting';
+    setFastState(next);
+    setNowTick(Date.now());
+  }
+
+  function endFast() {
+    writeFastState(null);
+    previousPhaseRef.current = null;
+    setFastState(null);
   }
 
   async function handleProgressPhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1279,6 +1463,334 @@ export default function MealLogPage() {
             ) : null}
           </div>
         </section>
+
+        {/* Fasting timer — 16:8 / 18:6 / 20:4 / custom */}
+        {(() => {
+          const phase = fastState ? currentFastPhase(fastState, nowTick) : null;
+          const isActive = !!fastState?.active && phase !== null;
+          const remainingMs =
+            isActive && fastState
+              ? phase === 'fasting'
+                ? fastEndMs(fastState) - nowTick
+                : eatingEndMs(fastState) - nowTick
+              : 0;
+          const fastHoursForLabel = fastState
+            ? fastState.planHours
+            : selectedPlan === 'custom'
+              ? Math.max(0, parseFloat(customFastHours) || 0)
+              : FAST_PRESETS.find((p) => p.plan === selectedPlan)?.fastHours ?? 16;
+          const eatHoursForLabel = fastState
+            ? fastState.eatingWindowHours
+            : selectedPlan === 'custom'
+              ? Math.max(0, parseFloat(customEatingHours) || 0)
+              : FAST_PRESETS.find((p) => p.plan === selectedPlan)?.eatHours ?? 8;
+          const windowStartMs = fastState ? fastEndMs(fastState) : null;
+          const windowEndMs = fastState ? eatingEndMs(fastState) : null;
+          const canStart =
+            selectedPlan === 'custom'
+              ? Number.isFinite(parseFloat(customFastHours)) &&
+                parseFloat(customFastHours) > 0 &&
+                Number.isFinite(parseFloat(customEatingHours)) &&
+                parseFloat(customEatingHours) > 0
+              : true;
+          return (
+            <section
+              aria-label="Fasting timer"
+              style={{
+                background: COLOURS.card,
+                border: `1px solid ${COLOURS.border}`,
+                borderRadius: 16,
+                padding: fastOpen ? '14px 16px 16px' : '12px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setFastOpen((o) => !o)}
+                aria-expanded={fastOpen}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  color: COLOURS.white,
+                  fontFamily: "'Barlow', sans-serif",
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                  <span aria-hidden="true" style={{ fontSize: 18, lineHeight: 1 }}>
+                    ⏱
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 800,
+                      fontSize: 18,
+                      letterSpacing: '-0.01em',
+                      color: COLOURS.white,
+                    }}
+                  >
+                    Fasting Timer
+                  </span>
+                  {isActive && (
+                    <span
+                      aria-label="Fast in progress"
+                      title="Fast in progress"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color: COLOURS.magenta,
+                      }}
+                    >
+                      <span aria-hidden="true">🔒</span>
+                      {phase === 'eating' ? 'Eating' : 'Fasting'}
+                    </span>
+                  )}
+                </span>
+                <span style={{ color: COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
+                  {fastOpen ? '▾' : '▸'}
+                </span>
+              </button>
+
+              {fastOpen && (
+                <>
+                  {!isActive && (
+                    <>
+                      <div
+                        role="radiogroup"
+                        aria-label="Fasting plan"
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}
+                      >
+                        {FAST_PRESETS.map((p) => {
+                          const active = p.plan === selectedPlan;
+                          return (
+                            <button
+                              key={p.plan}
+                              type="button"
+                              role="radio"
+                              aria-checked={active}
+                              onClick={() => setSelectedPlan(p.plan)}
+                              style={{
+                                background: active ? COLOURS.magenta : 'transparent',
+                                color: active ? COLOURS.white : 'rgba(255,255,255,0.85)',
+                                border: `1.5px solid ${active ? COLOURS.magenta : COLOURS.border}`,
+                                borderRadius: 999,
+                                padding: '8px 6px',
+                                fontFamily: "'Barlow', sans-serif",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                              }}
+                            >
+                              {p.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedPlan === 'custom' && (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <label
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 4,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                letterSpacing: '0.08em',
+                                textTransform: 'uppercase',
+                                color: COLOURS.textMuted,
+                              }}
+                            >
+                              Fast hours
+                            </span>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              max={48}
+                              step="0.5"
+                              value={customFastHours}
+                              onChange={(e) => setCustomFastHours(e.target.value)}
+                              style={{
+                                background: COLOURS.nearBlack,
+                                color: COLOURS.white,
+                                border: `1px solid ${COLOURS.border}`,
+                                borderRadius: 10,
+                                padding: '10px 12px',
+                                fontFamily: "'Barlow', sans-serif",
+                                fontSize: 14,
+                                outline: 'none',
+                                appearance: 'textfield',
+                              }}
+                            />
+                          </label>
+                          <label
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 4,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                letterSpacing: '0.08em',
+                                textTransform: 'uppercase',
+                                color: COLOURS.textMuted,
+                              }}
+                            >
+                              Eating window
+                            </span>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              max={24}
+                              step="0.5"
+                              value={customEatingHours}
+                              onChange={(e) => setCustomEatingHours(e.target.value)}
+                              style={{
+                                background: COLOURS.nearBlack,
+                                color: COLOURS.white,
+                                border: `1px solid ${COLOURS.border}`,
+                                borderRadius: 10,
+                                padding: '10px 12px',
+                                fontFamily: "'Barlow', sans-serif",
+                                fontSize: 14,
+                                outline: 'none',
+                                appearance: 'textfield',
+                              }}
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  <div
+                    style={{
+                      background: COLOURS.nearBlack,
+                      border: `1px solid ${COLOURS.border}`,
+                      borderRadius: 12,
+                      padding: '18px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 6,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 800,
+                        fontSize: 28,
+                        lineHeight: 1.1,
+                        color: isActive ? COLOURS.magenta : COLOURS.textMuted,
+                        letterSpacing: '-0.01em',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {isActive
+                        ? phase === 'eating'
+                          ? `🍽️ Eating window open — ${fmtRemaining(remainingMs)} left`
+                          : `⏱ ${fmtRemaining(remainingMs)} remaining`
+                        : `Ready: ${fastHoursForLabel}h fast · ${eatHoursForLabel}h window`}
+                    </div>
+                    {isActive && windowStartMs !== null && windowEndMs !== null ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: COLOURS.textMuted,
+                          letterSpacing: '0.02em',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        Eating window: {fmtClock(windowStartMs)} – {fmtClock(windowEndMs)}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: COLOURS.textMuted,
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        Pick a plan and start when you&apos;re ready.
+                      </div>
+                    )}
+                  </div>
+
+                  {isActive ? (
+                    <button
+                      type="button"
+                      onClick={endFast}
+                      style={{
+                        background: 'transparent',
+                        color: COLOURS.magenta,
+                        border: `2px solid ${COLOURS.magenta}`,
+                        borderRadius: 999,
+                        padding: '12px 18px',
+                        fontFamily: "'Barlow', sans-serif",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      End fast early
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={startFast}
+                      disabled={!canStart}
+                      style={{
+                        background: canStart ? COLOURS.magenta : '#2a2a30',
+                        color: canStart ? COLOURS.white : 'rgba(255,255,255,0.4)',
+                        border: 'none',
+                        borderRadius: 999,
+                        padding: '12px 18px',
+                        fontFamily: "'Barlow', sans-serif",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        cursor: canStart ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Start fast
+                    </button>
+                  )}
+                </>
+              )}
+            </section>
+          );
+        })()}
 
         {/* Weight tracker — daily logging + 30-day SVG trend */}
         <section
