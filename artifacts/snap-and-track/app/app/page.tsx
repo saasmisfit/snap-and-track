@@ -27,6 +27,7 @@ const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 const ONBOARDING_KEY = 'munchsnapper_onboarding_complete';
 const GOALS_KEY = 'munchsnapper_goals';
 const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
+const BURNED_KEY_PREFIX = 'munchsnapper_burned_today_';
 const STREAK_KEY = 'munchsnapper_streak';
 const NOTIF_ASKED_KEY = 'munchsnapper_notif_asked';
 const DAILY_SCHEDULED_PREFIX = 'munchsnapper_daily_reminders_scheduled_';
@@ -391,6 +392,7 @@ export default function SnapAndTrackApp() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showVoiceLog, setShowVoiceLog] = useState(false);
   const [mode, setMode] = useState<AnalyseMode>('meal');
+  const [burnedToday, setBurnedToday] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -477,6 +479,28 @@ export default function SnapAndTrackApp() {
       // best-effort
     }
   }, [goal]);
+
+  // Hydrate today's burned-calories input (per-day key, so it resets automatically)
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(`${BURNED_KEY_PREFIX}${todayLocalStr()}`);
+      const n = raw ? parseFloat(raw) : 0;
+      setBurnedToday(Number.isFinite(n) && n >= 0 ? Math.round(n) : 0);
+    } catch {
+      // best-effort
+    }
+  }, []);
+
+  function handleBurnedChange(raw: string) {
+    const n = parseFloat(raw);
+    const clean = Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+    setBurnedToday(clean);
+    try {
+      window.localStorage.setItem(`${BURNED_KEY_PREFIX}${todayLocalStr()}`, String(clean));
+    } catch {
+      // best-effort
+    }
+  }
 
   // Hydrate recent meals from the API (skips silently if not signed in or on error)
   useEffect(() => {
@@ -997,6 +1021,72 @@ export default function SnapAndTrackApp() {
             )}
           </div>
         )}
+
+        {/* Calories-burned input — adjusts today's calorie ceiling */}
+        {!result && goals ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: '0 4px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label
+                htmlFor="burn-input"
+                style={{
+                  flex: 1,
+                  fontSize: 12,
+                  color: COLOURS.textMuted,
+                  lineHeight: 1.4,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Calories burned today (Apple Watch / Fitbit / Garmin):
+              </label>
+              <input
+                id="burn-input"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step="1"
+                value={burnedToday > 0 ? String(burnedToday) : ''}
+                onChange={(e) => handleBurnedChange(e.target.value)}
+                placeholder="0"
+                aria-label="Calories burned today"
+                style={{
+                  width: 80,
+                  background: COLOURS.nearBlack,
+                  color: COLOURS.white,
+                  border: `1px solid ${COLOURS.border}`,
+                  borderRadius: 8,
+                  padding: '6px 10px',
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 13,
+                  outline: 'none',
+                  textAlign: 'right',
+                  appearance: 'textfield',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              />
+            </div>
+            {burnedToday > 0 ? (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: COLOURS.magenta,
+                  fontVariantNumeric: 'tabular-nums',
+                  textAlign: 'center',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Adjusted target: {(goals.calories + burnedToday).toLocaleString('en-GB')} kcal
+                (original {goals.calories.toLocaleString('en-GB')} + {burnedToday.toLocaleString('en-GB')} burned)
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Streak badge */}
         {!result && <StreakBadge streak={streak} />}

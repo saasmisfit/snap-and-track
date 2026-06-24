@@ -522,6 +522,43 @@ function checkAndResetStreak(): Streak {
   return s;
 }
 
+type DevicePlatform = 'ios' | 'android' | 'other';
+
+function detectPlatform(): DevicePlatform {
+  if (typeof navigator === 'undefined') return 'other';
+  const ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) return 'android';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+  return 'other';
+}
+
+function csvField(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function buildCsv(rows: string[][]): string {
+  return rows.map((r) => r.map(csvField).join(',')).join('\r\n') + '\r\n';
+}
+
+function triggerCsvDownload(filename: string, content: string): void {
+  try {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  } catch {
+    // best-effort
+  }
+}
+
 function fmtPhotoDate(dateStr: string): string {
   const parts = dateStr.split('-');
   if (parts.length !== 3) return dateStr;
@@ -639,6 +676,7 @@ export default function MealLogPage() {
   const [weightLog, setWeightLog] = useState<WeightEntry[]>([]);
   const [streak, setStreak] = useState<Streak>(EMPTY_STREAK);
   const [coachGoal, setCoachGoal] = useState<CoachGoal>('maintain');
+  const [platform, setPlatform] = useState<DevicePlatform>('other');
   const [fastOpen, setFastOpen] = useState(false);
   const [fastState, setFastState] = useState<FastState | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<FastPlan>('16:8');
@@ -679,6 +717,7 @@ export default function MealLogPage() {
     setStreak(checkAndResetStreak());
     setCoachGoal(readActiveGoal());
     setProgressPhotos(readProgressPhotos());
+    setPlatform(detectPlatform());
 
     const stored = readFastState();
     if (stored && stored.active) {
@@ -887,6 +926,26 @@ export default function MealLogPage() {
       else next.add(dateStr);
       return next;
     });
+  }
+
+  function exportEntriesCsv() {
+    const data = entries ?? [];
+    if (data.length === 0) return;
+    const sorted = [...data].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
+    const rows: string[][] = [
+      ['Date', 'Time', 'Meal', 'Calories', 'Protein', 'Carbs', 'Fat', 'Fibre'],
+      ...sorted.map((e) => [
+        getEntryDate(e),
+        getEntryTime(e),
+        e.dish,
+        String(Math.round(e.calories)),
+        String(Math.round(e.protein_g)),
+        String(Math.round(e.carbs_g)),
+        String(Math.round(e.fat_g)),
+        String(Math.round(typeof e.fibre_g === 'number' ? e.fibre_g : 0)),
+      ]),
+    ];
+    triggerCsvDownload(`munchsnapper-log-${todayLocalStr()}.csv`, buildCsv(rows));
   }
 
   function startFast() {
@@ -2356,6 +2415,203 @@ export default function MealLogPage() {
             })}
           </div>
         )}
+
+        {/* Export & device integrations */}
+        <section
+          aria-label="Export and integrations"
+          style={{
+            background: COLOURS.card,
+            border: `1px solid ${COLOURS.border}`,
+            borderRadius: 16,
+            padding: '14px 16px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: COLOURS.magenta,
+            }}
+          >
+            Export & integrations
+          </div>
+
+          <button
+            type="button"
+            onClick={exportEntriesCsv}
+            disabled={!entries || entries.length === 0}
+            style={{
+              background: 'transparent',
+              color: COLOURS.white,
+              border: `1.5px solid ${COLOURS.border}`,
+              borderRadius: 999,
+              padding: '12px 18px',
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              cursor: !entries || entries.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: !entries || entries.length === 0 ? 0.5 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>⬇️</span>
+            Export nutrition data (CSV)
+          </button>
+          <div
+            style={{
+              fontSize: 12,
+              color: COLOURS.textFaint,
+              textAlign: 'center',
+              lineHeight: 1.5,
+              marginTop: -4,
+            }}
+          >
+            Last 7 days · works with Apple Health, MyFitnessPal, spreadsheets
+          </div>
+
+          {platform === 'ios' && (
+            <div
+              style={{
+                background: COLOURS.nearBlack,
+                border: `1px solid ${COLOURS.border}`,
+                borderRadius: 12,
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 16,
+                  letterSpacing: '-0.01em',
+                  color: COLOURS.white,
+                }}
+              >
+                Sync to Apple Health
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  color: COLOURS.textMuted,
+                  lineHeight: 1.55,
+                }}
+              >
+                To log meals in Apple Health, use the Shortcuts app. Tap below to download our
+                pre-built Apple Shortcut that imports your daily nutrition data.
+              </p>
+              {/*
+                TODO(integrations): publish a real Munch Snapper Shortcut that ingests the CSV
+                export (or hits a future read endpoint) and writes Dietary Energy / Protein /
+                Carbs / Fat samples via HealthKit. Replace this href with the iCloud shortcut
+                link (e.g. https://www.icloud.com/shortcuts/<id>). Until then, point users at
+                the official Shortcuts guide so they at least land in the right app.
+              */}
+              <a
+                href="https://support.apple.com/guide/shortcuts"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  background: COLOURS.magenta,
+                  color: COLOURS.white,
+                  borderRadius: 999,
+                  padding: '10px 16px',
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                }}
+              >
+                <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>🍎</span>
+                Open Shortcuts guide
+              </a>
+            </div>
+          )}
+
+          {platform === 'android' && (
+            <div
+              style={{
+                background: COLOURS.nearBlack,
+                border: `1px solid ${COLOURS.border}`,
+                borderRadius: 12,
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 16,
+                  letterSpacing: '-0.01em',
+                  color: COLOURS.white,
+                }}
+              >
+                Sync to Google Health
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  color: COLOURS.textMuted,
+                  lineHeight: 1.55,
+                }}
+              >
+                Sync to Google Health — tap below to open Health Connect and enable Munch Snapper.
+              </p>
+              {/*
+                TODO(integrations): wire up the full Health Connect REST API
+                (https://developer.android.com/health-and-fitness/guides/health-connect) so we
+                can write Nutrition records (energy, protein, total carb, total fat, dietary
+                fibre) instead of relying on a deep-link. Until then the intent below jumps the
+                user into the Health Connect app where they can manage permissions manually.
+              */}
+              <a
+                href="intent://com.google.android.apps.healthdata#Intent;scheme=android-app;end"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  background: COLOURS.magenta,
+                  color: COLOURS.white,
+                  borderRadius: 999,
+                  padding: '10px 16px',
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                }}
+              >
+                <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>❤️</span>
+                Open Health Connect
+              </a>
+            </div>
+          )}
+        </section>
 
         <div style={styles.footerNote}>Meals are kept for 7 days</div>
       </div>
