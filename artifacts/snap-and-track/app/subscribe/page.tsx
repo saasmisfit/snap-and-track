@@ -231,11 +231,19 @@ export default function SubscribePage() {
           }}
         >
           {[
-            'Unlimited meal snaps',
-            'Full macro breakdown every time',
-            'Stacy’s goal-aware coaching note',
-            'Daily macro running total',
-            'Full meal log history',
+            'All logging methods (photo, voice, barcode, menu, gallery)',
+            'AI macro analysis on every meal',
+            'Stacy’s coaching note on every result',
+            'AI Coach — ask about your week',
+            'Pre-built meal plans in Stacy’s voice',
+            'Water tracker + reminders',
+            'Weight logging + trend graph',
+            'Streak tracker + daily nudges',
+            'Intermittent fasting timer',
+            'Progress photos with comparison',
+            'Net carbs mode',
+            '7-day meal history synced to cloud',
+            'No ads, ever',
           ].map((feature) => (
             <div
               key={feature}
