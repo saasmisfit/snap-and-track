@@ -736,62 +736,116 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer>
-        <div className="footer-brand">
-          <div>
-            <strong>Munch Snapper by Stacy Kundu</strong>
-          </div>
-          <div style={{ marginTop: '0.4rem', color: 'rgba(255,255,255,0.55)', fontSize: 13 }}>
-            © 2026 All rights reserved
-          </div>
+      {/* CONTACT */}
+      <section id="contact" className="section-dark" style={{ padding: '6rem 0' }}>
+        <div className="container" style={{ textAlign: 'center', maxWidth: 720 }}>
+          <span className="eyebrow">Contact</span>
+          <h2
+            style={{
+              fontFamily: 'var(--display-font)',
+              fontWeight: 800,
+              fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+              lineHeight: 1,
+              color: WHITE,
+              marginBottom: '1rem',
+            }}
+          >
+            Get in Touch
+          </h2>
+          <p
+            style={{
+              fontSize: 18,
+              color: TEXT_MUTED,
+              marginBottom: '2.25rem',
+              lineHeight: 1.6,
+            }}
+          >
+            Got a question? We&apos;d love to hear from you.
+          </p>
+          <a
+            href="mailto:help@munchsnapper.com"
+            className="contact-email"
+            style={{
+              fontFamily: 'var(--display-font)',
+              fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
+              fontWeight: 800,
+              color: MAGENTA,
+              textDecoration: 'none',
+              letterSpacing: '-0.01em',
+              display: 'inline-block',
+              borderBottom: `2px solid ${MAGENTA}`,
+              paddingBottom: 4,
+            }}
+          >
+            help@munchsnapper.com
+          </a>
         </div>
-        <ul className="footer-links" style={{ alignItems: 'center' }}>
-          <li>
-            <Link
-              href="/privacy"
-              style={{ color: '#ffffff', textDecoration: 'none' }}
+      </section>
+
+      {/* FOOTER */}
+      <footer
+        style={{
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          padding: '3rem 2rem 2rem',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: '2rem',
+            width: '100%',
+          }}
+        >
+          <div className="footer-brand" style={{ maxWidth: 360 }}>
+            <strong
+              style={{
+                fontFamily: 'var(--display-font)',
+                fontSize: 20,
+                letterSpacing: '0.02em',
+                display: 'block',
+              }}
             >
-              Privacy Policy
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/terms"
-              style={{ color: '#ffffff', textDecoration: 'none' }}
+              Munch Snapper
+            </strong>
+            <div
+              style={{
+                marginTop: '0.5rem',
+                color: 'rgba(255,255,255,0.55)',
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
             >
-              Terms of Service
-            </Link>
-          </li>
-          <li>
-            <a
-              href="mailto:help@munchsnapper.com"
-              style={{ color: '#ffffff', textDecoration: 'none' }}
-            >
-              help@munchsnapper.com
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://www.instagram.com/stacykundu"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#ffffff', textDecoration: 'none' }}
-            >
-              Instagram @stacykundu
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://www.tiktok.com/@stacykundu"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#ffffff', textDecoration: 'none' }}
-            >
-              TikTok @stacykundu
-            </a>
-          </li>
-        </ul>
+              AI-powered macro tracking. Snap, log, and stay on track.
+            </div>
+          </div>
+          <ul className="footer-links">
+            <li>
+              <Link href="/privacy">Privacy Policy</Link>
+            </li>
+            <li>
+              <Link href="/terms">Terms of Service</Link>
+            </li>
+            <li>
+              <a href="mailto:help@munchsnapper.com">help@munchsnapper.com</a>
+            </li>
+          </ul>
+        </div>
+        <div
+          style={{
+            borderTop: `1px solid ${BORDER}`,
+            marginTop: '2rem',
+            paddingTop: '1.5rem',
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.4)',
+            textAlign: 'center',
+          }}
+        >
+          © 2026 Munch Snapper. All rights reserved.
+        </div>
       </footer>
     </>
   );

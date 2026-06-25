@@ -768,9 +768,11 @@
   }
   .footer-brand { font-size: 13px; color: rgba(255,255,255,0.35); }
   .footer-brand strong { color: var(--magenta); }
-  .footer-links { display: flex; gap: 1.5rem; list-style: none; }
-  .footer-links a { font-size: 13px; color: rgba(255,255,255,0.35); text-decoration: none; transition: color 0.2s; }
-  .footer-links a:hover { color: rgba(255,255,255,0.6); }
+  .footer-links { display: flex; gap: 1.5rem; list-style: none; flex-wrap: wrap; }
+  .footer-links a { font-size: 13px; color: rgba(255,255,255,0.55); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--magenta); }
+  .contact-email { transition: opacity 0.2s, color 0.2s; }
+  .contact-email:hover { opacity: 0.85; }
   .metaburn-link {
     font-size: 13px;
     color: var(--magenta);
