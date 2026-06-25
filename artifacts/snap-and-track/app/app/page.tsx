@@ -1419,8 +1419,9 @@ export default function SnapAndTrackApp() {
                   style={{
                     display: 'block',
                     width: '100%',
-                    background: COLOURS.magenta,
-                    color: COLOURS.white,
+                    background: 'transparent',
+                    color: COLOURS.magenta,
+                    border: `2px solid ${COLOURS.magenta}`,
                     textAlign: 'center',
                     padding: '14px 24px',
                     borderRadius: 999,
@@ -1882,8 +1883,9 @@ export default function SnapAndTrackApp() {
         .subscribe-cta {
           display: block;
           width: 100%;
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: transparent;
+          color: ${COLOURS.magenta};
+          border: 2px solid ${COLOURS.magenta};
           text-align: center;
           padding: 14px 24px;
           border-radius: 999px;
@@ -1893,11 +1895,12 @@ export default function SnapAndTrackApp() {
           font-weight: 700;
           letter-spacing: 0.05em;
           text-transform: uppercase;
-          transition: background 0.2s, transform 0.1s;
+          transition: color 0.2s, border-color 0.2s, transform 0.1s;
           margin-top: 0.5rem;
         }
         .subscribe-cta:hover {
-          background: ${COLOURS.magentaDark};
+          color: ${COLOURS.magentaDark};
+          border-color: ${COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
