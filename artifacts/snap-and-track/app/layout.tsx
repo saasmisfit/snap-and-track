@@ -3,7 +3,13 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Munch Snapper — Instant Macros from a Photo',
+  title: 'Munch Snapper — Snap Your Food, Track Your Macros',
+  description:
+    'The easiest macro tracker for women. Snap a photo of your meal and get instant AI nutrition analysis. No more calorie counting the hard way.',
+  icons: {
+    icon: '/munch-snapper-logo.png',
+    apple: '/munch-snapper-logo.png',
+  },
 };
 
 export default function RootLayout({

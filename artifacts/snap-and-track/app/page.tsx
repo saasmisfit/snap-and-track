@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 const MAGENTA = '#B0185E';
@@ -230,13 +231,16 @@ export default function Home() {
     <>
       {/* NAV */}
       <nav>
-        <a href="#" className="nav-logo" aria-label="Munch Snapper home">
-          <div className="nav-logo-mark">MS</div>
-          <div>
-            <div className="nav-logo-text">Munch Snapper</div>
-            <div className="nav-logo-sub">by Stacy Kundu</div>
-          </div>
-        </a>
+        <Link href="/" className="nav-logo" aria-label="Munch Snapper home">
+          <Image
+            src="/munch-snapper-logo.png"
+            alt="Munch Snapper"
+            width={160}
+            height={60}
+            priority
+            style={{ height: 44, width: 'auto', display: 'block' }}
+          />
+        </Link>
         <ul className="nav-links">
           <li>
             <a href="#how-it-works" style={{ color: '#ffffff', textDecoration: 'none' }}>
@@ -264,7 +268,19 @@ export default function Home() {
         <div className="container">
           <div className="hero-grid">
             <div>
-              <span className="eyebrow">Munch Snapper</span>
+              <Image
+                src="/munch-snapper-logo.png"
+                alt="Munch Snapper"
+                width={220}
+                height={82}
+                priority
+                style={{
+                  width: 'auto',
+                  height: 82,
+                  display: 'block',
+                  marginBottom: '1.25rem',
+                }}
+              />
               <h1 className="hero-headline">
                 Snap it.<br />Track it.<br />
                 <span className="accent">Get coached.</span>

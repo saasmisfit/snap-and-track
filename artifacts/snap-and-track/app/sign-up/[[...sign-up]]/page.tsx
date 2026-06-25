@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { SignUp } from '@clerk/nextjs';
 
@@ -53,61 +54,16 @@ export default function SignUpPage() {
         }}
       >
         {/* Logo header — matches /app header pattern */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
-          <div
-            aria-hidden="true"
-            style={{
-              width: 52,
-              height: 52,
-              background: '#B0185E',
-              borderRadius: 14,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 800,
-              fontSize: 20,
-              color: '#ffffff',
-              letterSpacing: '-0.02em',
-              lineHeight: 1,
-            }}
-          >
-            MS
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontWeight: 800,
-                fontSize: 28,
-                lineHeight: 1.1,
-                color: '#ffffff',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              Munch Snapper
-            </div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: '#B0185E',
-                marginTop: 6,
-              }}
-            >
-              by Stacy Kundu
-            </div>
-          </div>
-        </div>
+        <Link href="/" aria-label="Munch Snapper home" style={{ textDecoration: 'none' }}>
+          <Image
+            src="/munch-snapper-logo.png"
+            alt="Munch Snapper"
+            width={220}
+            height={82}
+            priority
+            style={{ width: 'auto', height: 72, display: 'block' }}
+          />
+        </Link>
 
         <SignUp appearance={clerkAppearance} />
 

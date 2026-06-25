@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { UserButton, useUser } from '@clerk/nextjs';
 
@@ -945,13 +946,20 @@ export default function SnapAndTrackApp() {
       <div style={styles.shell}>
         {/* Header */}
         <header style={styles.header}>
-          <div style={styles.headerMark} aria-hidden="true">
-            📸
-          </div>
-          <div style={styles.headerTitleGroup}>
-            <div style={styles.headerTitle}>Munch Snapper</div>
-            <div style={styles.headerSub}>by Stacy Kundu</div>
-          </div>
+          <Link
+            href="/"
+            aria-label="Munch Snapper home"
+            style={{ display: 'inline-flex', alignItems: 'center', flex: 1, minWidth: 0, textDecoration: 'none' }}
+          >
+            <Image
+              src="/munch-snapper-logo.png"
+              alt="Munch Snapper"
+              width={160}
+              height={60}
+              priority
+              style={{ width: 'auto', height: 44, display: 'block' }}
+            />
+          </Link>
           <Link href="/app/plans" className="view-log-link" style={{ color: '#ffffff' }}>
             Meal plans →
           </Link>

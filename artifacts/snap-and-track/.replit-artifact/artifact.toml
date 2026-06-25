@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Snap & Track Landing Page"
+title = "Munch Snapper Landing Page"
 version = "1.0.0"
 id = "artifacts/snap-and-track"
 router = "path"
