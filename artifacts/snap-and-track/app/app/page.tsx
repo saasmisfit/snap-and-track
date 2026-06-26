@@ -1454,7 +1454,7 @@ export default function SnapAndTrackApp() {
                       : 'Analyse my meal ✦'}
                 </button>
                 {isSubscribed ? (
-                  <div style={styles.proBadge}>✦ Pro · unlimited snaps</div>
+                  <div style={styles.proBadge}>✓ Pro</div>
                 ) : snapCount === 1 || snapCount === 2 ? (
                   <div style={styles.freeCounter}>
                     {snapCount} of {FREE_SNAP_LIMIT} free snaps used
