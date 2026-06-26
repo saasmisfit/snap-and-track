@@ -2685,6 +2685,7 @@ interface SpeechRecognitionAlternativeLike {
 interface SpeechRecognitionResultLike {
   [index: number]: SpeechRecognitionAlternativeLike;
   readonly length: number;
+  readonly isFinal: boolean;
 }
 interface SpeechRecognitionResultListLike {
   [index: number]: SpeechRecognitionResultLike;
@@ -2733,6 +2734,16 @@ function VoiceLogModal({
   const [transcript, setTranscript] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finalTranscriptRef = useRef<string>('');
+  const stoppingRef = useRef<boolean>(false);
+
+  function clearSilenceTimer() {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }
 
   function startListening() {
     const Ctor = getSpeechRecognitionCtor();
@@ -2742,21 +2753,37 @@ function VoiceLogModal({
     }
     setErrorMsg('');
     setTranscript('');
+    finalTranscriptRef.current = '';
+    stoppingRef.current = false;
+    clearSilenceTimer();
     const rec = new Ctor();
     rec.lang = 'en-GB';
-    rec.interimResults = false;
-    rec.continuous = false;
+    rec.interimResults = true;
+    rec.continuous = true;
     rec.onresult = (event) => {
-      const first = event.results[0];
-      const alt = first && first[0];
-      const text = (alt?.transcript ?? '').trim();
-      if (!text) {
-        setErrorMsg("I didn't catch that — try again.");
-        setPhase('error');
-        return;
+      let finalText = '';
+      let interimText = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        const alt = r && r[0];
+        const piece = alt?.transcript ?? '';
+        if (r.isFinal) finalText += piece;
+        else interimText += piece;
       }
-      setTranscript(text);
-      setPhase('transcript');
+      finalTranscriptRef.current = finalText.trim();
+      // Reset the silence timer on any speech activity (final or interim).
+      // Stop after 3.5s of no new results so the user can pause naturally mid-sentence.
+      if (finalText || interimText) {
+        clearSilenceTimer();
+        silenceTimerRef.current = setTimeout(() => {
+          stoppingRef.current = true;
+          try {
+            rec.stop();
+          } catch {
+            // best-effort
+          }
+        }, 3500);
+      }
     };
     rec.onerror = (event) => {
       const code = event.error || '';
@@ -2768,12 +2795,27 @@ function VoiceLogModal({
             : code === 'audio-capture'
               ? 'No microphone detected. Check your device and try again.'
               : `Voice error: ${code || 'unknown'}`;
+      clearSilenceTimer();
       setErrorMsg(friendly);
       setPhase('error');
     };
     rec.onend = () => {
-      // If we ended without a result and we're still in listening, surface a soft error
-      // (most browsers fire onresult before onend on success; handled there)
+      clearSilenceTimer();
+      const text = finalTranscriptRef.current.trim();
+      if (text) {
+        setTranscript(text);
+        setPhase('transcript');
+        return;
+      }
+      // No speech captured — only surface if the modal is still actively listening
+      // (avoid clobbering an error already set by onerror).
+      setPhase((current) => {
+        if (current === 'listening') {
+          setErrorMsg("I didn't catch that — try again.");
+          return 'error';
+        }
+        return current;
+      });
     };
     recognitionRef.current = rec;
     try {
@@ -2793,6 +2835,7 @@ function VoiceLogModal({
     }
     startListening();
     return () => {
+      clearSilenceTimer();
       const r = recognitionRef.current;
       if (r) {
         try {
@@ -2839,6 +2882,7 @@ function VoiceLogModal({
   }
 
   function tryAgain() {
+    clearSilenceTimer();
     // Stop any in-flight recogniser before re-starting
     const r = recognitionRef.current;
     if (r) {
