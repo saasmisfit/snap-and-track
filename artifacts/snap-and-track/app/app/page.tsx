@@ -1746,10 +1746,10 @@ export default function SnapAndTrackApp() {
 
         .camera-btn {
           width: 100%;
-          background: transparent;
-          color: ${COLOURS.magenta};
-          border: 2px solid ${COLOURS.magenta};
-          padding: 16px 24px;
+          background: ${COLOURS.magenta};
+          color: ${COLOURS.white};
+          border: none;
+          padding: 14px 24px;
           border-radius: 999px;
           font-family: var(--body-font), 'Barlow', sans-serif;
           font-size: 14px;
@@ -1757,11 +1757,10 @@ export default function SnapAndTrackApp() {
           letter-spacing: 0.05em;
           text-transform: uppercase;
           cursor: pointer;
-          transition: background 0.2s, color 0.2s, transform 0.1s;
+          transition: background 0.2s, transform 0.1s;
         }
         .camera-btn:hover {
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
