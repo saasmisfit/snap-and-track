@@ -449,89 +449,109 @@ export default function Home() {
               gap: 20,
             }}
           >
-            {FEATURE_CLUSTERS.map((c) => (
-              <article
-                key={c.title}
-                className="cluster-card"
-                style={{
-                  background: CARD,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 18,
-                  padding: '22px 22px 18px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14,
-                  color: WHITE,
-                }}
-              >
-                <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span aria-hidden="true" style={{ fontSize: 24, lineHeight: 1 }}>
-                    {c.emoji}
-                  </span>
-                  <h3
-                    style={{
-                      fontFamily: 'var(--display-font)',
-                      fontWeight: 800,
-                      fontSize: 20,
-                      lineHeight: 1.15,
-                      color: MAGENTA,
-                      margin: 0,
-                      letterSpacing: '-0.01em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {c.title}
-                  </h3>
-                </header>
-                <ul
+            {FEATURE_CLUSTERS.map((c, index) => {
+              const isLast = index === FEATURE_CLUSTERS.length - 1;
+              return (
+                <article
+                  key={c.title}
+                  className="cluster-card"
                   style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0,
+                    background: CARD,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 18,
+                    padding: '22px 22px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 12,
+                    gap: 14,
+                    color: WHITE,
+                    ...(isLast
+                      ? {
+                          gridColumn: '1 / -1',
+                          alignItems: 'center',
+                          textAlign: 'center',
+                        }
+                      : {}),
                   }}
                 >
-                  {c.items.map((f) => (
-                    <li
-                      key={f.name}
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}
+                  <header
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      ...(isLast ? { justifyContent: 'center' } : {}),
+                    }}
+                  >
+                    <span aria-hidden="true" style={{ fontSize: 24, lineHeight: 1 }}>
+                      {c.emoji}
+                    </span>
+                    <h3
+                      style={{
+                        fontFamily: 'var(--display-font)',
+                        fontWeight: 800,
+                        fontSize: 20,
+                        lineHeight: 1.15,
+                        color: MAGENTA,
+                        margin: 0,
+                        letterSpacing: '-0.01em',
+                        textTransform: 'uppercase',
+                      }}
                     >
-                      <span
-                        aria-hidden="true"
-                        style={{ fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}
+                      {c.title}
+                    </h3>
+                  </header>
+                  <ul
+                    style={{
+                      listStyle: 'none',
+                      padding: 0,
+                      margin: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      ...(isLast
+                        ? { maxWidth: 520, width: '100%', textAlign: 'left' }
+                        : {}),
+                    }}
+                  >
+                    {c.items.map((f) => (
+                      <li
+                        key={f.name}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}
                       >
-                        {f.emoji}
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontFamily: "'Barlow', sans-serif",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            color: WHITE,
-                            lineHeight: 1.4,
-                          }}
+                        <span
+                          aria-hidden="true"
+                          style={{ fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}
                         >
-                          {f.name}
+                          {f.emoji}
+                        </span>
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontFamily: "'Barlow', sans-serif",
+                              fontWeight: 700,
+                              fontSize: 14,
+                              color: WHITE,
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {f.name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: TEXT_MUTED,
+                              lineHeight: 1.55,
+                              marginTop: 2,
+                            }}
+                          >
+                            {f.desc}
+                          </div>
                         </div>
-                        <div
-                          style={{
-                            fontSize: 13,
-                            color: TEXT_MUTED,
-                            lineHeight: 1.55,
-                            marginTop: 2,
-                          }}
-                        >
-                          {f.desc}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
