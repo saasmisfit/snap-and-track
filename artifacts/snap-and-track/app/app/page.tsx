@@ -1633,6 +1633,57 @@ export default function SnapAndTrackApp() {
               Tap to edit
             </div>
 
+            {goals && (
+              <div
+                style={{
+                  padding: '8px 4px 2px',
+                  textAlign: 'center',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: COLOURS.textFaint,
+                    marginBottom: 4,
+                  }}
+                >
+                  Of your daily target
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: COLOURS.textMuted,
+                    letterSpacing: '0.02em',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {fmtMacro(result.calories)} kcal{' '}
+                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                    ({goals.calories > 0 ? Math.round((result.calories / goals.calories) * 100) : 0}%)
+                  </span>
+                  {' · '}
+                  {fmtMacro(result.protein_g)}g protein{' '}
+                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                    ({goals.protein > 0 ? Math.round((result.protein_g / goals.protein) * 100) : 0}%)
+                  </span>
+                  {' · '}
+                  {fmtMacro(result.carbs_g)}g carbs{' '}
+                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                    ({goals.carbs > 0 ? Math.round((result.carbs_g / goals.carbs) * 100) : 0}%)
+                  </span>
+                  {' · '}
+                  {fmtMacro(result.fat_g)}g fat{' '}
+                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                    ({goals.fat > 0 ? Math.round((result.fat_g / goals.fat) * 100) : 0}%)
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div style={styles.sectionBlock}>
               <div style={styles.sectionLabel}>
                 {mode === 'menu' ? '📋 Menu recommendation' : 'What I can see'}
