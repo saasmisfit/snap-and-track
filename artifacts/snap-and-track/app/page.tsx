@@ -242,7 +242,7 @@ export default function Home() {
             width={160}
             height={60}
             priority
-            style={{ height: 44, width: 'auto', display: 'block' }}
+            style={{ height: 44, width: 'auto', display: 'block', filter: 'invert(1)' }}
           />
         </Link>
         <ul className="nav-links">
@@ -287,6 +287,7 @@ export default function Home() {
                   height: 82,
                   display: 'block',
                   marginBottom: '1.25rem',
+                  filter: 'invert(1)',
                 }}
               />
               <h1 className="hero-headline">
