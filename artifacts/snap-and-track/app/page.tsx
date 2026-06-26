@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
 
 const MAGENTA = '#B0185E';
 const CARD = '#1a1a1e';
@@ -168,6 +169,9 @@ const FAQS: FaqEntry[] = [
 ];
 
 export default function Home() {
+  const { isLoaded, isSignedIn } = useUser();
+  const showAppCta = isLoaded && isSignedIn;
+
   useEffect(() => {
     // FAQ accordion
     document.querySelectorAll<HTMLButtonElement>('.faq-q').forEach((btn) => {
@@ -258,8 +262,12 @@ export default function Home() {
             </a>
           </li>
         </ul>
-        <Link href="/sign-up" className="btn-primary" style={{ color: '#ffffff', textDecoration: 'none' }}>
-          Try Free
+        <Link
+          href={showAppCta ? '/app' : '/sign-up'}
+          className="btn-primary"
+          style={{ color: '#ffffff', textDecoration: 'none' }}
+        >
+          {showAppCta ? 'Go to app' : 'Try Free'}
         </Link>
       </nav>
 
@@ -290,11 +298,11 @@ export default function Home() {
               </p>
               <div className="hero-ctas">
                 <Link
-                  href="/sign-up"
+                  href={showAppCta ? '/app' : '/sign-up'}
                   className="btn-primary"
                   style={{ color: '#ffffff', textDecoration: 'none' }}
                 >
-                  Try free — 3 snaps on us
+                  {showAppCta ? 'Go to app' : 'Try free — 3 snaps on us'}
                 </Link>
                 <a
                   href="#pricing"
