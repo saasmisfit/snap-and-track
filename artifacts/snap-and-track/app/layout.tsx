@@ -10,6 +10,29 @@ export const metadata: Metadata = {
     icon: '/munch-snapper-logo.png',
     apple: '/munch-snapper-logo.png',
   },
+  openGraph: {
+    title: 'Munch Snapper — Snap Your Macros in Seconds',
+    description:
+      "The only food tracking app with a real PT's voice on every meal. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+    url: 'https://www.munchsnapper.com',
+    siteName: 'Munch Snapper',
+    images: [
+      {
+        url: 'https://www.munchsnapper.com/opengraph.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Munch Snapper — Snap Your Macros in Seconds',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Munch Snapper — Snap Your Macros in Seconds',
+    description:
+      "The only food tracking app with a real PT's voice on every meal. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+    images: ['https://www.munchsnapper.com/opengraph.jpg'],
+  },
 };
 
 export default function RootLayout({
