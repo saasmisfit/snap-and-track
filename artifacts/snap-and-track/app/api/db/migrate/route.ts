@@ -3,7 +3,13 @@ import { sql } from '@vercel/postgres';
 
 export const runtime = 'nodejs';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
+  const expected = process.env.MIGRATE_SECRET;
+  const provided = request.headers.get('x-migrate-secret');
+  if (!expected || provided !== expected) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS meal_logs (
