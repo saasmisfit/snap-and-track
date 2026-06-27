@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { sql } from '@vercel/postgres';
 
 export const runtime = 'nodejs';
+
+const FREE_SNAP_DAILY_LIMIT = 3;
 
 interface RateLimitEntry {
   count: number;
@@ -170,6 +173,38 @@ export async function POST(req: Request): Promise<NextResponse> {
       { error: 'Too many requests — please wait a moment before analysing another meal.' },
       { status: 429 }
     );
+  }
+
+  // Free tier: 3 logged meals per UTC day. Subscribers skip this check.
+  const user = await currentUser();
+  const isSubscribed = user?.publicMetadata?.subscribed === true;
+  if (!isSubscribed) {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const countResult = await sql<{ count: string }>`
+        SELECT COUNT(*)::text AS count
+        FROM meal_logs
+        WHERE user_id = ${userId} AND log_date = ${today}
+      `;
+      const todayCount = parseInt(countResult.rows[0]?.count ?? '0', 10);
+      if (todayCount >= FREE_SNAP_DAILY_LIMIT) {
+        return NextResponse.json(
+          {
+            error:
+              "You've used your 3 free snaps for today. Upgrade to Pro for unlimited snaps.",
+          },
+          { status: 403 }
+        );
+      }
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error ? err.message : 'Failed to check free tier usage',
+        },
+        { status: 500 }
+      );
+    }
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
