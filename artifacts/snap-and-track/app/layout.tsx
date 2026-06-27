@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Munch Snapper — Snap Your Macros in Seconds',
     description:
-      "The only food tracking app with a real PT's voice on every meal. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+      'Snap any meal. Get instant macros + a coaching note from Stacy. Photo, voice, barcode — all in one app.',
     url: 'https://www.munchsnapper.com',
     siteName: 'Munch Snapper',
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Munch Snapper — Snap Your Macros in Seconds',
     description:
-      "The only food tracking app with a real PT's voice on every meal. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+      'Snap any meal. Get instant macros + a coaching note from Stacy. Photo, voice, barcode — all in one app.',
     images: ['https://www.munchsnapper.com/opengraph.jpg'],
   },
 };
