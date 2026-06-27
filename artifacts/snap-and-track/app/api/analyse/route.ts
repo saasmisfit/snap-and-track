@@ -6,6 +6,13 @@ export const runtime = 'nodejs';
 
 const FREE_SNAP_DAILY_LIMIT = 3;
 
+const ALLOWED_IMAGE_MIME_TYPES: readonly string[] = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
@@ -260,6 +267,22 @@ export async function POST(req: Request): Promise<NextResponse> {
       { error: 'Missing or invalid "mimeType" (expected string, e.g. "image/jpeg")' },
       { status: 400 }
     );
+  }
+  if (hasImage) {
+    const mt = (mimeType as string).toLowerCase();
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(mt)) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Please upload a JPG, PNG, or WebP image.' },
+        { status: 400 }
+      );
+    }
+    const sizeBytes = Buffer.byteLength(image as string, 'base64');
+    if (sizeBytes > MAX_IMAGE_BYTES) {
+      return NextResponse.json(
+        { error: 'File too large. Please upload an image under 10MB.' },
+        { status: 400 }
+      );
+    }
   }
 
   const goalNote = GOAL_CONTEXT[goal];
