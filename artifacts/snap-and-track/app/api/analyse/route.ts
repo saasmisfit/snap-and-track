@@ -1,6 +1,27 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
 export const runtime = 'nodejs';
+
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+function checkRateLimit(userId: string, now: number): boolean {
+  const entry = rateLimitMap.get(userId);
+  if (!entry || entry.resetAt <= now) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count += 1;
+  return true;
+}
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type Mode = 'meal' | 'menu' | 'voice';
@@ -139,6 +160,18 @@ function pickTextBlock(content: AnthropicMessageResponse['content']): string | n
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!checkRateLimit(userId, Date.now())) {
+    return NextResponse.json(
+      { error: 'Too many requests — please wait a moment before analysing another meal.' },
+      { status: 429 }
+    );
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
