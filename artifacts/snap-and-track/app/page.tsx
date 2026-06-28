@@ -242,7 +242,7 @@ export default function Home() {
             width={160}
             height={60}
             priority
-            style={{ height: 44, width: 'auto', display: 'block', background: 'transparent', mixBlendMode: 'screen' }}
+            style={{ height: 44, width: 'auto', display: 'block', background: 'transparent' }}
           />
         </Link>
         <ul className="nav-links">
@@ -287,7 +287,6 @@ export default function Home() {
                   height: 82,
                   display: 'block',
                   background: 'transparent',
-                  mixBlendMode: 'screen',
                   marginBottom: '1.25rem',
                 }}
               />
