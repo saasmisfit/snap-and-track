@@ -957,7 +957,7 @@ export default function SnapAndTrackApp() {
               width={160}
               height={60}
               priority
-              style={{ width: 'auto', height: 44, display: 'block' }}
+              style={{ width: 'auto', height: 44, display: 'block', background: 'transparent' }}
             />
           </Link>
           <Link href="/app/plans" className="view-log-link" style={{ color: '#ffffff' }}>
