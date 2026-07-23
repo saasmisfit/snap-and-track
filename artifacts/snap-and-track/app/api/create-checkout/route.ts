@@ -6,6 +6,12 @@ export const runtime = 'nodejs';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
+type Plan = 'monthly' | 'annual';
+
+function isPlan(value: unknown): value is Plan {
+  return value === 'monthly' || value === 'annual';
+}
+
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
@@ -13,26 +19,32 @@ export async function POST(req: Request) {
   }
 
   const body: unknown = await req.json().catch(() => ({}));
-  const requestedPriceId =
+  const rawPriceId =
     body && typeof body === 'object' && 'priceId' in body
-      ? String((body as { priceId: unknown }).priceId ?? '')
-      : '';
+      ? (body as { priceId: unknown }).priceId
+      : undefined;
 
-  const monthlyPriceId = process.env.STRIPE_PRICE_ID as string;
-  const annualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID as string;
+  if (!isPlan(rawPriceId)) {
+    return NextResponse.json(
+      { error: 'Invalid "priceId" — expected "monthly" or "annual"' },
+      { status: 400 }
+    );
+  }
+  const plan: Plan = rawPriceId;
 
-  let priceId: string;
-  if (!requestedPriceId) {
-    priceId = monthlyPriceId;
-  } else if (requestedPriceId === 'annual') {
-    priceId = annualPriceId;
-  } else if (requestedPriceId === 'monthly') {
-    priceId = monthlyPriceId;
-  } else {
-    priceId = requestedPriceId;
+  const priceIdByPlan: Record<Plan, string | undefined> = {
+    monthly: process.env.STRIPE_PRICE_ID,
+    annual: process.env.STRIPE_ANNUAL_PRICE_ID,
+  };
+  const priceId = priceIdByPlan[plan];
+  if (!priceId) {
+    return NextResponse.json(
+      { error: `Server is not configured with a Stripe price ID for the "${plan}" plan` },
+      { status: 500 }
+    );
   }
 
-  const isMonthly = priceId === monthlyPriceId;
+  const isMonthly = plan === 'monthly';
 
   const user = await currentUser();
   const email = user?.emailAddresses?.find(
