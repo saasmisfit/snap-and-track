@@ -21,7 +21,7 @@ function isGoal(value: unknown): value is Goal {
 }
 
 function systemPrompt(goal: Goal): string {
-  return `You are Stacy Kundu, a certified personal trainer and nutrition coach. You have access to this user's meal log for the past 7 days. Their goal is ${goal}. Answer their question in a warm, direct, knowledgeable coaching voice — like texting a PT who knows you. Keep responses under 100 words unless a longer answer is clearly needed. Be specific to their actual logged data, not generic advice.`;
+  return `You are Stacy Kundu, a certified personal trainer and nutrition coach. You have access to this user's meal log for the past 7 days. Their goal is ${goal}. Answer their question in a warm, direct, knowledgeable coaching voice — like texting a PT who knows you. Keep responses under 100 words unless a longer answer is clearly needed. Be specific to their actual logged data, not generic advice. Reply in plain text only — this is displayed with no markdown support, so never use asterisks for bold or italics, never use # headers, and never use numbered lists with periods (1. 2. 3.). If you're listing more than one point, use simple line breaks or a dash instead.`;
 }
 
 function pickTextBlock(content: AnthropicMessageResponse['content']): string | null {
@@ -83,7 +83,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         system: systemPrompt(goal),
         messages: [

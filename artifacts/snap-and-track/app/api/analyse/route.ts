@@ -104,7 +104,7 @@ You MUST respond with ONLY a valid JSON object — no prose, no markdown fences,
   "stacy_insight": string
 }
 
-All macro fields are numbers (integers or one decimal place) for the TOTAL amount visible — not a single-serving estimate. "portion_estimate" describes the total visible quantity, not what one person typically eats. "carbs_g" is TOTAL carbohydrates including fibre; "fibre_g" is dietary fibre in grams (always include — use 0 if the meal genuinely has none). foods_identified lists every distinct food component visible with its calories contributing to the total. stacy_insight is 2–3 sentences in Stacy's voice, tailored to the user's stated goal.`;
+All macro fields are numbers (integers or one decimal place) for the TOTAL amount visible — not a single-serving estimate. "portion_estimate" describes the total visible quantity, not what one person typically eats. "carbs_g" is TOTAL carbohydrates including fibre; "fibre_g" is dietary fibre in grams (always include — use 0 if the meal genuinely has none). foods_identified lists every distinct food component visible with its calories contributing to the total. stacy_insight is 2–3 sentences in Stacy's voice, tailored to the user's stated goal. Write stacy_insight in plain prose only — no markdown syntax (no asterisks for bold or italics, no # headers, no numbered lists with periods). If you want to emphasise a point, use plain sentence structure or a dash, not formatting characters.`;
 
 const VOICE_SYSTEM_PROMPT = `You are Stacy Kundu, a certified personal trainer. The user has described a meal by voice. Estimate the calories, protein, carbs, fat, and fibre for what they described. Make reasonable assumptions about portion sizes for a typical adult. Be specific: list each component you are estimating.
 
@@ -122,7 +122,7 @@ You MUST respond with ONLY a valid JSON object — no prose, no markdown fences,
   "stacy_insight": string
 }
 
-"dish" is a short name summarising what they ate. "portion_estimate" is the portion assumption in plain language (e.g. "approx 200g chicken, 150g cooked rice"). "foods_identified" lists each component you estimated (one item per food, with the assumed portion in the name) and its approximate calories. "stacy_insight" is 2–3 sentences in your warm, direct voice — reference the actual protein number and tailor to the user's goal. "carbs_g" includes fibre; "fibre_g" defaults to 0 if you can't estimate it.`;
+"dish" is a short name summarising what they ate. "portion_estimate" is the portion assumption in plain language (e.g. "approx 200g chicken, 150g cooked rice"). "foods_identified" lists each component you estimated (one item per food, with the assumed portion in the name) and its approximate calories. "stacy_insight" is 2–3 sentences in your warm, direct voice — reference the actual protein number and tailor to the user's goal. Write it as plain text, not markdown — no asterisks, no headers, no numbered lists; use a dash if you need to separate points. "carbs_g" includes fibre; "fibre_g" defaults to 0 if you can't estimate it.`;
 
 function menuSystemPrompt(goal: Goal): string {
   return `You are Stacy Kundu, a certified personal trainer and nutrition coach. The user has photographed a restaurant menu or menu board. Analyse what is visible. Based on their goal (${goal}), recommend the single best menu item for their macros and fat loss / muscle building objective. Provide: recommended dish name, your estimated calories/protein/carbs/fat for a standard restaurant portion, why you chose it for their goal, and one brief tip (e.g. 'ask for sauce on the side' or 'add extra chicken for more protein'). Be direct and practical — this is a coaching recommendation, not a database lookup.
@@ -141,7 +141,7 @@ You MUST respond with ONLY a valid JSON object — no prose, no markdown fences,
   "stacy_insight": string
 }
 
-"dish" is the recommended menu item by name as it appears on the menu. "portion_estimate" describes the typical restaurant portion (e.g. "standard restaurant portion", "regular bowl", "8oz steak"). "foods_identified" lists 1–3 key components of the recommended dish (e.g. main protein, side, sauce) with approximate calories — these summarise why the choice fits. "stacy_insight" is 2–3 sentences in your warm, direct voice: why this dish wins for the user's goal, plus one practical tip. Reference the actual macro numbers, not generic targets. All macro fields are numbers; "carbs_g" includes fibre; "fibre_g" defaults to 0 if you can't estimate it.`;
+"dish" is the recommended menu item by name as it appears on the menu. "portion_estimate" describes the typical restaurant portion (e.g. "standard restaurant portion", "regular bowl", "8oz steak"). "foods_identified" lists 1–3 key components of the recommended dish (e.g. main protein, side, sauce) with approximate calories — these summarise why the choice fits. "stacy_insight" is 2–3 sentences in your warm, direct voice: why this dish wins for the user's goal, plus one practical tip. Reference the actual macro numbers, not generic targets. Keep it plain text — no markdown formatting (asterisks, headers, numbered lists); a dash is fine if you're listing more than one thing. All macro fields are numbers; "carbs_g" includes fibre; "fibre_g" defaults to 0 if you can't estimate it.`;
 }
 
 function isGoal(value: unknown): value is Goal {
@@ -326,7 +326,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   else systemPrompt = SYSTEM_PROMPT;
 
   const anthropicPayload = {
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1000,
     system: systemPrompt,
     messages: [
