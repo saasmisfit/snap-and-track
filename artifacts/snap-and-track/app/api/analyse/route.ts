@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { sql } from '@vercel/postgres';
+import { auth, currentUser, clerkClient } from '@clerk/nextjs/server';
 
 export const runtime = 'nodejs';
 
-const FREE_SNAP_DAILY_LIMIT = 3;
+// Lifetime allowance of AI analyses for a non-subscribed user. Every request
+// that reaches this route costs an Anthropic call, so every one of them counts.
+// Barcode scans do not call this route at all (Open Food Facts supplies their
+// macros and their coaching note is a static string), so they stay free.
+const FREE_SNAP_LIFETIME_LIMIT = 3;
+const FREE_SNAPS_USED_KEY = 'freeSnapsUsed';
 
 const ALLOWED_IMAGE_MIME_TYPES: readonly string[] = [
   'image/jpeg',
@@ -169,6 +173,46 @@ function pickTextBlock(content: AnthropicMessageResponse['content']): string | n
   return null;
 }
 
+function logAnalyse(message: string, context: Record<string, unknown> = {}): void {
+  console.error(`[analyse] ${message}`, context);
+}
+
+function readFreeSnapsUsed(metadata: unknown): number {
+  if (!metadata || typeof metadata !== 'object') return 0;
+  const raw = (metadata as Record<string, unknown>)[FREE_SNAPS_USED_KEY];
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return Math.floor(raw);
+  return 0;
+}
+
+/**
+ * Record one consumed free analysis. Metadata is read-then-spread so unrelated
+ * keys (subscribed, paymentFailedAt) survive. Best-effort: if the write fails
+ * the user keeps the snap they just paid us for, which is the right way to
+ * fail — we log it rather than erroring a request that already succeeded.
+ */
+async function incrementFreeSnaps(
+  userId: string,
+  existingMetadata: unknown,
+  nextCount: number
+): Promise<void> {
+  try {
+    const client = await clerkClient();
+    const existing =
+      existingMetadata && typeof existingMetadata === 'object'
+        ? (existingMetadata as Record<string, unknown>)
+        : {};
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { ...existing, [FREE_SNAPS_USED_KEY]: nextCount },
+    });
+  } catch (err) {
+    logAnalyse('Failed to increment free-snap counter — user keeps a free snap', {
+      userId,
+      nextCount,
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 export async function POST(req: Request): Promise<NextResponse> {
   const { userId } = await auth();
   if (!userId) {
@@ -182,36 +226,21 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
-  // Free tier: 3 logged meals per UTC day. Subscribers skip this check.
+  // Free tier: 3 AI analyses per user, lifetime. Subscribers are unlimited.
+  // Checked here, before the Anthropic call, so an exhausted user costs nothing.
   const user = await currentUser();
   const isSubscribed = user?.publicMetadata?.subscribed === true;
-  if (!isSubscribed) {
-    const today = new Date().toISOString().split('T')[0];
-    try {
-      const countResult = await sql<{ count: string }>`
-        SELECT COUNT(*)::text AS count
-        FROM meal_logs
-        WHERE user_id = ${userId} AND log_date = ${today}
-      `;
-      const todayCount = parseInt(countResult.rows[0]?.count ?? '0', 10);
-      if (todayCount >= FREE_SNAP_DAILY_LIMIT) {
-        return NextResponse.json(
-          {
-            error:
-              "You've used your 3 free snaps for today. Upgrade to Pro for unlimited snaps.",
-          },
-          { status: 403 }
-        );
-      }
-    } catch (err) {
-      return NextResponse.json(
-        {
-          error:
-            err instanceof Error ? err.message : 'Failed to check free tier usage',
-        },
-        { status: 500 }
-      );
-    }
+  const freeSnapsUsed = readFreeSnapsUsed(user?.publicMetadata);
+  if (!isSubscribed && freeSnapsUsed >= FREE_SNAP_LIFETIME_LIMIT) {
+    return NextResponse.json(
+      {
+        error: "You've used all 3 free snaps. Subscribe to keep tracking.",
+        freeSnapsUsed,
+        freeSnapsRemaining: 0,
+        limitReached: true,
+      },
+      { status: 403 }
+    );
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -401,5 +430,19 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
-  return NextResponse.json(parsed);
+  // Only a genuinely successful analysis consumes an allowance. Every failure
+  // path above returns early, so a user never loses a snap to our own errors.
+  let nextFreeSnapsUsed = freeSnapsUsed;
+  if (!isSubscribed) {
+    nextFreeSnapsUsed = freeSnapsUsed + 1;
+    await incrementFreeSnaps(userId, user?.publicMetadata, nextFreeSnapsUsed);
+  }
+
+  return NextResponse.json({
+    ...parsed,
+    freeSnapsUsed: nextFreeSnapsUsed,
+    freeSnapsRemaining: isSubscribed
+      ? null
+      : Math.max(0, FREE_SNAP_LIFETIME_LIMIT - nextFreeSnapsUsed),
+  });
 }

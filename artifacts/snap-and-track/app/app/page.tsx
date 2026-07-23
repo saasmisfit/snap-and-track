@@ -23,7 +23,6 @@ const userButtonAppearance = {
 };
 
 const FREE_SNAP_LIMIT = 3;
-const FREE_SNAP_KEY = 'snaptrack_free_count';
 const NET_CARBS_KEY = 'munchsnapper_netcarbs';
 const ONBOARDING_KEY = 'munchsnapper_onboarding_complete';
 const GOALS_KEY = 'munchsnapper_goals';
@@ -104,6 +103,17 @@ interface AnalyseResponse {
   fibre_g: number;
   foods_identified: FoodItem[];
   stacy_insight: string;
+  // Server-authoritative free-tier counters, returned by /api/analyse only.
+  // Absent on results built client-side (e.g. barcode scans).
+  freeSnapsUsed?: number;
+  freeSnapsRemaining?: number | null;
+}
+
+function readFreeSnapsUsed(metadata: unknown): number {
+  if (!metadata || typeof metadata !== 'object') return 0;
+  const raw = (metadata as Record<string, unknown>).freeSnapsUsed;
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return Math.floor(raw);
+  return 0;
 }
 
 const GOALS: Array<{ value: Goal; label: string }> = [
@@ -423,16 +433,13 @@ export default function SnapAndTrackApp() {
     return () => window.clearTimeout(id);
   }, [justLogged]);
 
-  // Load free-snap count from localStorage on mount
+  // Hydrate the free-snap count from Clerk publicMetadata — the server is the
+  // sole source of truth, this is display only. Refreshed from each
+  // /api/analyse response so it stays accurate within the session.
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(FREE_SNAP_KEY);
-      const parsed = raw ? parseInt(raw, 10) : 0;
-      setSnapCount(Number.isFinite(parsed) && parsed >= 0 ? parsed : 0);
-    } catch {
-      setSnapCount(0);
-    }
-  }, []);
+    if (!isLoaded) return;
+    setSnapCount(readFreeSnapsUsed(user?.publicMetadata));
+  }, [isLoaded, user?.id, user?.publicMetadata]);
 
   // Load Net carbs preference on mount
   useEffect(() => {
@@ -658,6 +665,7 @@ export default function SnapAndTrackApp() {
     setShowVoiceLog(true);
   }
 
+  // Barcode scans make no AI call, so they never consume a free snap.
   function handleBarcodeResult(data: AnalyseResponse) {
     setShowBarcodeScanner(false);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -668,15 +676,6 @@ export default function SnapAndTrackApp() {
     setLoggedEntryId(null);
     setMode('meal');
     setResult(data);
-    setSnapCount((prev) => {
-      const next = (prev ?? 0) + 1;
-      try {
-        window.localStorage.setItem(FREE_SNAP_KEY, String(next));
-      } catch {
-        // best-effort
-      }
-      return next;
-    });
   }
 
   function handleVoiceResult(data: AnalyseResponse) {
@@ -689,15 +688,7 @@ export default function SnapAndTrackApp() {
     setLoggedEntryId(null);
     setMode('meal');
     setResult(data);
-    setSnapCount((prev) => {
-      const next = (prev ?? 0) + 1;
-      try {
-        window.localStorage.setItem(FREE_SNAP_KEY, String(next));
-      } catch {
-        // best-effort
-      }
-      return next;
-    });
+    if (typeof data.freeSnapsUsed === 'number') setSnapCount(data.freeSnapsUsed);
   }
 
   function updateMacro(key: MacroKey, raw: string) {
@@ -775,7 +766,8 @@ export default function SnapAndTrackApp() {
 
   async function analyse() {
     if (!file) return;
-    // Hard gate — if free quota is used up and the user isn't subscribed, do not call the API
+    // UI-level short-circuit only. The server enforces the real limit — this
+    // just avoids a pointless round trip when we already know it's exhausted.
     if (!isSubscribed && snapCount !== null && snapCount >= FREE_SNAP_LIMIT) return;
     setIsAnalysing(true);
     setError(null);
@@ -788,23 +780,23 @@ export default function SnapAndTrackApp() {
         body: JSON.stringify({ image: base64, mimeType: file.type, goal, mode }),
       });
       const data: unknown = await res.json().catch(() => ({}));
+      const payload = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+
+      // Server says the allowance is gone — sync our counter so the subscribe
+      // gate renders instead of a raw error message.
+      if (res.status === 403 && payload.limitReached === true) {
+        if (typeof payload.freeSnapsUsed === 'number') setSnapCount(payload.freeSnapsUsed);
+        else setSnapCount(FREE_SNAP_LIMIT);
+        return;
+      }
       if (!res.ok) {
         const detail =
-          data && typeof data === 'object' && 'error' in data
-            ? String((data as { error: unknown }).error)
-            : `Request failed (${res.status})`;
+          'error' in payload ? String(payload.error) : `Request failed (${res.status})`;
         throw new Error(detail);
       }
-      setResult(data as AnalyseResponse);
-      setSnapCount((prev) => {
-        const next = (prev ?? 0) + 1;
-        try {
-          window.localStorage.setItem(FREE_SNAP_KEY, String(next));
-        } catch {
-          // best-effort
-        }
-        return next;
-      });
+      const result = data as AnalyseResponse;
+      setResult(result);
+      if (typeof result.freeSnapsUsed === 'number') setSnapCount(result.freeSnapsUsed);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong analysing that meal.');
     } finally {
@@ -1455,9 +1447,9 @@ export default function SnapAndTrackApp() {
                 </button>
                 {isSubscribed ? (
                   <div style={styles.proBadge}>✓ Pro</div>
-                ) : snapCount === 1 || snapCount === 2 ? (
+                ) : snapCount !== null && snapCount < FREE_SNAP_LIMIT ? (
                   <div style={styles.freeCounter}>
-                    {snapCount} of {FREE_SNAP_LIMIT} free snaps used
+                    {FREE_SNAP_LIMIT - snapCount} of {FREE_SNAP_LIMIT} free snaps remaining
                   </div>
                 ) : null}
               </>
@@ -1993,7 +1985,6 @@ export default function SnapAndTrackApp() {
 
       {showBarcodeScanner ? (
         <BarcodeScannerModal
-          goal={goal}
           onClose={() => setShowBarcodeScanner(false)}
           onResult={handleBarcodeResult}
         />
@@ -2255,11 +2246,9 @@ function offNumber(v: unknown): number {
 }
 
 function BarcodeScannerModal({
-  goal,
   onClose,
   onResult,
 }: {
-  goal: Goal;
   onClose: () => void;
   onResult: (data: AnalyseResponse) => void;
 }) {
@@ -2268,7 +2257,6 @@ function BarcodeScannerModal({
   const [productName, setProductName] = useState<string>('');
   const [per100g, setPer100g] = useState<OffPer100g | null>(null);
   const [servingGrams, setServingGrams] = useState<string>('100');
-  const [isFinalizing, setIsFinalizing] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -2384,33 +2372,10 @@ function BarcodeScannerModal({
       }
     : null;
 
-  async function confirmServing() {
-    if (!per100g || !preview || isFinalizing) return;
-    setIsFinalizing(true);
-    const description = `${productName} — ${servingValue}g serving. Known macros: ${preview.calories} kcal, ${preview.protein}g protein, ${preview.carbs}g carbs, ${preview.fat}g fat, ${preview.fibre}g fibre. Treat these macros as ground truth.`;
-
-    let coaching = '';
-    try {
-      const res = await fetch('/api/analyse', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ description, goal }),
-      });
-      if (res.ok) {
-        const data: unknown = await res.json().catch(() => null);
-        if (
-          data &&
-          typeof data === 'object' &&
-          typeof (data as { stacy_insight?: unknown }).stacy_insight === 'string'
-        ) {
-          coaching = (data as { stacy_insight: string }).stacy_insight;
-        }
-      }
-    } catch {
-      // best-effort — fall back to a generic note
-    }
-
-    setIsFinalizing(false);
+  // Barcode scans are fully free: Open Food Facts supplies verified macros, so
+  // there is no AI call here and no free-snap allowance is consumed.
+  function confirmServing() {
+    if (!per100g || !preview) return;
     onResult({
       dish: productName,
       portion_estimate: `${servingValue}g serving`,
@@ -2426,7 +2391,6 @@ function BarcodeScannerModal({
         },
       ],
       stacy_insight:
-        coaching ||
         'Logged from a barcode scan. Adjust the serving size if it does not match what you ate.',
     });
   }
@@ -2633,14 +2597,14 @@ function BarcodeScannerModal({
             <button
               type="button"
               onClick={confirmServing}
-              disabled={!servingValid || isFinalizing}
+              disabled={!servingValid}
               style={{
                 ...primaryBtnStyle,
-                opacity: !servingValid || isFinalizing ? 0.6 : 1,
-                cursor: !servingValid || isFinalizing ? 'not-allowed' : 'pointer',
+                opacity: !servingValid ? 0.6 : 1,
+                cursor: !servingValid ? 'not-allowed' : 'pointer',
               }}
             >
-              {isFinalizing ? 'Generating coaching note…' : 'Confirm'}
+              Confirm
             </button>
           </>
         )}
