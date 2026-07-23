@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         { price: priceId, quantity: 1 },
       ],
       ...(isMonthly ? { subscription_data: { trial_period_days: 3 } } : {}),
-      success_url: `${appUrl}/subscribe/success`,
+      success_url: `${appUrl}/subscribe/success?plan=${plan}`,
       cancel_url: `${appUrl}/subscribe`,
       ...(email ? { customer_email: email } : {}),
       metadata: { userId },

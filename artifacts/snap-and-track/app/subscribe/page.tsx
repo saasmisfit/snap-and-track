@@ -366,14 +366,14 @@ export default function SubscribePage() {
           <div style={{ fontSize: 13, color: COLOURS.textMuted, marginTop: '0.25rem' }}>
             Need help? Email{' '}
             <a
-              href="mailto:hello@munchsnapper.com"
+              href="mailto:help@munchsnapper.com"
               style={{
                 color: COLOURS.magenta,
                 textDecoration: 'none',
                 fontWeight: 600,
               }}
             >
-              hello@munchsnapper.com
+              help@munchsnapper.com
             </a>
           </div>
         </div>

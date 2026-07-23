@@ -16,21 +16,28 @@ const COLOURS = {
   textFaint: 'rgba(255,255,255,0.35)',
 };
 
-function formatTrialEnd(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 3);
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+type Plan = 'monthly' | 'annual';
+
+function isPlan(value: string | null): value is Plan {
+  return value === 'monthly' || value === 'annual';
 }
 
 export default function SubscribeSuccessPage() {
-  const [trialEnd, setTrialEnd] = useState<string>('');
+  // Which plan was purchased, read from the ?plan= query param create-checkout
+  // appends to the Stripe success_url. Null covers a missing/unrecognised param
+  // (e.g. someone lands here without completing checkout) — in that case we
+  // deliberately show the no-trial-claim copy rather than risk repeating the
+  // false trial claim this page used to show unconditionally.
+  const [plan, setPlan] = useState<Plan | null>(null);
 
   useEffect(() => {
-    setTrialEnd(formatTrialEnd());
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('plan');
+      setPlan(isPlan(raw) ? raw : null);
+    } catch {
+      setPlan(null);
+    }
   }, []);
 
   return (
@@ -103,13 +110,17 @@ export default function SubscribeSuccessPage() {
             margin: 0,
           }}
         >
-          Your 3-day free trial has started.
-          <br />
-          You won&apos;t be charged until{' '}
-          <span style={{ color: COLOURS.white, fontWeight: 600 }}>
-            {trialEnd || '…'}
-          </span>
-          .
+          {plan === 'monthly' ? (
+            <>
+              Your 3-day free trial has started.
+              <br />
+              You won&apos;t be charged again until your trial ends.
+            </>
+          ) : plan === 'annual' ? (
+            <>You&apos;re all set — your annual subscription is active.</>
+          ) : (
+            <>You&apos;re all set — your subscription is active.</>
+          )}
         </p>
 
         {/* CTA */}
