@@ -6,7 +6,8 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.5",
@@ -23,6 +24,8 @@
     "@types/node": "^25.3.3",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.29",
     "typescript": "~5.9.3"
   }
 }
