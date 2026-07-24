@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Privacy Policy — Munch Snapper',
+  description:
+    'How Munch Snapper collects, stores, and protects your data — meal logs, account information, and the third-party services we use.',
 };
 
 const COLOURS = {

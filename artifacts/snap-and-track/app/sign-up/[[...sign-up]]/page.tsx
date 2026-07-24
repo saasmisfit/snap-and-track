@@ -1,6 +1,33 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SignUp } from '@clerk/nextjs';
+
+export const metadata: Metadata = {
+  title: 'Sign Up — Munch Snapper',
+  description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card required.',
+  openGraph: {
+    title: 'Sign Up — Munch Snapper',
+    description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card required.',
+    url: 'https://www.munchsnapper.com/sign-up',
+    siteName: 'Munch Snapper',
+    images: [
+      {
+        url: 'https://www.munchsnapper.com/opengraph.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Munch Snapper — Snap Your Macros in Seconds',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sign Up — Munch Snapper',
+    description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card required.',
+    images: ['https://www.munchsnapper.com/opengraph.jpg'],
+  },
+};
 
 const clerkAppearance = {
   variables: {

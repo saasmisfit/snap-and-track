@@ -1,6 +1,33 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SignIn } from '@clerk/nextjs';
+
+export const metadata: Metadata = {
+  title: 'Sign In — Munch Snapper',
+  description: 'Sign in to Munch Snapper to log your meals and track your macros.',
+  openGraph: {
+    title: 'Sign In — Munch Snapper',
+    description: 'Sign in to Munch Snapper to log your meals and track your macros.',
+    url: 'https://www.munchsnapper.com/sign-in',
+    siteName: 'Munch Snapper',
+    images: [
+      {
+        url: 'https://www.munchsnapper.com/opengraph.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Munch Snapper — Snap Your Macros in Seconds',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sign In — Munch Snapper',
+    description: 'Sign in to Munch Snapper to log your meals and track your macros.',
+    images: ['https://www.munchsnapper.com/opengraph.jpg'],
+  },
+};
 
 const clerkAppearance = {
   variables: {

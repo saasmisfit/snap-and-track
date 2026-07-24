@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Terms of Service — Munch Snapper',
+  description:
+    'The terms governing your use of Munch Snapper — subscriptions, billing, acceptable use, and account responsibilities.',
 };
 
 const COLOURS = {
