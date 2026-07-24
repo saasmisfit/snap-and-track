@@ -77,6 +77,7 @@ const COACH_INITIAL_QUESTION =
 type CoachGoal = 'fat_loss' | 'maintain' | 'build';
 
 interface ChatMessage {
+  id: number;
   role: 'user' | 'assistant';
   text: string;
 }
@@ -697,6 +698,10 @@ export default function MealLogPage() {
   const [chatError, setChatError] = useState<string | null>(null);
   const autoQuestionFiredRef = useRef(false);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  // Monotonic counter for stable chat message keys — not derived from array
+  // position, so reordering/inserting/removing messages can't cause React to
+  // mismatch content. Session-only, so a simple incrementing ref is enough.
+  const nextChatMessageIdRef = useRef(0);
 
   // One-time hydration for localStorage-backed bits + initial UI state
   useEffect(() => {
@@ -1024,7 +1029,8 @@ export default function MealLogPage() {
     if (!user?.id) return;
     const trimmed = question.trim();
     if (!trimmed) return;
-    setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
+    const userMessageId = nextChatMessageIdRef.current++;
+    setChatMessages((prev) => [...prev, { id: userMessageId, role: 'user', text: trimmed }]);
     setChatInput('');
     setIsChatLoading(true);
     setChatError(null);
@@ -1054,7 +1060,11 @@ export default function MealLogPage() {
           ? String((data as { reply: unknown }).reply)
           : '';
       if (!reply) throw new Error('Empty reply from coach');
-      setChatMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+      const assistantMessageId = nextChatMessageIdRef.current++;
+      setChatMessages((prev) => [
+        ...prev,
+        { id: assistantMessageId, role: 'assistant', text: reply },
+      ]);
     } catch (e) {
       setChatError(e instanceof Error ? e.message : 'Coach failed.');
     } finally {
@@ -1209,10 +1219,10 @@ export default function MealLogPage() {
                   </div>
                 ) : null}
 
-                {chatMessages.map((m, i) =>
+                {chatMessages.map((m) =>
                   m.role === 'user' ? (
                     <div
-                      key={i}
+                      key={m.id}
                       style={{
                         alignSelf: 'flex-end',
                         maxWidth: '85%',
@@ -1231,7 +1241,7 @@ export default function MealLogPage() {
                     </div>
                   ) : (
                     <div
-                      key={i}
+                      key={m.id}
                       style={{
                         alignSelf: 'flex-start',
                         maxWidth: '85%',

@@ -173,9 +173,12 @@ export default function Home() {
   const showAppCta = isLoaded && isSignedIn;
 
   useEffect(() => {
-    // FAQ accordion
-    document.querySelectorAll<HTMLButtonElement>('.faq-q').forEach((btn) => {
-      btn.addEventListener('click', () => {
+    // FAQ accordion — named handlers so cleanup can remove the exact
+    // listener that was attached (StrictMode mounts this effect twice in
+    // development; without this, clicks open then instantly close).
+    const faqButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.faq-q'));
+    const faqHandlers = faqButtons.map((btn) => {
+      const handleClick = () => {
         const item = btn.closest('.faq-item');
         if (!item) return;
         const isOpen = item.classList.contains('open');
@@ -188,7 +191,9 @@ export default function Home() {
           item.classList.add('open');
           btn.setAttribute('aria-expanded', 'true');
         }
-      });
+      };
+      btn.addEventListener('click', handleClick);
+      return handleClick;
     });
 
     // Scroll fade-in
@@ -226,6 +231,9 @@ export default function Home() {
     window.addEventListener('scroll', handleScroll);
 
     return () => {
+      faqButtons.forEach((btn, idx) => {
+        btn.removeEventListener('click', faqHandlers[idx]);
+      });
       window.removeEventListener('scroll', handleScroll);
       observer.disconnect();
     };
