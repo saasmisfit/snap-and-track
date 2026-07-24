@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import { MacroPill } from '../../components/MacroPill';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type MealSlot = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
@@ -412,35 +413,6 @@ export default function MealPlansPage() {
   );
 }
 
-function MacroPill({ value, unit }: { value: string; unit: string }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        gap: 4,
-        background: COLOURS.cardRaised,
-        border: `1px solid ${COLOURS.border}`,
-        borderRadius: 999,
-        padding: '5px 11px',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      <span
-        style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 800,
-          fontSize: 14,
-          lineHeight: 1,
-          color: COLOURS.white,
-        }}
-      >
-        {value}
-      </span>
-      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>{unit}</span>
-    </span>
-  );
-}
 
 const styles: Record<string, React.CSSProperties> = {
   page: {

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { UserButton, useUser } from '@clerk/nextjs';
+import { StreakBadge } from '../components/StreakBadge';
+import { EMPTY_STREAK, checkAndResetStreak, readStreak, writeStreak, type Streak } from '../lib/streak';
 
 const userButtonAppearance = {
   variables: {
@@ -28,7 +30,6 @@ const ONBOARDING_KEY = 'munchsnapper_onboarding_complete';
 const GOALS_KEY = 'munchsnapper_goals';
 const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
 const BURNED_KEY_PREFIX = 'munchsnapper_burned_today_';
-const STREAK_KEY = 'munchsnapper_streak';
 const NOTIF_ASKED_KEY = 'munchsnapper_notif_asked';
 const DAILY_SCHEDULED_PREFIX = 'munchsnapper_daily_reminders_scheduled_';
 const STREAK_MILESTONES: readonly number[] = [3, 7, 14, 30];
@@ -37,14 +38,6 @@ const DAILY_REMINDERS: ReadonlyArray<{ hour: number; minute: number; message: st
   { hour: 13, minute: 0, message: '🥗 Lunchtime! Snap your meal and stay on track.' },
   { hour: 19, minute: 0, message: '🍽️ Log your dinner to keep your streak alive.' },
 ];
-
-interface Streak {
-  currentStreak: number;
-  lastLogDate: string;
-  longestStreak: number;
-}
-
-const EMPTY_STREAK: Streak = { currentStreak: 0, lastLogDate: '', longestStreak: 0 };
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type AnalyseMode = 'meal' | 'menu';
@@ -236,49 +229,6 @@ function daysAgoLocalStr(n: number): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const da = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${da}`;
-}
-
-function isStreak(v: unknown): v is Streak {
-  if (!v || typeof v !== 'object') return false;
-  const o = v as Record<string, unknown>;
-  return (
-    typeof o.currentStreak === 'number' &&
-    typeof o.lastLogDate === 'string' &&
-    typeof o.longestStreak === 'number'
-  );
-}
-
-function readStreak(): Streak {
-  try {
-    const raw = window.localStorage.getItem(STREAK_KEY);
-    if (!raw) return { ...EMPTY_STREAK };
-    const parsed: unknown = JSON.parse(raw);
-    if (isStreak(parsed)) return parsed;
-  } catch {
-    // best-effort
-  }
-  return { ...EMPTY_STREAK };
-}
-
-function writeStreak(s: Streak): void {
-  try {
-    window.localStorage.setItem(STREAK_KEY, JSON.stringify(s));
-  } catch {
-    // best-effort
-  }
-}
-
-function checkAndResetStreak(): Streak {
-  const s = readStreak();
-  if (!s.lastLogDate || s.currentStreak === 0) return s;
-  const today = todayLocalStr();
-  const yesterday = daysAgoLocalStr(1);
-  if (s.lastLogDate !== today && s.lastLogDate !== yesterday) {
-    const next: Streak = { ...s, currentStreak: 0 };
-    writeStreak(next);
-    return next;
-  }
-  return s;
 }
 
 interface SavedLogEntry {
@@ -2161,70 +2111,6 @@ function MacroTile({
       >
         {label}
       </div>
-    </div>
-  );
-}
-
-function StreakBadge({ streak }: { streak: Streak }) {
-  const active = streak.currentStreak > 0;
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        padding: '8px 14px',
-        background: COLOURS.card,
-        border: `1px solid ${COLOURS.border}`,
-        borderRadius: 999,
-        alignSelf: 'center',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-      aria-label={
-        active
-          ? `${streak.currentStreak} day logging streak`
-          : 'No active streak — start today'
-      }
-    >
-      {active ? (
-        <>
-          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>
-            🔥
-          </span>
-          <span
-            style={{
-              fontFamily: "'Barlow', sans-serif",
-              fontSize: 13,
-              fontWeight: 700,
-              color: COLOURS.white,
-              letterSpacing: '0.02em',
-            }}
-          >
-            {streak.currentStreak} day streak
-          </span>
-          <span
-            style={{
-              fontSize: 11,
-              color: COLOURS.textMuted,
-              letterSpacing: '0.02em',
-            }}
-          >
-            · Keep it going
-          </span>
-        </>
-      ) : (
-        <span
-          style={{
-            fontFamily: "'Barlow', sans-serif",
-            fontSize: 12,
-            color: COLOURS.textMuted,
-            letterSpacing: '0.02em',
-          }}
-        >
-          Start your streak today
-        </span>
-      )}
     </div>
   );
 }

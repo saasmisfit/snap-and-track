@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import { StreakBadge } from '../../components/StreakBadge';
+import { MacroPill } from '../../components/MacroPill';
+import { EMPTY_STREAK, checkAndResetStreak, type Streak } from '../../lib/streak';
 
 interface FoodItem {
   name: string;
@@ -37,7 +40,6 @@ const WEIGHT_UNIT_KEY = 'munchsnapper_weight_unit';
 const WEIGHT_LOG_KEY = 'munchsnapper_weight_log';
 const WEIGHT_MAX_DAYS = 90;
 const WEIGHT_GRAPH_DAYS = 30;
-const STREAK_KEY = 'munchsnapper_streak';
 const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
 const FAST_KEY = 'munchsnapper_fast';
 const FAST_COMPLETE_MESSAGE =
@@ -91,14 +93,6 @@ function readActiveGoal(): CoachGoal {
   }
   return 'maintain';
 }
-
-interface Streak {
-  currentStreak: number;
-  lastLogDate: string;
-  longestStreak: number;
-}
-
-const EMPTY_STREAK: Streak = { currentStreak: 0, lastLogDate: '', longestStreak: 0 };
 
 type WeightUnit = 'kg' | 'lbs';
 
@@ -320,36 +314,6 @@ function fmtWeight(n: number): string {
   return (Math.round(n * 10) / 10).toString();
 }
 
-function isStreak(v: unknown): v is Streak {
-  if (!v || typeof v !== 'object') return false;
-  const o = v as Record<string, unknown>;
-  return (
-    typeof o.currentStreak === 'number' &&
-    typeof o.lastLogDate === 'string' &&
-    typeof o.longestStreak === 'number'
-  );
-}
-
-function readStreak(): Streak {
-  try {
-    const raw = window.localStorage.getItem(STREAK_KEY);
-    if (!raw) return { ...EMPTY_STREAK };
-    const parsed: unknown = JSON.parse(raw);
-    if (isStreak(parsed)) return parsed;
-  } catch {
-    // best-effort
-  }
-  return { ...EMPTY_STREAK };
-}
-
-function writeStreak(s: Streak): void {
-  try {
-    window.localStorage.setItem(STREAK_KEY, JSON.stringify(s));
-  } catch {
-    // best-effort
-  }
-}
-
 function isFastState(v: unknown): v is FastState {
   if (!v || typeof v !== 'object') return false;
   const o = v as Record<string, unknown>;
@@ -508,19 +472,6 @@ function fileToCompressedDataUrl(file: File): Promise<string> {
     };
     reader.readAsDataURL(file);
   });
-}
-
-function checkAndResetStreak(): Streak {
-  const s = readStreak();
-  if (!s.lastLogDate || s.currentStreak === 0) return s;
-  const today = todayLocalStr();
-  const yesterday = daysAgoLocalStr(1);
-  if (s.lastLogDate !== today && s.lastLogDate !== yesterday) {
-    const next: Streak = { ...s, currentStreak: 0 };
-    writeStreak(next);
-    return next;
-  }
-  return s;
 }
 
 type DevicePlatform = 'ios' | 'android' | 'other';
@@ -2879,108 +2830,6 @@ export default function MealLogPage() {
           })()
         : null}
     </main>
-  );
-}
-
-function StreakBadge({ streak }: { streak: Streak }) {
-  const active = streak.currentStreak > 0;
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        padding: '8px 14px',
-        background: COLOURS.card,
-        border: `1px solid ${COLOURS.border}`,
-        borderRadius: 999,
-        alignSelf: 'center',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-      aria-label={
-        active
-          ? `${streak.currentStreak} day logging streak`
-          : 'No active streak — start today'
-      }
-    >
-      {active ? (
-        <>
-          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>
-            🔥
-          </span>
-          <span
-            style={{
-              fontFamily: "'Barlow', sans-serif",
-              fontSize: 13,
-              fontWeight: 700,
-              color: COLOURS.white,
-              letterSpacing: '0.02em',
-            }}
-          >
-            {streak.currentStreak} day streak
-          </span>
-          <span
-            style={{
-              fontSize: 11,
-              color: COLOURS.textMuted,
-              letterSpacing: '0.02em',
-            }}
-          >
-            · Keep it going
-          </span>
-        </>
-      ) : (
-        <span
-          style={{
-            fontFamily: "'Barlow', sans-serif",
-            fontSize: 12,
-            color: COLOURS.textMuted,
-            letterSpacing: '0.02em',
-          }}
-        >
-          Start your streak today
-        </span>
-      )}
-    </div>
-  );
-}
-
-function MacroPill({
-  value,
-  unit,
-  accent = false,
-}: {
-  value: string;
-  unit: string;
-  accent?: boolean;
-}) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        gap: 4,
-        background: accent ? COLOURS.magentaTint : COLOURS.cardRaised,
-        border: `1px solid ${accent ? 'rgba(176,24,94,0.45)' : COLOURS.border}`,
-        borderRadius: 999,
-        padding: '5px 11px',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      <span
-        style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 800,
-          fontSize: 14,
-          lineHeight: 1,
-          color: accent ? COLOURS.magenta : COLOURS.white,
-        }}
-      >
-        {value}
-      </span>
-      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>{unit}</span>
-    </span>
   );
 }
 
