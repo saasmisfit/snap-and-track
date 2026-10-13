@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
@@ -90,11 +90,22 @@ const COACHING_NOTE = "Stacy's coaching note";
 const STACY_TAKE =
   "That's a brilliant fat-loss plate. 44g of protein is exactly where you want to be — the broccoli keeps it filling without blowing your calories. Genuinely good choice.";
 
+const AI_COACH = 'AI Coach';
+// PLACEHOLDER example copy, needs Mark's approval
+const COACH_CHAT_EXAMPLE: { label: string; text: string; from: 'user' | 'stacy' }[] = [
+  { label: 'You asked', text: 'How am I doing this week?', from: 'user' },
+  {
+    label: "Stacy's answer",
+    text: "Solid week. Your streak is strong and your protein is on track. Let's tighten up the weekend snacking.",
+    from: 'stacy',
+  },
+];
+
 // Bento cards, in display order. Text comes from FEATURE_CLUSTERS by name;
 // every feature not listed here is shown as a chip under "And everything else".
 const BENTO_LAYOUT: { name: string; icon: LucideIcon; size: 'large' | 'quarter' | 'third' }[] = [
   { name: COACHING_NOTE, icon: MessageCircleHeart, size: 'large' },
-  { name: 'AI Coach', icon: Bot, size: 'large' },
+  { name: AI_COACH, icon: Bot, size: 'large' },
   { name: 'Photo snap', icon: Camera, size: 'quarter' },
   { name: 'Voice logging', icon: Mic, size: 'quarter' },
   { name: 'Barcode scanner', icon: ScanBarcode, size: 'quarter' },
@@ -172,6 +183,44 @@ function VsCell({ text, kind }: { text: string; kind?: VsKind }) {
   );
 }
 
+// Animates an element's height when its content changes with `open`.
+// Call capture() just before toggling; skipped under prefers-reduced-motion.
+function useAnimatedHeight<T extends HTMLElement>(open: boolean) {
+  const ref = useRef<T>(null);
+  const from = useRef<number | null>(null);
+  const capture = () => {
+    if (ref.current) from.current = ref.current.offsetHeight;
+  };
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const start = from.current;
+    from.current = null;
+    if (!el || start === null) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const end = el.offsetHeight;
+    if (start === end) return;
+
+    const reset = () => {
+      el.style.height = '';
+      el.style.overflow = '';
+      el.style.transition = '';
+    };
+    el.style.overflow = 'hidden';
+    el.style.height = `${start}px`;
+    el.getBoundingClientRect(); // commit the start height before transitioning
+    el.style.transition = 'height 250ms ease';
+    el.style.height = `${end}px`;
+    const timer = window.setTimeout(reset, 300);
+    return () => {
+      window.clearTimeout(timer);
+      reset();
+    };
+  }, [open]);
+
+  return { ref, capture };
+}
+
 const PLAN_FEATURES: string[] = [
   'All logging methods (photo, voice, barcode, menu, gallery)',
   'AI macro analysis on every meal',
@@ -241,6 +290,8 @@ export default function Home() {
   const showAppCta = isLoaded && isSignedIn;
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [showFullVs, setShowFullVs] = useState(false);
+  const moreFeatures = useAnimatedHeight<HTMLUListElement>(showAllFeatures);
+  const vsTable = useAnimatedHeight<HTMLDivElement>(showFullVs);
 
   useEffect(() => {
     // FAQ accordion — named handlers so cleanup can remove the exact
@@ -501,6 +552,16 @@ export default function Home() {
                     <blockquote>{STACY_TAKE}</blockquote>
                   </figure>
                 )}
+                {name === AI_COACH && (
+                  <div className="coach-chat">
+                    {COACH_CHAT_EXAMPLE.map((m) => (
+                      <figure key={m.label} className={`take-bubble from-${m.from}`}>
+                        <figcaption className="take-label">{m.label}</figcaption>
+                        <blockquote>{m.text}</blockquote>
+                      </figure>
+                    ))}
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -509,16 +570,13 @@ export default function Home() {
             <h3 className="more-title">And everything else</h3>
             <ul
               id="more-features-list"
+              ref={moreFeatures.ref}
               className={`more-grid${showAllFeatures ? ' open' : ''}`}
             >
               {MORE_FEATURES.map((f) => (
                 <li key={f.name}>
                   <span className="more-chip">{f.name}</span>
-                  <div className="more-desc" aria-hidden={!showAllFeatures}>
-                    <div>
-                      <p>{f.desc}</p>
-                    </div>
-                  </div>
+                  <p className="more-desc">{f.desc}</p>
                 </li>
               ))}
             </ul>
@@ -527,7 +585,10 @@ export default function Home() {
               className="btn-outline expander-btn"
               aria-expanded={showAllFeatures}
               aria-controls="more-features-list"
-              onClick={() => setShowAllFeatures((open) => !open)}
+              onClick={() => {
+                moreFeatures.capture();
+                setShowAllFeatures((open) => !open);
+              }}
             >
               See every feature
               <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
@@ -545,7 +606,7 @@ export default function Home() {
             <span style={{ color: 'var(--magenta)' }}>coaching.</span>
           </h2>
           <div className="vs-card">
-            <div className="vs-scroll">
+            <div className="vs-scroll" ref={vsTable.ref}>
               <table className="vs-table" id="vs-table">
                 <thead>
                   <tr>
@@ -591,7 +652,10 @@ export default function Home() {
               className="btn-outline expander-btn"
               aria-expanded={showFullVs}
               aria-controls="vs-table"
-              onClick={() => setShowFullVs((open) => !open)}
+              onClick={() => {
+                vsTable.capture();
+                setShowFullVs((open) => !open);
+              }}
             >
               Show full comparison
               <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
@@ -666,7 +730,12 @@ export default function Home() {
               <div className="price-tagline">Less than a coffee. Unlimited snaps.</div>
               <ul className="price-features">
                 {PLAN_FEATURES.map((f) => (
-                  <li key={`m-${f}`}>{f}</li>
+                  <li key={`m-${f}`}>
+                    <span className="price-tick" aria-hidden="true">
+                      <Check size={13} strokeWidth={3} />
+                    </span>
+                    {f}
+                  </li>
                 ))}
               </ul>
               <Link
@@ -689,9 +758,19 @@ export default function Home() {
               <div className="price-tagline">Best value. Same everything. One year of Stacy.</div>
               <ul className="price-features">
                 {PLAN_FEATURES.map((f) => (
-                  <li key={`a-${f}`}>{f}</li>
+                  <li key={`a-${f}`}>
+                    <span className="price-tick" aria-hidden="true">
+                      <Check size={13} strokeWidth={3} />
+                    </span>
+                    {f}
+                  </li>
                 ))}
-                <li>Priority email support</li>
+                <li>
+                  <span className="price-tick" aria-hidden="true">
+                    <Check size={13} strokeWidth={3} />
+                  </span>
+                  Priority email support
+                </li>
               </ul>
               <Link
                 href="/subscribe?annual=true"

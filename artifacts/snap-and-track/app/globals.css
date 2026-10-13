@@ -41,7 +41,7 @@
     /* 1440px wide at a 1440px viewport, growing to 1600px at 1920px and above */
     --container-max: clamp(1440px, calc(960px + 33.333vw), 1600px);
     --gutter: clamp(20px, 5vw, 48px);
-    --section-pad: clamp(96px, 10vw, 160px);
+    --section-pad: clamp(80px, 8vw, 128px);
     --fs-label: max(13px, 0.78rem);
     --fs-small: max(16px, 0.9rem);
     --phone-scale: 1.15;
@@ -86,8 +86,9 @@
     justify-content: center;
     flex-shrink: 0;
   }
-  .expander-btn { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .landing .expander-btn { display: inline-flex; align-items: center; gap: 0.5rem; }
   .expander-btn svg { transition: transform 0.25s ease; }
+  @media (prefers-reduced-motion: reduce) { .expander-btn svg { transition: none; } }
   .expander-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
 
   /* ── NAV ── */
@@ -605,6 +606,21 @@
     margin-bottom: 0.5rem;
   }
   .take-bubble blockquote { font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--text-body); }
+  .coach-chat {
+    margin-top: 1.75rem;
+    width: 100%;
+    max-width: 36rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+  }
+  .coach-chat .take-bubble { margin-top: 0; }
+  /* Row 1 cards are equal height: the coaching-note quote is set larger and
+     its bubble takes up whatever height the chat card needs. */
+  .bento-large > .take-bubble { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .bento-large > .take-bubble blockquote { font-size: 1.3rem; line-height: 1.5; }
+  .coach-chat .take-bubble.from-user { align-self: flex-end; border-radius: 18px 18px 4px 18px; }
 
   /* "And everything else": chips, with descriptions that expand under each */
   .more-features { margin-top: 3.5rem; }
@@ -618,6 +634,11 @@
   }
   .more-grid {
     list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .more-grid.open {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
     gap: 12px 24px;
@@ -634,15 +655,9 @@
     line-height: 1.2;
     color: var(--text-heading);
   }
-  .more-desc {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    transition: grid-template-rows 0.35s ease, opacity 0.35s ease;
-  }
-  .more-desc > div { overflow: hidden; min-height: 0; }
-  .more-desc p { padding: 0.6rem 0.25rem 0.9rem; font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--text-body); }
-  .more-grid.open .more-desc { grid-template-rows: 1fr; opacity: 1; }
+  /* The list's height change is animated in page.tsx (useAnimatedHeight) */
+  .more-desc { display: none; padding: 0.6rem 0.25rem 0.9rem; font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--text-body); }
+  .more-grid.open .more-desc { display: block; }
   .more-features .expander-btn { margin-top: 2rem; }
   .features-grid {
     display: grid;
@@ -744,7 +759,7 @@
   .vs-table td.col-snap { color: var(--text-heading); font-weight: 600; border-bottom-color: var(--magenta-line); }
   .vs-table tbody tr:last-child td.col-snap { border-bottom: 2px solid var(--magenta); }
   /* Cell marks: green tick disc, grey dash, amber dot */
-  .vs-cell { display: inline-flex; align-items: center; gap: 0.6rem; }
+  .vs-cell { display: flex; align-items: center; gap: 0.6rem; }
   .vs-mark {
     width: 22px; height: 22px;
     border-radius: 50%;
@@ -812,18 +827,18 @@
   #stacy { padding: var(--section-pad) 0; }
   .stacy-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5rem;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 4rem;
     align-items: center;
   }
   .stacy-img-wrap {
     position: relative;
     width: 100%;
-    max-width: 30rem;
-    margin: 0 auto;
   }
   .stacy-img-box {
     width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
     aspect-ratio: 3/4;
     background: var(--bg-mint);
     border-radius: 20px;
@@ -850,7 +865,8 @@
   .stacy-creds {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    justify-content: center;
+    gap: 8px;
     margin-top: 1.5rem;
   }
   .cred-pill {
@@ -858,7 +874,8 @@
     color: var(--text-body);
     background: var(--surface);
     border: 1px solid var(--border-strong);
-    padding: 0.45rem 1rem;
+    padding: 0.4rem 0.75rem;
+    white-space: nowrap;
     border-radius: 999px;
     display: flex;
     align-items: center;
@@ -940,7 +957,17 @@
   .price-tagline { font-size: var(--fs-small); color: var(--magenta); font-weight: 600; margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
   .price-features { list-style: none; display: flex; flex-direction: column; gap: 16px; margin-bottom: 2.25rem; }
   .price-features li { font-size: 1rem; font-weight: 500; color: var(--text-body); display: flex; align-items: flex-start; gap: 12px; line-height: 1.45; }
-  .price-features li::before { content: '✓'; color: var(--magenta); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .price-tick {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--icon-tint);
+    color: var(--magenta);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.12em;
+  }
   .price-cta { display: block; text-align: center; }
   .upsell-strip {
     margin-top: 2rem;
