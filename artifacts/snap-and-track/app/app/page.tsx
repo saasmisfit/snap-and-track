@@ -6,21 +6,23 @@ import Link from 'next/link';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { StreakBadge } from '../components/StreakBadge';
 import { EMPTY_STREAK, checkAndResetStreak, readStreak, writeStreak, type Streak } from '../lib/streak';
+import { APP_COLOURS } from '../lib/app-colours';
 
 const userButtonAppearance = {
   variables: {
-    colorPrimary: '#B0185E',
-    colorBackground: '#1a1a1e',
-    colorText: '#ffffff',
-    colorTextSecondary: '#888888',
+    colorPrimary: APP_COLOURS.magenta,
+    colorBackground: APP_COLOURS.card,
+    colorText: APP_COLOURS.heading,
+    colorTextSecondary: APP_COLOURS.textMuted,
   },
   elements: {
     userButtonAvatarBox: { width: 32, height: 32 },
     userButtonPopoverCard: {
-      background: '#1a1a1e',
-      border: '1px solid #2a2a30',
+      background: APP_COLOURS.card,
+      border: `1px solid ${APP_COLOURS.border}`,
+      boxShadow: APP_COLOURS.shadowFloat,
     },
-    userButtonPopoverActionButton: { color: '#ffffff' },
+    userButtonPopoverActionButton: { color: APP_COLOURS.heading },
   },
 };
 
@@ -123,22 +125,6 @@ const LOADING_MESSAGES = [
 ];
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-const COLOURS = {
-  magenta: '#B0185E',
-  magentaDark: '#8a1249',
-  magentaSoft: 'rgba(176,24,94,0.12)',
-  magentaTint: 'rgba(176,24,94,0.25)',
-  nearBlack: '#0E0E10',
-  card: '#1a1a1e',
-  border: '#2a2a30',
-  white: '#ffffff',
-  textMuted: 'rgba(255,255,255,0.55)',
-  textFaint: 'rgba(255,255,255,0.35)',
-  errorBg: 'rgba(220,38,38,0.10)',
-  errorBorder: 'rgba(220,38,38,0.45)',
-  errorText: '#fca5a5',
-};
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -899,13 +885,13 @@ export default function SnapAndTrackApp() {
               width={160}
               height={60}
               priority
-              style={{ width: 'auto', height: 44, display: 'block', background: 'transparent' }}
+              style={{ width: 'auto', height: 44, display: 'block', background: 'transparent', filter: 'brightness(0)', opacity: 0.92 }}
             />
           </Link>
-          <Link href="/app/plans" className="view-log-link" style={{ color: '#ffffff' }}>
+          <Link href="/app/plans" className="view-log-link" style={{ color: APP_COLOURS.heading }}>
             Meal plans →
           </Link>
-          <Link href="/app/log" className="view-log-link" style={{ color: '#ffffff' }}>
+          <Link href="/app/log" className="view-log-link" style={{ color: APP_COLOURS.heading }}>
             View log →
           </Link>
           <UserButton afterSignOutUrl="/" appearance={userButtonAppearance} />
@@ -937,8 +923,8 @@ export default function SnapAndTrackApp() {
         {!result && (
           <div
             style={{
-              fontSize: 12,
-              color: COLOURS.textMuted,
+              fontSize: 14,
+              color: APP_COLOURS.textMuted,
               textAlign: 'center',
               letterSpacing: '0.02em',
               padding: '6px 4px',
@@ -957,9 +943,9 @@ export default function SnapAndTrackApp() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: COLOURS.magenta,
+                  color: APP_COLOURS.magenta,
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 600,
                   cursor: 'pointer',
                   padding: 0,
@@ -987,8 +973,8 @@ export default function SnapAndTrackApp() {
                 htmlFor="burn-input"
                 style={{
                   flex: 1,
-                  fontSize: 12,
-                  color: COLOURS.textMuted,
+                  fontSize: 14,
+                  color: APP_COLOURS.textMuted,
                   lineHeight: 1.4,
                   letterSpacing: '0.02em',
                 }}
@@ -1007,13 +993,13 @@ export default function SnapAndTrackApp() {
                 aria-label="Calories burned today"
                 style={{
                   width: 80,
-                  background: COLOURS.nearBlack,
-                  color: COLOURS.white,
-                  border: `1px solid ${COLOURS.border}`,
+                  background: APP_COLOURS.card,
+                  color: APP_COLOURS.text,
+                  border: `1px solid ${APP_COLOURS.border}`,
                   borderRadius: 8,
                   padding: '6px 10px',
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 13,
+                  fontSize: 16,
                   outline: 'none',
                   textAlign: 'right',
                   appearance: 'textfield',
@@ -1024,8 +1010,8 @@ export default function SnapAndTrackApp() {
             {burnedToday > 0 ? (
               <div
                 style={{
-                  fontSize: 12,
-                  color: COLOURS.magenta,
+                  fontSize: 14,
+                  color: APP_COLOURS.magenta,
                   fontVariantNumeric: 'tabular-nums',
                   textAlign: 'center',
                   letterSpacing: '0.02em',
@@ -1064,9 +1050,10 @@ export default function SnapAndTrackApp() {
                 <div
                   key={m.key}
                   style={{
-                    flex: '0 0 140px',
-                    background: COLOURS.card,
-                    border: `1px solid ${COLOURS.border}`,
+                    flex: '0 0 168px',
+                    background: APP_COLOURS.card,
+                    border: `1px solid ${APP_COLOURS.border}`,
+                    boxShadow: APP_COLOURS.shadowCard,
                     borderRadius: 12,
                     padding: '12px',
                     display: 'flex',
@@ -1078,9 +1065,9 @@ export default function SnapAndTrackApp() {
                     title={m.dish}
                     style={{
                       fontFamily: "'Barlow', sans-serif",
-                      fontSize: 13,
+                      fontSize: 16,
                       fontWeight: 600,
-                      color: COLOURS.white,
+                      color: APP_COLOURS.heading,
                       lineHeight: 1.25,
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
@@ -1097,7 +1084,7 @@ export default function SnapAndTrackApp() {
                       fontFamily: "'Barlow Condensed', sans-serif",
                       fontWeight: 800,
                       fontSize: 22,
-                      color: COLOURS.magenta,
+                      color: APP_COLOURS.magenta,
                       lineHeight: 1,
                       fontVariantNumeric: 'tabular-nums',
                       display: 'flex',
@@ -1108,9 +1095,9 @@ export default function SnapAndTrackApp() {
                     {fmtMacro(m.calories)}
                     <span
                       style={{
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: 500,
-                        color: COLOURS.textFaint,
+                        color: APP_COLOURS.textMuted,
                         letterSpacing: '0.04em',
                       }}
                     >
@@ -1124,12 +1111,12 @@ export default function SnapAndTrackApp() {
                     style={{
                       marginTop: 'auto',
                       background: 'transparent',
-                      color: COLOURS.white,
-                      border: `1px solid ${COLOURS.white}`,
+                      color: APP_COLOURS.magenta,
+                      border: `1px solid ${APP_COLOURS.magenta}`,
                       borderRadius: 999,
                       padding: '6px 10px',
                       fontFamily: "'Barlow', sans-serif",
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: 600,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
@@ -1202,9 +1189,9 @@ export default function SnapAndTrackApp() {
                   aria-label="Upload from gallery"
                   style={{
                     width: '100%',
-                    background: COLOURS.card,
-                    color: COLOURS.white,
-                    border: `1.5px solid ${COLOURS.border}`,
+                    background: APP_COLOURS.card,
+                    color: APP_COLOURS.heading,
+                    border: `1.5px solid ${APP_COLOURS.border}`,
                     padding: '14px 24px',
                     borderRadius: 999,
                     fontFamily: "'Barlow', sans-serif",
@@ -1228,9 +1215,9 @@ export default function SnapAndTrackApp() {
                   aria-label="Scan a barcode"
                   style={{
                     width: '100%',
-                    background: COLOURS.card,
-                    color: COLOURS.white,
-                    border: `1.5px solid ${COLOURS.border}`,
+                    background: APP_COLOURS.card,
+                    color: APP_COLOURS.heading,
+                    border: `1.5px solid ${APP_COLOURS.border}`,
                     padding: '14px 24px',
                     borderRadius: 999,
                     fontFamily: "'Barlow', sans-serif",
@@ -1268,9 +1255,9 @@ export default function SnapAndTrackApp() {
                   aria-label="Scan a restaurant menu"
                   style={{
                     width: '100%',
-                    background: COLOURS.card,
-                    color: COLOURS.white,
-                    border: `1.5px solid ${COLOURS.border}`,
+                    background: APP_COLOURS.card,
+                    color: APP_COLOURS.heading,
+                    border: `1.5px solid ${APP_COLOURS.border}`,
                     padding: '14px 24px',
                     borderRadius: 999,
                     fontFamily: "'Barlow', sans-serif",
@@ -1294,9 +1281,9 @@ export default function SnapAndTrackApp() {
                   aria-label="Voice log a meal"
                   style={{
                     width: '100%',
-                    background: COLOURS.card,
-                    color: COLOURS.white,
-                    border: `1.5px solid ${COLOURS.border}`,
+                    background: APP_COLOURS.card,
+                    color: APP_COLOURS.heading,
+                    border: `1.5px solid ${APP_COLOURS.border}`,
                     padding: '14px 24px',
                     borderRadius: 999,
                     fontFamily: "'Barlow', sans-serif",
@@ -1326,11 +1313,11 @@ export default function SnapAndTrackApp() {
                     {mode === 'menu' ? (
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: 700,
                           letterSpacing: '0.08em',
                           textTransform: 'uppercase',
-                          color: COLOURS.magenta,
+                          color: APP_COLOURS.magenta,
                         }}
                       >
                         🍽️ Menu mode
@@ -1362,8 +1349,8 @@ export default function SnapAndTrackApp() {
                     display: 'block',
                     width: '100%',
                     background: 'transparent',
-                    color: COLOURS.magenta,
-                    border: `2px solid ${COLOURS.magenta}`,
+                    color: APP_COLOURS.magenta,
+                    border: `2px solid ${APP_COLOURS.magenta}`,
                     textAlign: 'center',
                     padding: '14px 24px',
                     borderRadius: 999,
@@ -1525,11 +1512,11 @@ export default function SnapAndTrackApp() {
               >
                 <span
                   style={{
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: 600,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
-                    color: netCarbs ? COLOURS.magenta : COLOURS.textMuted,
+                    color: netCarbs ? APP_COLOURS.magenta : APP_COLOURS.textMuted,
                   }}
                 >
                   Net carbs
@@ -1540,7 +1527,7 @@ export default function SnapAndTrackApp() {
                     position: 'relative',
                     width: 40,
                     height: 22,
-                    background: netCarbs ? COLOURS.magenta : COLOURS.border,
+                    background: netCarbs ? APP_COLOURS.magenta : APP_COLOURS.controlOutline,
                     borderRadius: 999,
                     transition: 'background 0.2s',
                     flexShrink: 0,
@@ -1554,10 +1541,10 @@ export default function SnapAndTrackApp() {
                       left: netCarbs ? 20 : 2,
                       width: 18,
                       height: 18,
-                      background: COLOURS.white,
+                      background: APP_COLOURS.card,
                       borderRadius: '50%',
                       transition: 'left 0.2s',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                      boxShadow: APP_COLOURS.shadowKnob,
                     }}
                   />
                 </span>
@@ -1565,8 +1552,8 @@ export default function SnapAndTrackApp() {
             </div>
             <div
               style={{
-                fontSize: 11,
-                color: COLOURS.textFaint,
+                fontSize: 14,
+                color: APP_COLOURS.textMuted,
                 textAlign: 'center',
                 letterSpacing: '0.04em',
                 marginTop: -4,
@@ -1585,11 +1572,11 @@ export default function SnapAndTrackApp() {
               >
                 <div
                   style={{
-                    fontSize: 10,
+                    fontSize: 14,
                     fontWeight: 600,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: COLOURS.textFaint,
+                    color: APP_COLOURS.textMuted,
                     marginBottom: 4,
                   }}
                 >
@@ -1597,29 +1584,29 @@ export default function SnapAndTrackApp() {
                 </div>
                 <div
                   style={{
-                    fontSize: 12,
-                    color: COLOURS.textMuted,
+                    fontSize: 16,
+                    color: APP_COLOURS.textMuted,
                     letterSpacing: '0.02em',
                     lineHeight: 1.6,
                   }}
                 >
                   {fmtMacro(result.calories)} kcal{' '}
-                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                  <span style={{ color: APP_COLOURS.magenta, fontWeight: 600 }}>
                     ({goals.calories > 0 ? Math.round((result.calories / goals.calories) * 100) : 0}%)
                   </span>
                   {' · '}
                   {fmtMacro(result.protein_g)}g protein{' '}
-                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                  <span style={{ color: APP_COLOURS.magenta, fontWeight: 600 }}>
                     ({goals.protein > 0 ? Math.round((result.protein_g / goals.protein) * 100) : 0}%)
                   </span>
                   {' · '}
                   {fmtMacro(result.carbs_g)}g carbs{' '}
-                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                  <span style={{ color: APP_COLOURS.magenta, fontWeight: 600 }}>
                     ({goals.carbs > 0 ? Math.round((result.carbs_g / goals.carbs) * 100) : 0}%)
                   </span>
                   {' · '}
                   {fmtMacro(result.fat_g)}g fat{' '}
-                  <span style={{ color: COLOURS.magenta, fontWeight: 600 }}>
+                  <span style={{ color: APP_COLOURS.magenta, fontWeight: 600 }}>
                     ({goals.fat > 0 ? Math.round((result.fat_g / goals.fat) * 100) : 0}%)
                   </span>
                 </div>
@@ -1665,18 +1652,25 @@ export default function SnapAndTrackApp() {
           keyframes, media queries). Works in App Router client components. */}
       <style jsx>{`
         :global(body) {
-          background: ${COLOURS.nearBlack};
+          background: ${APP_COLOURS.softBg};
+        }
+
+        :global(main input:focus),
+        :global(main select:focus),
+        :global(main textarea:focus) {
+          border-color: ${APP_COLOURS.magenta} !important;
+          box-shadow: 0 0 0 3px ${APP_COLOURS.magentaTint};
         }
 
         .goal-pill {
           flex: 1;
-          background: transparent;
-          color: rgba(255, 255, 255, 0.85);
-          border: 1.5px solid ${COLOURS.border};
+          background: ${APP_COLOURS.card};
+          color: ${APP_COLOURS.heading};
+          border: 1.5px solid ${APP_COLOURS.border};
           border-radius: 999px;
           padding: 11px 16px;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 600;
           letter-spacing: 0.04em;
           text-transform: uppercase;
@@ -1684,26 +1678,26 @@ export default function SnapAndTrackApp() {
           transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
         }
         .goal-pill:hover {
-          border-color: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          border-color: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.magenta};
         }
         .goal-pill.active {
-          background: ${COLOURS.magenta};
-          border-color: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${APP_COLOURS.magenta};
+          border-color: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
         }
         .goal-pill.active:hover {
-          background: ${COLOURS.magentaDark};
-          border-color: ${COLOURS.magentaDark};
+          background: ${APP_COLOURS.magentaDark};
+          border-color: ${APP_COLOURS.magentaDark};
         }
 
         .upload-zone {
           width: 100%;
-          background: ${COLOURS.card};
-          border: 2px dashed ${COLOURS.border};
+          background: ${APP_COLOURS.card};
+          border: 2px dashed ${APP_COLOURS.controlOutline};
           border-radius: 18px;
           padding: 3rem 1.5rem;
-          color: ${COLOURS.white};
+          color: ${APP_COLOURS.text};
           font-family: var(--body-font), 'Barlow', sans-serif;
           display: flex;
           flex-direction: column;
@@ -1713,14 +1707,14 @@ export default function SnapAndTrackApp() {
           transition: border-color 0.2s, background 0.2s, transform 0.1s;
         }
         .upload-zone:hover {
-          border-color: ${COLOURS.magenta};
-          background: #1d1d22;
+          border-color: ${APP_COLOURS.magenta};
+          background: ${APP_COLOURS.cardRaised};
           transform: translateY(-1px);
         }
         .upload-zone.dragging {
-          border-color: ${COLOURS.magenta};
+          border-color: ${APP_COLOURS.magenta};
           border-style: solid;
-          background: ${COLOURS.magentaSoft};
+          background: ${APP_COLOURS.magentaSoft};
         }
         .upload-icon {
           font-size: 36px;
@@ -1732,15 +1726,15 @@ export default function SnapAndTrackApp() {
           text-align: center;
         }
         .upload-sub {
-          font-size: 12px;
-          color: ${COLOURS.textFaint};
+          font-size: 14px;
+          color: ${APP_COLOURS.textMuted};
           letter-spacing: 0.04em;
         }
 
         .camera-btn {
           width: 100%;
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
           border: none;
           padding: 14px 24px;
           border-radius: 999px;
@@ -1753,34 +1747,34 @@ export default function SnapAndTrackApp() {
           transition: background 0.2s, transform 0.1s;
         }
         .camera-btn:hover {
-          background: ${COLOURS.magentaDark};
+          background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
         .change-photo {
           background: transparent;
           border: none;
-          color: ${COLOURS.magenta};
+          color: ${APP_COLOURS.magenta};
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
           text-decoration: underline;
           padding: 0;
         }
         .change-photo:hover {
-          color: ${COLOURS.white};
+          color: ${APP_COLOURS.magentaDark};
         }
 
         .analyse-btn {
           width: 100%;
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
           border: none;
           padding: 16px 24px;
           border-radius: 999px;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 15px;
+          font-size: 16px;
           font-weight: 700;
           letter-spacing: 0.05em;
           text-transform: uppercase;
@@ -1788,13 +1782,13 @@ export default function SnapAndTrackApp() {
           transition: background 0.2s, transform 0.1s;
         }
         .analyse-btn:hover {
-          background: ${COLOURS.magentaDark};
+          background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
         .analyse-btn.disabled,
         .analyse-btn:disabled {
-          background: #2a2a30;
-          color: rgba(255, 255, 255, 0.35);
+          background: ${APP_COLOURS.border};
+          color: ${APP_COLOURS.textMuted};
           cursor: not-allowed;
           transform: none;
         }
@@ -1802,12 +1796,12 @@ export default function SnapAndTrackApp() {
         .log-btn {
           width: 100%;
           background: transparent;
-          color: ${COLOURS.magenta};
-          border: 2px solid ${COLOURS.magenta};
+          color: ${APP_COLOURS.magenta};
+          border: 2px solid ${APP_COLOURS.magenta};
           padding: 14px 24px;
           border-radius: 999px;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 700;
           letter-spacing: 0.05em;
           text-transform: uppercase;
@@ -1816,37 +1810,37 @@ export default function SnapAndTrackApp() {
           margin-top: 0.5rem;
         }
         .log-btn:hover {
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
         }
         .log-btn.logged,
         .log-btn.logged:hover {
-          color: #4ade80;
-          border-color: #4ade80;
-          background: rgba(74, 222, 128, 0.08);
+          color: ${APP_COLOURS.success};
+          border-color: ${APP_COLOURS.success};
+          background: ${APP_COLOURS.successSoft};
           cursor: default;
           transform: none;
         }
 
         .view-log-link {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 600;
-          color: ${COLOURS.white};
+          color: ${APP_COLOURS.heading};
           text-decoration: none;
           letter-spacing: 0.02em;
           white-space: nowrap;
           transition: color 0.2s;
         }
         .view-log-link:hover {
-          color: ${COLOURS.magenta};
+          color: ${APP_COLOURS.magenta};
         }
 
         .reset-link {
           background: transparent;
           border: none;
-          color: ${COLOURS.textMuted};
+          color: ${APP_COLOURS.textMuted};
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 500;
           cursor: pointer;
           padding: 0.5rem;
@@ -1855,15 +1849,15 @@ export default function SnapAndTrackApp() {
           transition: color 0.2s;
         }
         .reset-link:hover {
-          color: ${COLOURS.white};
+          color: ${APP_COLOURS.magenta};
         }
 
         .spinner {
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          border: 3px solid ${COLOURS.border};
-          border-top-color: ${COLOURS.magenta};
+          border: 3px solid ${APP_COLOURS.border};
+          border-top-color: ${APP_COLOURS.magenta};
           animation: spin 0.9s linear infinite;
         }
         @keyframes spin {
@@ -1876,8 +1870,8 @@ export default function SnapAndTrackApp() {
           display: block;
           width: 100%;
           background: transparent;
-          color: ${COLOURS.magenta};
-          border: 2px solid ${COLOURS.magenta};
+          color: ${APP_COLOURS.magenta};
+          border: 2px solid ${APP_COLOURS.magenta};
           text-align: center;
           padding: 14px 24px;
           border-radius: 999px;
@@ -1891,8 +1885,8 @@ export default function SnapAndTrackApp() {
           margin-top: 0.5rem;
         }
         .subscribe-cta:hover {
-          color: ${COLOURS.magentaDark};
-          border-color: ${COLOURS.magentaDark};
+          color: ${APP_COLOURS.magentaDark};
+          border-color: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
@@ -1901,18 +1895,18 @@ export default function SnapAndTrackApp() {
         }
 
         .voice-pulse {
-          box-shadow: 0 0 0 0 rgba(176, 24, 94, 0.55);
+          box-shadow: 0 0 0 0 ${APP_COLOURS.magentaPulse};
           animation: voicePulse 1.4s ease-out infinite;
         }
         @keyframes voicePulse {
           0% {
-            box-shadow: 0 0 0 0 rgba(176, 24, 94, 0.55);
+            box-shadow: 0 0 0 0 ${APP_COLOURS.magentaPulse};
           }
           70% {
-            box-shadow: 0 0 0 18px rgba(176, 24, 94, 0);
+            box-shadow: 0 0 0 18px ${APP_COLOURS.magentaPulseEnd};
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(176, 24, 94, 0);
+            box-shadow: 0 0 0 0 ${APP_COLOURS.magentaPulseEnd};
           }
         }
 
@@ -1957,17 +1951,17 @@ export default function SnapAndTrackApp() {
             bottom: 28,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.magentaTint}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.magentaTint}`,
             borderRadius: 999,
             padding: '10px 22px',
-            color: COLOURS.magenta,
+            color: APP_COLOURS.magenta,
             fontFamily: "'Barlow', sans-serif",
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
-            boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
+            boxShadow: APP_COLOURS.shadowFloat,
             zIndex: 200,
             pointerEvents: 'none',
             animation: 'relogToastFade 2s ease forwards',
@@ -2010,7 +2004,7 @@ function MacroTile({
     return () => window.cancelAnimationFrame(id);
   }, [isEditing, value]);
 
-  const valueColour = accent ? COLOURS.magenta : COLOURS.white;
+  const valueColour = accent ? APP_COLOURS.magenta : APP_COLOURS.heading;
 
   return (
     <div
@@ -2030,8 +2024,9 @@ function MacroTile({
       }
       style={{
         position: 'relative',
-        background: COLOURS.card,
-        border: `1px solid ${COLOURS.border}`,
+        background: APP_COLOURS.card,
+        border: `1px solid ${APP_COLOURS.border}`,
+        boxShadow: APP_COLOURS.shadowCard,
         borderRadius: 14,
         padding: '18px 16px',
         textAlign: 'center',
@@ -2044,11 +2039,10 @@ function MacroTile({
           position: 'absolute',
           top: 8,
           right: 10,
-          fontSize: 11,
-          color: COLOURS.textFaint,
+          fontSize: 14,
+          color: APP_COLOURS.textMuted,
           lineHeight: 1,
           pointerEvents: 'none',
-          opacity: 0.7,
         }}
       >
         ✏️
@@ -2098,14 +2092,14 @@ function MacroTile({
           {fmtMacro(value)}
         </div>
       )}
-      <div style={{ fontSize: 11, color: COLOURS.textFaint, marginTop: 4 }}>{unit}</div>
+      <div style={{ fontSize: 14, color: APP_COLOURS.textMuted, marginTop: 4 }}>{unit}</div>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 14,
           fontWeight: 600,
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.6)',
+          color: APP_COLOURS.textMuted,
           marginTop: 6,
         }}
       >
@@ -2284,7 +2278,7 @@ function BarcodeScannerModal({
   const overlayStyle: React.CSSProperties = {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(14,14,16,0.96)',
+    background: APP_COLOURS.overlay,
     zIndex: 110,
     overflowY: 'auto',
     display: 'flex',
@@ -2296,14 +2290,15 @@ function BarcodeScannerModal({
   const cardStyle: React.CSSProperties = {
     width: '100%',
     maxWidth: 480,
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowFloat,
     borderRadius: 18,
     padding: '1.75rem 1.5rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
-    color: COLOURS.white,
+    color: APP_COLOURS.text,
     position: 'relative',
   };
 
@@ -2313,7 +2308,7 @@ function BarcodeScannerModal({
     right: 12,
     background: 'transparent',
     border: 'none',
-    color: COLOURS.textMuted,
+    color: APP_COLOURS.textMuted,
     fontSize: 20,
     lineHeight: 1,
     cursor: 'pointer',
@@ -2331,13 +2326,13 @@ function BarcodeScannerModal({
 
   const primaryBtnStyle: React.CSSProperties = {
     width: '100%',
-    background: COLOURS.magenta,
-    color: COLOURS.white,
+    background: APP_COLOURS.magenta,
+    color: APP_COLOURS.onMagenta,
     border: 'none',
     padding: '14px 24px',
     borderRadius: 999,
     fontFamily: "'Barlow', sans-serif",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 700,
     letterSpacing: '0.05em',
     textTransform: 'uppercase',
@@ -2347,12 +2342,12 @@ function BarcodeScannerModal({
   const secondaryBtnStyle: React.CSSProperties = {
     width: '100%',
     background: 'transparent',
-    color: COLOURS.textMuted,
-    border: `1px solid ${COLOURS.border}`,
+    color: APP_COLOURS.magenta,
+    border: `1px solid ${APP_COLOURS.magenta}`,
     padding: '12px 24px',
     borderRadius: 999,
     fontFamily: "'Barlow', sans-serif",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
@@ -2375,7 +2370,7 @@ function BarcodeScannerModal({
                 width: '100%',
                 borderRadius: 12,
                 overflow: 'hidden',
-                background: '#000',
+                background: APP_COLOURS.photoMatte,
               }}
             >
               <video
@@ -2392,7 +2387,7 @@ function BarcodeScannerModal({
                 }}
               />
             </div>
-            <p style={{ fontSize: 13, color: COLOURS.textMuted, margin: 0, textAlign: 'center' }}>
+            <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, textAlign: 'center' }}>
               Point your camera at a product barcode
             </p>
           </>
@@ -2409,7 +2404,7 @@ function BarcodeScannerModal({
             }}
           >
             <div className="spinner" aria-hidden="true" />
-            <div style={{ fontSize: 14, color: COLOURS.textMuted }}>Looking up product…</div>
+            <div style={{ fontSize: 16, color: APP_COLOURS.textMuted }}>Looking up product…</div>
           </div>
         )}
 
@@ -2418,11 +2413,11 @@ function BarcodeScannerModal({
             <h2 style={titleStyle}>{productName}</h2>
             <label
               style={{
-                fontSize: 11,
+                fontSize: 14,
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: COLOURS.textMuted,
+                color: APP_COLOURS.textMuted,
               }}
             >
               How much did you eat?
@@ -2438,9 +2433,9 @@ function BarcodeScannerModal({
                 autoFocus
                 style={{
                   flex: 1,
-                  background: COLOURS.nearBlack,
-                  color: COLOURS.white,
-                  border: `1px solid ${COLOURS.border}`,
+                  background: APP_COLOURS.card,
+                  color: APP_COLOURS.text,
+                  border: `1px solid ${APP_COLOURS.border}`,
                   borderRadius: 10,
                   padding: '12px 14px',
                   fontFamily: "'Barlow', sans-serif",
@@ -2449,28 +2444,28 @@ function BarcodeScannerModal({
                   appearance: 'textfield',
                 }}
               />
-              <span style={{ color: COLOURS.white, fontSize: 14 }}>g</span>
+              <span style={{ color: APP_COLOURS.text, fontSize: 16 }}>g</span>
             </div>
             {preview && (
               <div
                 style={{
-                  background: COLOURS.magentaSoft,
-                  border: `1px solid ${COLOURS.magentaTint}`,
+                  background: APP_COLOURS.magentaSoft,
+                  border: `1px solid ${APP_COLOURS.magentaTint}`,
                   borderRadius: 12,
                   padding: '12px 14px',
-                  fontSize: 13,
-                  color: COLOURS.white,
+                  fontSize: 16,
+                  color: APP_COLOURS.text,
                   lineHeight: 1.5,
                   fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 14,
                     fontWeight: 600,
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    color: COLOURS.magenta,
+                    color: APP_COLOURS.magenta,
                     marginBottom: 4,
                   }}
                 >
@@ -2486,7 +2481,8 @@ function BarcodeScannerModal({
               disabled={!servingValid}
               style={{
                 ...primaryBtnStyle,
-                opacity: !servingValid ? 0.6 : 1,
+                background: !servingValid ? APP_COLOURS.border : APP_COLOURS.magenta,
+                color: !servingValid ? APP_COLOURS.textMuted : APP_COLOURS.onMagenta,
                 cursor: !servingValid ? 'not-allowed' : 'pointer',
               }}
             >
@@ -2498,7 +2494,7 @@ function BarcodeScannerModal({
         {phase === 'not-found' && (
           <>
             <h2 style={titleStyle}>Hmm, no match</h2>
-            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
               Product not found. Try scanning again or snap a photo instead.
             </p>
             <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
@@ -2513,7 +2509,7 @@ function BarcodeScannerModal({
         {phase === 'error' && (
           <>
             <h2 style={titleStyle}>Camera trouble</h2>
-            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
               {errorMsg || 'Something went wrong starting the camera.'}
             </p>
             <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
@@ -2749,7 +2745,7 @@ function VoiceLogModal({
   const overlayStyle: React.CSSProperties = {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(14,14,16,0.96)',
+    background: APP_COLOURS.scrim,
     zIndex: 110,
     overflowY: 'auto',
     display: 'flex',
@@ -2761,14 +2757,15 @@ function VoiceLogModal({
   const cardStyle: React.CSSProperties = {
     width: '100%',
     maxWidth: 460,
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowFloat,
     borderRadius: 18,
     padding: '1.75rem 1.5rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
-    color: COLOURS.white,
+    color: APP_COLOURS.text,
     position: 'relative',
   };
 
@@ -2778,7 +2775,7 @@ function VoiceLogModal({
     right: 12,
     background: 'transparent',
     border: 'none',
-    color: COLOURS.textMuted,
+    color: APP_COLOURS.textMuted,
     fontSize: 20,
     lineHeight: 1,
     cursor: 'pointer',
@@ -2796,13 +2793,13 @@ function VoiceLogModal({
 
   const primaryBtnStyle: React.CSSProperties = {
     width: '100%',
-    background: COLOURS.magenta,
-    color: COLOURS.white,
+    background: APP_COLOURS.magenta,
+    color: APP_COLOURS.onMagenta,
     border: 'none',
     padding: '14px 24px',
     borderRadius: 999,
     fontFamily: "'Barlow', sans-serif",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 700,
     letterSpacing: '0.05em',
     textTransform: 'uppercase',
@@ -2812,12 +2809,12 @@ function VoiceLogModal({
   const secondaryBtnStyle: React.CSSProperties = {
     width: '100%',
     background: 'transparent',
-    color: COLOURS.textMuted,
-    border: `1px solid ${COLOURS.border}`,
+    color: APP_COLOURS.magenta,
+    border: `1px solid ${APP_COLOURS.magenta}`,
     padding: '12px 24px',
     borderRadius: 999,
     fontFamily: "'Barlow', sans-serif",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
@@ -2834,7 +2831,7 @@ function VoiceLogModal({
         {phase === 'unsupported' && (
           <>
             <h2 style={titleStyle}>Voice logging unavailable</h2>
-            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
               Voice logging works best on Chrome or Safari. Try the photo or gallery options instead.
             </p>
             <button type="button" onClick={onClose} style={primaryBtnStyle}>
@@ -2860,11 +2857,11 @@ function VoiceLogModal({
                 width: 72,
                 height: 72,
                 borderRadius: '50%',
-                background: COLOURS.magenta,
+                background: APP_COLOURS.magenta,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: COLOURS.white,
+                color: APP_COLOURS.onMagenta,
                 fontSize: 30,
                 lineHeight: 1,
               }}
@@ -2874,8 +2871,8 @@ function VoiceLogModal({
             <div
               style={{
                 fontFamily: "'Barlow', sans-serif",
-                fontSize: 15,
-                color: COLOURS.white,
+                fontSize: 17,
+                color: APP_COLOURS.heading,
                 textAlign: 'center',
                 letterSpacing: '0.02em',
               }}
@@ -2893,13 +2890,13 @@ function VoiceLogModal({
             <h2 style={titleStyle}>I heard</h2>
             <div
               style={{
-                background: COLOURS.nearBlack,
-                border: `1px solid ${COLOURS.border}`,
+                background: APP_COLOURS.cardRaised,
+                border: `1px solid ${APP_COLOURS.border}`,
                 borderRadius: 12,
                 padding: '14px 16px',
-                fontSize: 15,
+                fontSize: 16,
                 lineHeight: 1.5,
-                color: COLOURS.white,
+                color: APP_COLOURS.text,
               }}
             >
               {transcript}
@@ -2924,14 +2921,14 @@ function VoiceLogModal({
             }}
           >
             <div className="spinner" aria-hidden="true" />
-            <div style={{ fontSize: 14, color: COLOURS.textMuted }}>Estimating macros…</div>
+            <div style={{ fontSize: 16, color: APP_COLOURS.textMuted }}>Estimating macros…</div>
           </div>
         )}
 
         {phase === 'error' && (
           <>
             <h2 style={titleStyle}>Hmm</h2>
-            <p style={{ fontSize: 14, color: COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
               {errorMsg || 'Something went wrong.'}
             </p>
             <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
@@ -2986,13 +2983,13 @@ function OnboardingOverlay({
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: COLOURS.nearBlack,
-    color: COLOURS.white,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    color: APP_COLOURS.text,
+    border: `1px solid ${APP_COLOURS.border}`,
     borderRadius: 10,
     padding: '12px 14px',
     fontFamily: "'Barlow', sans-serif",
-    fontSize: 15,
+    fontSize: 16,
     outline: 'none',
     appearance: 'textfield',
   };
@@ -3005,7 +3002,7 @@ function OnboardingOverlay({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(14,14,16,0.96)',
+        background: APP_COLOURS.scrim,
         zIndex: 100,
         overflowY: 'auto',
         display: 'flex',
@@ -3019,14 +3016,15 @@ function OnboardingOverlay({
         style={{
           width: '100%',
           maxWidth: 480,
-          background: COLOURS.card,
-          border: `1px solid ${COLOURS.border}`,
+          background: APP_COLOURS.card,
+          border: `1px solid ${APP_COLOURS.border}`,
+          boxShadow: APP_COLOURS.shadowFloat,
           borderRadius: 18,
           padding: '1.75rem 1.5rem 1.5rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.25rem',
-          color: COLOURS.white,
+          color: APP_COLOURS.text,
           position: 'relative',
         }}
       >
@@ -3041,7 +3039,7 @@ function OnboardingOverlay({
               right: 12,
               background: 'transparent',
               border: 'none',
-              color: COLOURS.textMuted,
+              color: APP_COLOURS.textMuted,
               fontSize: 20,
               lineHeight: 1,
               cursor: 'pointer',
@@ -3055,11 +3053,11 @@ function OnboardingOverlay({
         <header>
           <div
             style={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: COLOURS.magenta,
+              color: APP_COLOURS.magenta,
               marginBottom: 6,
             }}
           >
@@ -3070,7 +3068,7 @@ function OnboardingOverlay({
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 800,
-              fontSize: 26,
+              fontSize: 30,
               lineHeight: 1.1,
               margin: 0,
               letterSpacing: '-0.01em',
@@ -3080,8 +3078,8 @@ function OnboardingOverlay({
           </h2>
           <p
             style={{
-              fontSize: 13,
-              color: COLOURS.textMuted,
+              fontSize: 16,
+              color: APP_COLOURS.textMuted,
               margin: '6px 0 0',
               lineHeight: 1.5,
             }}
@@ -3210,22 +3208,22 @@ function OnboardingOverlay({
         {computed ? (
           <div
             style={{
-              background: COLOURS.magentaSoft,
-              border: `1px solid ${COLOURS.magentaTint}`,
+              background: APP_COLOURS.magentaSoft,
+              border: `1px solid ${APP_COLOURS.magentaTint}`,
               borderRadius: 12,
               padding: '12px 14px',
-              fontSize: 13,
-              color: COLOURS.white,
+              fontSize: 16,
+              color: APP_COLOURS.text,
               lineHeight: 1.5,
             }}
           >
             <div
               style={{
-                fontSize: 11,
+                fontSize: 14,
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: COLOURS.magenta,
+                color: APP_COLOURS.magenta,
                 marginBottom: 4,
               }}
             >
@@ -3241,8 +3239,8 @@ function OnboardingOverlay({
           disabled={!canSubmit}
           style={{
             width: '100%',
-            background: canSubmit ? COLOURS.magenta : '#2a2a30',
-            color: canSubmit ? COLOURS.white : 'rgba(255,255,255,0.4)',
+            background: canSubmit ? APP_COLOURS.magenta : APP_COLOURS.border,
+            color: canSubmit ? APP_COLOURS.onMagenta : APP_COLOURS.textMuted,
             border: 'none',
             padding: '16px 24px',
             borderRadius: 999,
@@ -3266,11 +3264,11 @@ function OnboardField({ label, children }: { label: string; children: React.Reac
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <span
         style={{
-          fontSize: 11,
+          fontSize: 14,
           fontWeight: 600,
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
-          color: COLOURS.textMuted,
+          color: APP_COLOURS.textMuted,
         }}
       >
         {label}
@@ -3293,8 +3291,8 @@ function UnitToggle({
     <div
       style={{
         display: 'inline-flex',
-        background: COLOURS.nearBlack,
-        border: `1px solid ${COLOURS.border}`,
+        background: APP_COLOURS.cardRaised,
+        border: `1px solid ${APP_COLOURS.border}`,
         borderRadius: 10,
         padding: 3,
         gap: 2,
@@ -3308,13 +3306,13 @@ function UnitToggle({
             type="button"
             onClick={() => onChange(o.value)}
             style={{
-              background: active ? COLOURS.magenta : 'transparent',
-              color: active ? COLOURS.white : COLOURS.textMuted,
+              background: active ? APP_COLOURS.magenta : 'transparent',
+              color: active ? APP_COLOURS.onMagenta : APP_COLOURS.textMuted,
               border: 'none',
               padding: '8px 12px',
               borderRadius: 8,
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: 700,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
@@ -3358,13 +3356,13 @@ function PillGroup({
             type="button"
             onClick={() => onChange(o.value)}
             style={{
-              background: active ? COLOURS.magenta : 'transparent',
-              color: active ? COLOURS.white : 'rgba(255,255,255,0.85)',
-              border: `1.5px solid ${active ? COLOURS.magenta : COLOURS.border}`,
+              background: active ? APP_COLOURS.magenta : APP_COLOURS.card,
+              color: active ? APP_COLOURS.onMagenta : APP_COLOURS.heading,
+              border: `1.5px solid ${active ? APP_COLOURS.magenta : APP_COLOURS.border}`,
               borderRadius: 999,
               padding: '11px 12px',
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
@@ -3385,8 +3383,8 @@ function PillGroup({
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: COLOURS.nearBlack,
-    color: COLOURS.white,
+    background: APP_COLOURS.softBg,
+    color: APP_COLOURS.text,
     fontFamily: "'Barlow', sans-serif",
     padding: '2rem 1.25rem 4rem',
     display: 'flex',
@@ -3404,7 +3402,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '0.5rem 0 1rem',
-    borderBottom: `1px solid ${COLOURS.border}`,
+    borderBottom: `1px solid ${APP_COLOURS.border}`,
   },
   headerTitleGroup: {
     flex: 1,
@@ -3413,7 +3411,7 @@ const styles: Record<string, React.CSSProperties> = {
   headerMark: {
     width: 44,
     height: 44,
-    background: COLOURS.magenta,
+    background: APP_COLOURS.magenta,
     borderRadius: 12,
     display: 'flex',
     alignItems: 'center',
@@ -3424,16 +3422,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
     fontSize: 20,
-    color: COLOURS.white,
+    color: APP_COLOURS.heading,
     lineHeight: 1.1,
     letterSpacing: '-0.01em',
   },
   headerSub: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   block: {
     display: 'flex',
@@ -3441,11 +3439,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.6rem',
   },
   eyebrow: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   pillRow: {
     display: 'grid',
@@ -3453,8 +3451,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   previewCard: {
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 18,
     overflow: 'hidden',
     display: 'flex',
@@ -3475,8 +3474,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
   },
   previewName: {
-    fontSize: 13,
-    color: COLOURS.textMuted,
+    fontSize: 14,
+    color: APP_COLOURS.textMuted,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -3484,8 +3483,9 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
   },
   loadingBox: {
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 16,
     padding: '2rem 1.5rem',
     display: 'flex',
@@ -3494,13 +3494,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 14,
   },
   loadingText: {
-    fontSize: 14,
-    color: COLOURS.textMuted,
+    fontSize: 16,
+    color: APP_COLOURS.textMuted,
     letterSpacing: '0.02em',
   },
   errorBox: {
-    background: COLOURS.errorBg,
-    border: `1px solid ${COLOURS.errorBorder}`,
+    background: APP_COLOURS.dangerSoft,
+    border: `1px solid ${APP_COLOURS.dangerBorder}`,
     borderRadius: 14,
     padding: '14px 18px',
     display: 'flex',
@@ -3508,15 +3508,15 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 4,
   },
   errorTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 700,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    color: COLOURS.errorText,
+    color: APP_COLOURS.danger,
   },
   errorMsg: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
+    fontSize: 16,
+    color: APP_COLOURS.text,
     lineHeight: 1.5,
   },
   resultsWrap: {
@@ -3525,22 +3525,22 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1.25rem',
   },
   resultHeader: {
-    background: COLOURS.magenta,
+    background: APP_COLOURS.magenta,
     borderRadius: 16,
     padding: '18px 20px',
-    color: COLOURS.white,
+    color: APP_COLOURS.onMagenta,
   },
   resultDish: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 26,
+    fontSize: 28,
     lineHeight: 1.1,
     letterSpacing: '-0.01em',
   },
   resultPortion: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 500,
-    color: 'rgba(255,255,255,0.85)',
+    color: APP_COLOURS.onMagenta,
     marginTop: 4,
   },
   macroGrid: {
@@ -3552,17 +3552,18 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 8,
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 14,
     padding: '16px 18px',
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   foodList: {
     listStyle: 'none',
@@ -3576,26 +3577,27 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '8px 0',
-    borderBottom: `1px solid ${COLOURS.border}`,
-    fontSize: 14,
+    borderBottom: `1px solid ${APP_COLOURS.border}`,
+    fontSize: 16,
   },
   foodName: {
-    color: 'rgba(255,255,255,0.85)',
+    color: APP_COLOURS.text,
   },
   foodCalories: {
-    color: COLOURS.textMuted,
+    color: APP_COLOURS.textMuted,
     fontVariantNumeric: 'tabular-nums',
   },
   insight: {
-    fontSize: 14.5,
+    fontSize: 17,
     lineHeight: 1.65,
-    color: 'rgba(255,255,255,0.85)',
+    color: APP_COLOURS.text,
     fontStyle: 'italic',
     margin: 0,
   },
   subscribeGate: {
-    background: COLOURS.card,
-    border: `2px solid ${COLOURS.magenta}`,
+    background: APP_COLOURS.card,
+    border: `2px solid ${APP_COLOURS.magenta}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 16,
     padding: '22px 20px',
     display: 'flex',
@@ -3609,25 +3611,25 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 800,
     fontSize: 24,
     lineHeight: 1.15,
-    color: COLOURS.white,
+    color: APP_COLOURS.heading,
     letterSpacing: '-0.01em',
   },
   gateSub: {
-    fontSize: 14,
-    color: COLOURS.textMuted,
+    fontSize: 16,
+    color: APP_COLOURS.textMuted,
     marginBottom: 4,
   },
   freeCounter: {
-    fontSize: 12,
-    color: COLOURS.textFaint,
+    fontSize: 14,
+    color: APP_COLOURS.textMuted,
     textAlign: 'center',
     letterSpacing: '0.04em',
     paddingTop: 4,
   },
   proBadge: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 600,
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
     textAlign: 'center',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',

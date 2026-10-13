@@ -25,6 +25,10 @@
 //   dangerBorder  error outline                        (was errorBorder)
 //   shadowCard    soft card shadow
 //   controlOutline  outline of an empty control or chart mark; 3:1 on white
+//   shadowFloat     stronger shadow for floating cards: modals, toasts, menus
+//   shadowKnob      small shadow under a switch knob
+//   scrim           dimmed backdrop behind a modal
+//   magentaPulse / magentaPulseEnd  the animated ring around the voice button
 //
 // Deliberately dark, for surfaces that sit over a photo or camera view:
 //   overlay         full-screen backdrop behind photos
@@ -58,6 +62,11 @@ export const APP_COLOURS = {
   dangerBorder: '#F0B4AE',
   shadowCard: '0 1px 2px rgba(20,20,26,0.04), 0 8px 24px rgba(20,20,26,0.06)',
   controlOutline: '#7C8A82',
+  shadowFloat: '0 4px 10px rgba(20,20,26,0.08), 0 18px 44px rgba(20,20,26,0.18)',
+  shadowKnob: '0 1px 2px rgba(20,20,26,0.3)',
+  scrim: 'rgba(20,20,26,0.6)',
+  magentaPulse: 'rgba(176,24,94,0.55)',
+  magentaPulseEnd: 'rgba(176,24,94,0)',
   overlay: 'rgba(14,14,16,0.96)',
   onOverlay: '#FFFFFF',
   onOverlayMuted: 'rgba(255,255,255,0.8)',
