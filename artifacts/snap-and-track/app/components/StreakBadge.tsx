@@ -1,3 +1,4 @@
+import { APP_COLOURS } from '../lib/app-colours';
 import type { Streak } from '../lib/streak';
 
 export function StreakBadge({ streak }: { streak: Streak }) {
@@ -10,8 +11,8 @@ export function StreakBadge({ streak }: { streak: Streak }) {
         justifyContent: 'center',
         gap: 8,
         padding: '8px 14px',
-        background: '#1a1a1e',
-        border: '1px solid #2a2a30',
+        background: APP_COLOURS.magentaSoft,
+        border: `1px solid ${APP_COLOURS.magentaTint}`,
         borderRadius: 999,
         alignSelf: 'center',
         fontVariantNumeric: 'tabular-nums',
@@ -32,7 +33,7 @@ export function StreakBadge({ streak }: { streak: Streak }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 13,
               fontWeight: 700,
-              color: '#ffffff',
+              color: APP_COLOURS.heading,
               letterSpacing: '0.02em',
             }}
           >
@@ -41,7 +42,7 @@ export function StreakBadge({ streak }: { streak: Streak }) {
           <span
             style={{
               fontSize: 11,
-              color: 'rgba(255,255,255,0.55)',
+              color: APP_COLOURS.textMuted,
               letterSpacing: '0.02em',
             }}
           >
@@ -53,7 +54,7 @@ export function StreakBadge({ streak }: { streak: Streak }) {
           style={{
             fontFamily: "'Barlow', sans-serif",
             fontSize: 12,
-            color: 'rgba(255,255,255,0.55)',
+            color: APP_COLOURS.textMuted,
             letterSpacing: '0.02em',
           }}
         >

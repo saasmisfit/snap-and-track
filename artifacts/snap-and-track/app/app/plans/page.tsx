@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { MacroPill } from '../../components/MacroPill';
+import { APP_COLOURS } from '../../lib/app-colours';
 
 type Goal = 'fat_loss' | 'maintain' | 'build';
 type MealSlot = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
@@ -18,23 +19,6 @@ interface PlanMeal {
   fat_g: number;
   fibre_g: number;
 }
-
-const COLOURS = {
-  magenta: '#B0185E',
-  magentaDark: '#8a1249',
-  magentaSoft: 'rgba(176,24,94,0.12)',
-  magentaTint: 'rgba(176,24,94,0.18)',
-  nearBlack: '#0E0E10',
-  card: '#1a1a1e',
-  cardRaised: '#22222a',
-  border: '#2a2a30',
-  white: '#ffffff',
-  textMuted: 'rgba(255,255,255,0.55)',
-  textFaint: 'rgba(255,255,255,0.35)',
-  textLight: '#cccccc',
-  success: '#4ade80',
-  danger: '#fca5a5',
-};
 
 const GOAL_TABS: Array<{ value: Goal; label: string }> = [
   { value: 'fat_loss', label: 'Fat loss' },
@@ -259,7 +243,7 @@ export default function MealPlansPage() {
             <div style={styles.headerTitle}>Meal Plans</div>
             <div style={styles.headerSub}>by Stacy Kundu</div>
           </div>
-          <Link href="/app" className="header-link" style={{ color: '#ffffff', textDecoration: 'none' }}>
+          <Link href="/app" className="header-link" style={{ color: APP_COLOURS.onMagenta, textDecoration: 'none' }}>
             ＋ Snap a meal
           </Link>
         </header>
@@ -285,13 +269,13 @@ export default function MealPlansPage() {
                 onClick={() => setTab(g.value)}
                 style={{
                   flex: 1,
-                  background: active ? COLOURS.magenta : 'transparent',
-                  color: active ? COLOURS.white : 'rgba(255,255,255,0.85)',
-                  border: `1.5px solid ${active ? COLOURS.magenta : COLOURS.border}`,
+                  background: active ? APP_COLOURS.magenta : APP_COLOURS.card,
+                  color: active ? APP_COLOURS.onMagenta : APP_COLOURS.heading,
+                  border: `1.5px solid ${active ? APP_COLOURS.magenta : APP_COLOURS.border}`,
                   borderRadius: 999,
-                  padding: '10px 14px',
+                  padding: '12px 14px',
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 600,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
@@ -333,9 +317,9 @@ export default function MealPlansPage() {
                 <div style={styles.mealName}>{m.name}</div>
                 <p style={styles.mealDesc}>{m.description}</p>
                 <div style={styles.macroPills}>
-                  <MacroPill value={`${fmt(m.protein_g)}g`} unit="protein" />
-                  <MacroPill value={`${fmt(m.carbs_g)}g`} unit="carbs" />
-                  <MacroPill value={`${fmt(m.fat_g)}g`} unit="fat" />
+                  <MacroPill value={`${fmt(m.protein_g)}g`} unit="protein" size="large" />
+                  <MacroPill value={`${fmt(m.carbs_g)}g`} unit="carbs" size="large" />
+                  <MacroPill value={`${fmt(m.fat_g)}g`} unit="fat" size="large" />
                 </div>
                 <button
                   type="button"
@@ -344,16 +328,16 @@ export default function MealPlansPage() {
                   style={{
                     width: '100%',
                     background: isLogged
-                      ? 'rgba(74, 222, 128, 0.08)'
+                      ? APP_COLOURS.successSoft
                       : isLogging
-                        ? COLOURS.magentaDark
-                        : COLOURS.magenta,
-                    color: isLogged ? COLOURS.success : COLOURS.white,
-                    border: isLogged ? `1.5px solid ${COLOURS.success}` : 'none',
-                    padding: '12px 24px',
+                        ? APP_COLOURS.magentaDark
+                        : APP_COLOURS.magenta,
+                    color: isLogged ? APP_COLOURS.success : APP_COLOURS.onMagenta,
+                    border: isLogged ? `1.5px solid ${APP_COLOURS.success}` : 'none',
+                    padding: '14px 24px',
                     borderRadius: 999,
                     fontFamily: "'Barlow', sans-serif",
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: 700,
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
@@ -368,23 +352,23 @@ export default function MealPlansPage() {
           })}
         </div>
 
-        <Link href="/app/log" className="footer-link" style={{ color: COLOURS.textMuted, textDecoration: 'none' }}>
+        <Link href="/app/log" className="footer-link" style={{ color: APP_COLOURS.textMuted, textDecoration: 'none' }}>
           View your log →
         </Link>
       </div>
 
       <style jsx>{`
         :global(body) {
-          background: ${COLOURS.nearBlack};
+          background: ${APP_COLOURS.softBg};
         }
 
         .header-link {
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
-          padding: 8px 16px;
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
+          padding: 10px 18px;
           border-radius: 999px;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 700;
           letter-spacing: 0.06em;
           text-transform: uppercase;
@@ -393,20 +377,20 @@ export default function MealPlansPage() {
           transition: background 0.2s, transform 0.1s;
         }
         .header-link:hover {
-          background: ${COLOURS.magentaDark};
+          background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
         .footer-link {
           align-self: center;
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 500;
           padding: 0.5rem 0 0;
           letter-spacing: 0.02em;
           transition: color 0.2s;
         }
         .footer-link:hover {
-          color: ${COLOURS.white} !important;
+          color: ${APP_COLOURS.magenta} !important;
         }
       `}</style>
     </main>
@@ -417,8 +401,8 @@ export default function MealPlansPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: COLOURS.nearBlack,
-    color: COLOURS.white,
+    background: APP_COLOURS.softBg,
+    color: APP_COLOURS.text,
     fontFamily: "'Barlow', sans-serif",
     padding: '2rem 1.25rem 4rem',
     display: 'flex',
@@ -426,7 +410,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   shell: {
     width: '100%',
-    maxWidth: 560,
+    maxWidth: 600,
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
@@ -436,12 +420,12 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '0.5rem 0 1rem',
-    borderBottom: `1px solid ${COLOURS.border}`,
+    borderBottom: `1px solid ${APP_COLOURS.border}`,
   },
   headerMark: {
     width: 44,
     height: 44,
-    background: COLOURS.magenta,
+    background: APP_COLOURS.magenta,
     borderRadius: 12,
     display: 'flex',
     alignItems: 'center',
@@ -455,23 +439,24 @@ const styles: Record<string, React.CSSProperties> = {
   headerTitle: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 20,
-    color: COLOURS.white,
+    fontSize: 28,
+    color: APP_COLOURS.heading,
     lineHeight: 1.1,
     letterSpacing: '-0.01em',
   },
   headerSub: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   bannerCard: {
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.magentaTint}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.magentaTint}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 16,
-    padding: '16px 18px',
+    padding: '18px 20px',
     display: 'flex',
     alignItems: 'flex-start',
     gap: 12,
@@ -484,10 +469,10 @@ const styles: Record<string, React.CSSProperties> = {
   bannerText: {
     margin: 0,
     fontFamily: "'Barlow', sans-serif",
-    fontSize: 14,
+    fontSize: 16,
     fontStyle: 'italic',
     lineHeight: 1.55,
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   tabRow: {
     display: 'flex',
@@ -500,25 +485,27 @@ const styles: Record<string, React.CSSProperties> = {
     paddingLeft: 2,
   },
   totalsLabel: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   totalsValues: {
-    fontSize: 13,
-    color: COLOURS.textLight,
+    fontSize: 16,
+    fontWeight: 500,
+    color: APP_COLOURS.text,
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: '0.02em',
   },
   errorBox: {
-    background: 'rgba(220,38,38,0.10)',
-    border: '1px solid rgba(220,38,38,0.45)',
+    background: APP_COLOURS.dangerSoft,
+    border: `1px solid ${APP_COLOURS.dangerBorder}`,
     borderRadius: 12,
-    padding: '12px 16px',
-    color: COLOURS.danger,
-    fontSize: 13,
+    padding: '14px 16px',
+    color: APP_COLOURS.danger,
+    fontSize: 16,
+    fontWeight: 500,
     lineHeight: 1.5,
   },
   mealList: {
@@ -527,13 +514,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1rem',
   },
   mealCard: {
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 16,
-    padding: '16px 18px',
+    padding: '20px 22px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
+    gap: 10,
   },
   mealTopRow: {
     display: 'flex',
@@ -542,38 +530,39 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
   },
   mealSlot: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 700,
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   mealCalories: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 18,
-    color: COLOURS.white,
+    fontSize: 21,
+    color: APP_COLOURS.heading,
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: '-0.01em',
   },
   mealName: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 20,
+    fontSize: 25,
     lineHeight: 1.15,
-    color: COLOURS.white,
+    color: APP_COLOURS.heading,
     letterSpacing: '-0.01em',
   },
   mealDesc: {
     margin: 0,
-    fontSize: 13.5,
+    fontSize: 16,
+    fontWeight: 500,
     lineHeight: 1.55,
-    color: 'rgba(255,255,255,0.78)',
+    color: APP_COLOURS.text,
   },
   macroPills: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
     marginTop: 4,
   },
 };
