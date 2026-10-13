@@ -24,6 +24,8 @@
     --text-table: #2A2A33;
     --border-card: #D5E6DC;
     --magenta-tint: #FEF0F6;
+    --icon-tint: #F9EAF1;
+    --icon-muted: #9A9AA6;
     --magenta-line: rgba(176,24,94,0.2);
     --on-magenta: #FFFFFF;
     --glow-magenta: rgba(176,24,94,0.14);
@@ -65,6 +67,28 @@
   /* Marketing page wrapper: light surface without touching the /app routes */
   .landing { background: var(--bg-white); color: var(--text-body); font-size: 1rem; font-weight: 500; }
   body:has(.landing) { background: var(--bg-white); }
+  .landing .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* Line icon (lucide) on a pale magenta tile */
+  .icon-tile {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--icon-tint);
+    color: var(--magenta);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .expander-btn { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .expander-btn svg { transition: transform 0.25s ease; }
+  .expander-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
 
   /* ── NAV ── */
   nav {
@@ -284,25 +308,28 @@
     flex-wrap: wrap;
     margin-bottom: 2rem;
   }
+  /* Five pills; the width cap makes them break three then two, never four then one */
   .hero-trust {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem 1.5rem;
-    /* Clips the separator dot of whichever chip starts a wrapped line */
-    overflow-x: clip;
+    gap: 0.6rem;
+    list-style: none;
+    max-width: 34rem;
+  }
+  .hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+    padding: 0.45rem 0.95rem 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: var(--icon-tint);
+    color: var(--text-heading);
     font-size: var(--fs-small);
     font-weight: 600;
-    color: var(--text-heading);
-    letter-spacing: 0.01em;
+    line-height: 1.2;
   }
-  .hero-trust span { position: relative; white-space: nowrap; }
-  .hero-trust span + span::before {
-    content: '·';
-    position: absolute;
-    left: -0.75rem;
-    transform: translateX(-50%);
-    color: var(--text-muted);
-  }
+  .hero-pill svg { color: var(--magenta); flex-shrink: 0; }
   .hero-visual {
     position: relative;
     display: flex;
@@ -521,10 +548,11 @@
     margin-bottom: 1rem;
   }
   .features-lede { font-size: 1.222rem; color: var(--text-body); max-width: 40rem; margin: 0.75rem 0 3rem; line-height: 1.6; }
-  .cluster-grid {
+  /* Bento: 2 large cards, then 4, then 3 */
+  .bento-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-    gap: 32px;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
   }
   .cluster-card {
     background: var(--bg-mint);
@@ -532,17 +560,90 @@
     border-radius: 18px;
     box-shadow: var(--shadow-card);
     color: var(--text-body);
-    padding: clamp(24px, 4vw, 40px);
+  }
+  .bento-card {
+    padding: clamp(32px, 2.5vw, 40px);
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    align-items: flex-start;
   }
-  .cluster-emoji { font-size: 1.8rem; line-height: 1; }
-  .cluster-title { font-size: 1.6rem; color: var(--text-heading); }
-  .cluster-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 28px; }
-  .cluster-item-emoji { font-size: 1.15rem; line-height: 1.4; flex-shrink: 0; }
-  .cluster-item-name { font-size: 1.111rem; color: var(--text-heading); }
-  .cluster-item-desc { font-size: 1rem; font-weight: 500; color: var(--text-body); line-height: 1.6; margin-top: 4px; }
+  .landing .bento-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card-hover); }
+  .bento-large { grid-column: span 6; }
+  .bento-quarter { grid-column: span 3; }
+  .bento-third { grid-column: span 4; }
+  .bento-title {
+    font-size: 1.222rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-heading);
+    margin: 1.25rem 0 0.5rem;
+  }
+  .bento-desc { font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--text-body); }
+  .bento-large .bento-title {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 2.1rem;
+    line-height: 1.05;
+    margin-bottom: 0.75rem;
+  }
+  .bento-large .bento-desc { font-size: 1.111rem; max-width: 36rem; }
+  .take-bubble {
+    margin-top: 1.75rem;
+    max-width: 36rem;
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: 18px 18px 18px 4px;
+    box-shadow: var(--shadow-card);
+    padding: 1.25rem 1.5rem 1.35rem;
+  }
+  .take-label {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--magenta);
+    margin-bottom: 0.5rem;
+  }
+  .take-bubble blockquote { font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--text-body); }
+
+  /* "And everything else": chips, with descriptions that expand under each */
+  .more-features { margin-top: 3.5rem; }
+  .more-title {
+    font-family: var(--display-font);
+    font-weight: 800;
+    font-size: 1.7rem;
+    line-height: 1.1;
+    color: var(--text-heading);
+    margin-bottom: 1.5rem;
+  }
+  .more-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
+    gap: 12px 24px;
+    align-items: start;
+  }
+  .more-chip {
+    display: inline-flex;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    background: var(--bg-mint);
+    border: 1px solid var(--border-card);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-heading);
+  }
+  .more-desc {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.35s ease, opacity 0.35s ease;
+  }
+  .more-desc > div { overflow: hidden; min-height: 0; }
+  .more-desc p { padding: 0.6rem 0.25rem 0.9rem; font-size: 1rem; font-weight: 500; line-height: 1.6; color: var(--text-body); }
+  .more-grid.open .more-desc { grid-template-rows: 1fr; opacity: 1; }
+  .more-features .expander-btn { margin-top: 2rem; }
   .features-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -600,8 +701,10 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     box-shadow: var(--shadow-card);
-    padding: 1rem 1.25rem 1.25rem;
+    position: relative;
+    overflow: hidden;
   }
+  .vs-scroll { overflow-x: auto; padding: 1rem 1.25rem 1.25rem; }
   .vs-table {
     width: 100%;
     border-collapse: collapse;
@@ -638,12 +741,24 @@
     border-right: 2px solid var(--magenta);
   }
   .vs-table th.col-snap { color: var(--magenta); border-top: 2px solid var(--magenta); border-bottom-color: var(--magenta-line); }
-  .vs-table td.col-snap { color: var(--text-heading); font-weight: 700; border-bottom-color: var(--magenta-line); }
+  .vs-table td.col-snap { color: var(--text-heading); font-weight: 600; border-bottom-color: var(--magenta-line); }
   .vs-table tbody tr:last-child td.col-snap { border-bottom: 2px solid var(--magenta); }
-  .vs-table td.check { color: var(--ok); }
-  .vs-table td.cross { color: var(--text-muted); }
-  .vs-table td.partial { color: var(--warn); }
-  .vs-table td.col-snap.check { color: var(--text-heading); }
+  /* Cell marks: green tick disc, grey dash, amber dot */
+  .vs-cell { display: inline-flex; align-items: center; gap: 0.6rem; }
+  .vs-mark {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .vs-check .vs-mark { background: var(--ok); color: var(--white); }
+  .vs-cross { color: var(--text-muted); }
+  .vs-cross .vs-mark { color: var(--icon-muted); }
+  .vs-partial .vs-mark::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--warn); }
+  .vs-actions { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; margin-top: 2rem; }
+  .vs-footnote { font-size: var(--fs-small); color: var(--text-muted); text-align: center; line-height: 1.6; }
 
   /* ── SOCIAL PROOF ── */
   #proof { padding: 6rem 0; }
@@ -957,7 +1072,7 @@
     :root { --phone-scale: 1; }
     #hero { min-height: 0; }
     .hero-grid { padding: 3rem 0 4rem; }
-    .hero-trust { justify-content: center; }
+    .hero-trust { justify-content: center; margin: 0 auto; }
     .hero-visual { margin-top: 2rem; }
     .phone-badge, .phone-badge2 { display: none; }
     .pain-grid { grid-template-columns: 1fr; }
@@ -971,12 +1086,44 @@
     .pricing-grid { grid-template-columns: 1fr 1fr; }
     .nav-links { display: none; }
     .upsell-strip { flex-direction: column; text-align: center; }
+    /* Comparison table: sticky feature column, sideways scroll, fade as a scroll hint */
+    .vs-scroll { padding: 0; }
+    .vs-table th:first-child,
+    .vs-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--surface);
+      min-width: 8.5rem;
+      max-width: 10rem;
+      box-shadow: 1px 0 0 var(--border);
+    }
+    .vs-table th:last-child,
+    .vs-table td:last-child { padding-right: 44px; }
+    .vs-card::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 36px;
+      background: linear-gradient(to right, transparent, var(--surface));
+      pointer-events: none;
+      z-index: 2;
+    }
+  }
+  /* Bento: two columns on tablets and small laptops, one on phones */
+  @media(max-width:1180px) {
+    .bento-grid { grid-template-columns: repeat(2, 1fr); }
+    .bento-quarter, .bento-third { grid-column: span 1; }
+    .bento-large, .bento-third:last-child { grid-column: 1 / -1; }
+  }
+  @media(max-width:640px) {
+    .bento-grid { grid-template-columns: 1fr; }
+    .bento-large, .bento-quarter, .bento-third, .bento-third:last-child { grid-column: 1 / -1; }
   }
   @media(max-width:600px) {
     .pricing-grid { grid-template-columns: 1fr; }
     :root { --nav-h: 76px; --logo-h: 64px; }
     .hero-visual::before { width: 440px; height: 440px; }
-    .vs-card { padding: 0.5rem 0.5rem 0.75rem; }
   }
   /* Keep the mockup in proportion with the fluid type on large monitors */
   @media(min-width:1800px) { :root { --phone-scale: 1.28; } }

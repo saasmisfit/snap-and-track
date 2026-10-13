@@ -1,73 +1,119 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import {
+  Bot,
+  Camera,
+  ChartColumn,
+  Check,
+  ChevronDown,
+  ClipboardList,
+  Flame,
+  MessageCircleHeart,
+  Mic,
+  Minus,
+  ScanBarcode,
+  Timer,
+  UtensilsCrossed,
+  type LucideIcon,
+} from 'lucide-react';
 
-const HERO_SOCIAL_STRIP =
-  '📸 Photo snap · 🔊 Voice log · 📊 Macro tracking · 🔥 Streak coaching · 🤖 AI Coach';
+const HERO_CHIPS: { label: string; icon: LucideIcon }[] = [
+  { label: 'Photo snap', icon: Camera },
+  { label: 'Voice log', icon: Mic },
+  { label: 'Macro tracking', icon: ChartColumn },
+  { label: 'Streak coaching', icon: Flame },
+  { label: 'AI Coach', icon: Bot },
+];
 
 interface FeatureItem {
-  emoji: string;
   name: string;
   desc: string;
 }
 
 interface FeatureCluster {
-  emoji: string;
   title: string;
   items: FeatureItem[];
 }
 
 const FEATURE_CLUSTERS: FeatureCluster[] = [
   {
-    emoji: '📸',
     title: 'Log your meals in seconds',
     items: [
-      { emoji: '📸', name: 'Photo snap', desc: 'Point your camera at any meal and get instant calories and macros powered by Claude AI.' },
-      { emoji: '🖼️', name: 'Gallery upload', desc: 'Already eaten? Upload from your camera roll and log it after the fact.' },
-      { emoji: '📱', name: 'Barcode scanner', desc: 'Scan any packaged food and pull verified nutrition data from the Open Food Facts database.' },
-      { emoji: '🎙️', name: 'Voice logging', desc: 'Just say what you ate. The app transcribes and estimates your macros automatically.' },
-      { emoji: '🍽️', name: 'Restaurant menu scanner', desc: 'Photograph a menu and Stacy recommends the best dish for your goal.' },
-      { emoji: '⚡', name: 'Quick re-log', desc: 'See your recent meals and log them again in one tap — no scanning needed.' },
+      { name: 'Photo snap', desc: 'Point your camera at any meal and get instant calories and macros powered by Claude AI.' },
+      { name: 'Gallery upload', desc: 'Already eaten? Upload from your camera roll and log it after the fact.' },
+      { name: 'Barcode scanner', desc: 'Scan any packaged food and pull verified nutrition data from the Open Food Facts database.' },
+      { name: 'Voice logging', desc: 'Just say what you ate. The app transcribes and estimates your macros automatically.' },
+      { name: 'Restaurant menu scanner', desc: 'Photograph a menu and Stacy recommends the best dish for your goal.' },
+      { name: 'Quick re-log', desc: 'See your recent meals and log them again in one tap — no scanning needed.' },
     ],
   },
   {
-    emoji: '📊',
     title: 'Track what actually matters',
     items: [
-      { emoji: '🎯', name: 'Daily calorie target', desc: 'Set your personalised calorie and macro targets using the Mifflin-St Jeor calculator on first open.' },
-      { emoji: '📉', name: 'Net carbs mode', desc: 'Toggle net carbs on for keto tracking. Fibre is tracked and subtracted automatically.' },
-      { emoji: '💧', name: 'Water tracker', desc: 'Log your glasses and get browser reminders every two hours to stay hydrated.' },
-      { emoji: '⚖️', name: 'Weight trend graph', desc: 'Log your weight daily and watch your 30-day trend line in a clean SVG graph.' },
-      { emoji: '🔥', name: 'Calories burned', desc: 'Enter calories burned from your watch or tracker and see your adjusted daily budget.' },
-      { emoji: '7️⃣', name: '7-day rolling history', desc: 'Your meal log keeps a full seven days of history, grouped by date, with daily macro totals.' },
+      { name: 'Daily calorie target', desc: 'Set your personalised calorie and macro targets using the Mifflin-St Jeor calculator on first open.' },
+      { name: 'Net carbs mode', desc: 'Toggle net carbs on for keto tracking. Fibre is tracked and subtracted automatically.' },
+      { name: 'Water tracker', desc: 'Log your glasses and get browser reminders every two hours to stay hydrated.' },
+      { name: 'Weight trend graph', desc: 'Log your weight daily and watch your 30-day trend line in a clean SVG graph.' },
+      { name: 'Calories burned', desc: 'Enter calories burned from your watch or tracker and see your adjusted daily budget.' },
+      { name: '7-day rolling history', desc: 'Your meal log keeps a full seven days of history, grouped by date, with daily macro totals.' },
     ],
   },
   {
-    emoji: '🔥',
     title: 'Build habits that stick',
     items: [
-      { emoji: '🔥', name: 'Streak tracker', desc: 'Build a consecutive logging streak. Milestone notifications fire at 3, 7, 14, and 30 days.' },
-      { emoji: '⏰', name: 'Daily reminders', desc: 'Get a gentle nudge at breakfast, lunch, and dinner so nothing slips through the gaps.' },
-      { emoji: '⏱️', name: 'Fasting timer', desc: 'Run 16:8, 18:6, 20:4, or a custom fasting window with a live countdown and eating window alerts.' },
-      { emoji: '📷', name: 'Progress photos', desc: 'Upload a weekly progress photo and compare any two side by side to see your transformation.' },
-      { emoji: '📅', name: 'Dated meal history', desc: 'Every entry is timestamped. Tap any date to expand and see everything you ate that day.' },
-      { emoji: '☁️', name: 'Syncs everywhere', desc: 'Your data lives in the cloud. Log on your phone, check on your laptop — always in sync.' },
+      { name: 'Streak tracker', desc: 'Build a consecutive logging streak. Milestone notifications fire at 3, 7, 14, and 30 days.' },
+      { name: 'Daily reminders', desc: 'Get a gentle nudge at breakfast, lunch, and dinner so nothing slips through the gaps.' },
+      { name: 'Fasting timer', desc: 'Run 16:8, 18:6, 20:4, or a custom fasting window with a live countdown and eating window alerts.' },
+      { name: 'Progress photos', desc: 'Upload a weekly progress photo and compare any two side by side to see your transformation.' },
+      { name: 'Dated meal history', desc: 'Every entry is timestamped. Tap any date to expand and see everything you ate that day.' },
+      { name: 'Syncs everywhere', desc: 'Your data lives in the cloud. Log on your phone, check on your laptop — always in sync.' },
     ],
   },
   {
-    emoji: '💬',
     title: 'Your coach in your pocket',
     items: [
-      { emoji: '💬', name: "Stacy's coaching note", desc: "Every single meal scan returns a personalised note written in Stacy's voice — not generic AI output." },
-      { emoji: '🤖', name: 'AI Coach', desc: 'Ask Stacy anything about your week. She reads your actual logged data and answers like a real PT would.' },
-      { emoji: '📋', name: 'Pre-built meal plans', desc: "Three done-for-you day plans — fat loss, maintain, and build — written by Stacy. Log any meal straight to your day." },
-      { emoji: '🎯', name: 'Goal-aware output', desc: 'Set your goal to Fat Loss, Maintain, or Build & Tone. Every result and recommendation adapts to it.' },
+      { name: "Stacy's coaching note", desc: "Every single meal scan returns a personalised note written in Stacy's voice — not generic AI output." },
+      { name: 'AI Coach', desc: 'Ask Stacy anything about your week. She reads your actual logged data and answers like a real PT would.' },
+      { name: 'Pre-built meal plans', desc: "Three done-for-you day plans — fat loss, maintain, and build — written by Stacy. Log any meal straight to your day." },
+      { name: 'Goal-aware output', desc: 'Set your goal to Fat Loss, Maintain, or Build & Tone. Every result and recommendation adapts to it.' },
     ],
   },
 ];
+
+const ALL_FEATURES: FeatureItem[] = FEATURE_CLUSTERS.flatMap((c) => c.items);
+
+const COACHING_NOTE = "Stacy's coaching note";
+const STACY_TAKE =
+  "That's a brilliant fat-loss plate. 44g of protein is exactly where you want to be — the broccoli keeps it filling without blowing your calories. Genuinely good choice.";
+
+// Bento cards, in display order. Text comes from FEATURE_CLUSTERS by name;
+// every feature not listed here is shown as a chip under "And everything else".
+const BENTO_LAYOUT: { name: string; icon: LucideIcon; size: 'large' | 'quarter' | 'third' }[] = [
+  { name: COACHING_NOTE, icon: MessageCircleHeart, size: 'large' },
+  { name: 'AI Coach', icon: Bot, size: 'large' },
+  { name: 'Photo snap', icon: Camera, size: 'quarter' },
+  { name: 'Voice logging', icon: Mic, size: 'quarter' },
+  { name: 'Barcode scanner', icon: ScanBarcode, size: 'quarter' },
+  { name: 'Restaurant menu scanner', icon: UtensilsCrossed, size: 'quarter' },
+  { name: 'Streak tracker', icon: Flame, size: 'third' },
+  { name: 'Fasting timer', icon: Timer, size: 'third' },
+  { name: 'Pre-built meal plans', icon: ClipboardList, size: 'third' },
+];
+
+const BENTO_FEATURES = BENTO_LAYOUT.map((b) => ({
+  ...b,
+  desc: ALL_FEATURES.find((f) => f.name === b.name)?.desc ?? '',
+}));
+
+const MORE_FEATURES = ALL_FEATURES.filter(
+  (f) => !BENTO_LAYOUT.some((b) => b.name === f.name)
+);
+
+type VsKind = 'check' | 'partial' | 'cross';
 
 interface VsRow {
   feature: string;
@@ -75,10 +121,10 @@ interface VsRow {
   mfp: string;
   cal: string;
   macro: string;
-  munchKind?: 'check' | 'partial' | 'cross';
-  mfpKind?: 'check' | 'partial' | 'cross';
-  calKind?: 'check' | 'partial' | 'cross';
-  macroKind?: 'check' | 'partial' | 'cross';
+  munchKind?: VsKind;
+  mfpKind?: VsKind;
+  calKind?: VsKind;
+  macroKind?: VsKind;
 }
 
 const VS_ROWS: VsRow[] = [
@@ -96,6 +142,35 @@ const VS_ROWS: VsRow[] = [
   { feature: 'UK price', munch: '£5.99/mo', mfp: '~£13/mo', cal: '~£6/mo', macro: '~£6/mo' },
   { feature: 'Free entry point', munch: '✓ 3 free snaps', mfp: '~ Limited', cal: '✓ 3-day trial', macro: '✗ No free tier', mfpKind: 'partial', calKind: 'check', macroKind: 'cross' },
 ];
+
+// Rows shown before "Show full comparison" is opened.
+const VS_CORE_ROWS = new Set([
+  'Photo macro analysis',
+  'Motivating coaching tone',
+  'Voice logging',
+  'AI Coach on your data',
+  'Progress photos',
+  'Pre-built meal plans',
+  'UK price',
+  'Free entry point',
+]);
+
+const VS_KIND_LABEL: Record<VsKind, string> = { check: 'Yes', partial: 'Partial', cross: 'No' };
+
+// Swaps the leading ✓ / ~ / ✗ glyph for an icon; the claim text itself is unchanged.
+function VsCell({ text, kind }: { text: string; kind?: VsKind }) {
+  if (!kind) return <>{text}</>;
+  const label = text.replace(/^[✓~✗]\s*/, '');
+  return (
+    <span className={`vs-cell vs-${kind}`}>
+      <span className="vs-mark" aria-hidden="true">
+        {kind === 'check' && <Check size={14} strokeWidth={3} />}
+        {kind === 'cross' && <Minus size={18} strokeWidth={2} />}
+      </span>
+      {label ? <span>{label}</span> : <span className="sr-only">{VS_KIND_LABEL[kind]}</span>}
+    </span>
+  );
+}
 
 const PLAN_FEATURES: string[] = [
   'All logging methods (photo, voice, barcode, menu, gallery)',
@@ -164,6 +239,8 @@ const FAQS: FaqEntry[] = [
 export default function Home() {
   const { isLoaded, isSignedIn } = useUser();
   const showAppCta = isLoaded && isSignedIn;
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
+  const [showFullVs, setShowFullVs] = useState(false);
 
   useEffect(() => {
     // FAQ accordion — named handlers so cleanup can remove the exact
@@ -301,11 +378,14 @@ export default function Home() {
                   See pricing
                 </a>
               </div>
-              <p className="hero-trust">
-                {HERO_SOCIAL_STRIP.split(' · ').map((chip) => (
-                  <span key={chip}>{chip}</span>
+              <ul className="hero-trust">
+                {HERO_CHIPS.map(({ label, icon: Icon }) => (
+                  <li key={label} className="hero-pill">
+                    <Icon size={20} strokeWidth={2} aria-hidden="true" />
+                    {label}
+                  </li>
                 ))}
-              </p>
+              </ul>
             </div>
             <div className="hero-visual">
               <div className="phone-wrap">
@@ -399,7 +479,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURES — 4 CLUSTERS */}
+      {/* FEATURES — BENTO */}
       <section id="features" className="section-white">
         <div className="container">
           <span className="eyebrow">Features</span>
@@ -407,77 +487,51 @@ export default function Home() {
           <p className="features-lede">
             A full nutrition coaching platform for £5.99 a month.
           </p>
-          <div className="cluster-grid">
-            {FEATURE_CLUSTERS.map((c, index) => {
-              const isLast = index === FEATURE_CLUSTERS.length - 1;
-              return (
-                <article
-                  key={c.title}
-                  className="cluster-card"
-                  style={
-                    isLast
-                      ? { gridColumn: '1 / -1', alignItems: 'center', textAlign: 'center' }
-                      : undefined
-                  }
-                >
-                  <header
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      ...(isLast ? { justifyContent: 'center' } : {}),
-                    }}
-                  >
-                    <span aria-hidden="true" className="cluster-emoji">
-                      {c.emoji}
-                    </span>
-                    <h3
-                      className="cluster-title"
-                      style={{
-                        fontFamily: 'var(--display-font)',
-                        fontWeight: 800,
-                        lineHeight: 1.15,
-                        margin: 0,
-                        letterSpacing: '-0.01em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {c.title}
-                    </h3>
-                  </header>
-                  <ul
-                    className="cluster-list"
-                    style={
-                      isLast ? { maxWidth: '34rem', width: '100%', textAlign: 'left' } : undefined
-                    }
-                  >
-                    {c.items.map((f) => (
-                      <li
-                        key={f.name}
-                        style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}
-                      >
-                        <span aria-hidden="true" className="cluster-item-emoji">
-                          {f.emoji}
-                        </span>
-                        <div style={{ minWidth: 0 }}>
-                          <div
-                            className="cluster-item-name"
-                            style={{
-                              fontFamily: "'Barlow', sans-serif",
-                              fontWeight: 700,
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            {f.name}
-                          </div>
-                          <div className="cluster-item-desc">{f.desc}</div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              );
-            })}
+          <div className="bento-grid">
+            {BENTO_FEATURES.map(({ name, desc, size, icon: Icon }) => (
+              <article key={name} className={`cluster-card bento-card bento-${size}`}>
+                <span className="icon-tile" aria-hidden="true">
+                  <Icon size={24} strokeWidth={2} />
+                </span>
+                <h3 className="bento-title">{name}</h3>
+                <p className="bento-desc">{desc}</p>
+                {name === COACHING_NOTE && (
+                  <figure className="take-bubble">
+                    <figcaption className="take-label">Stacy&apos;s take</figcaption>
+                    <blockquote>{STACY_TAKE}</blockquote>
+                  </figure>
+                )}
+              </article>
+            ))}
+          </div>
+
+          <div className="more-features">
+            <h3 className="more-title">And everything else</h3>
+            <ul
+              id="more-features-list"
+              className={`more-grid${showAllFeatures ? ' open' : ''}`}
+            >
+              {MORE_FEATURES.map((f) => (
+                <li key={f.name}>
+                  <span className="more-chip">{f.name}</span>
+                  <div className="more-desc" aria-hidden={!showAllFeatures}>
+                    <div>
+                      <p>{f.desc}</p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="btn-outline expander-btn"
+              aria-expanded={showAllFeatures}
+              aria-controls="more-features-list"
+              onClick={() => setShowAllFeatures((open) => !open)}
+            >
+              See every feature
+              <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
           </div>
         </div>
       </section>
@@ -490,29 +544,61 @@ export default function Home() {
             Every other app gives you<br />numbers. We give you{' '}
             <span style={{ color: 'var(--magenta)' }}>coaching.</span>
           </h2>
-          <div className="vs-card" style={{ overflowX: 'auto' }}>
-            <table className="vs-table">
-              <thead>
-                <tr>
-                  <th>Feature</th>
-                  <th className="col-snap">Munch Snapper</th>
-                  <th>MyFitnessPal</th>
-                  <th>Cal AI</th>
-                  <th>MacroFactor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {VS_ROWS.map((r) => (
-                  <tr key={r.feature} className="snap-row">
-                    <td>{r.feature}</td>
-                    <td className="col-snap check">{r.munch}</td>
-                    <td className={r.mfpKind ?? ''}>{r.mfp}</td>
-                    <td className={r.calKind ?? ''}>{r.cal}</td>
-                    <td className={r.macroKind ?? ''}>{r.macro}</td>
+          <div className="vs-card">
+            <div className="vs-scroll">
+              <table className="vs-table" id="vs-table">
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th className="col-snap">Munch Snapper</th>
+                    <th>MyFitnessPal</th>
+                    <th>Cal AI</th>
+                    <th>MacroFactor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {VS_ROWS.map((r) => (
+                    <tr
+                      key={r.feature}
+                      className="snap-row"
+                      hidden={!showFullVs && !VS_CORE_ROWS.has(r.feature)}
+                    >
+                      <td>{r.feature}</td>
+                      <td className="col-snap">
+                        <VsCell
+                          text={r.munch}
+                          kind={r.munch.startsWith('✓') ? 'check' : r.munchKind}
+                        />
+                      </td>
+                      <td>
+                        <VsCell text={r.mfp} kind={r.mfpKind} />
+                      </td>
+                      <td>
+                        <VsCell text={r.cal} kind={r.calKind} />
+                      </td>
+                      <td>
+                        <VsCell text={r.macro} kind={r.macroKind} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="vs-actions">
+            <button
+              type="button"
+              className="btn-outline expander-btn"
+              aria-expanded={showFullVs}
+              aria-controls="vs-table"
+              onClick={() => setShowFullVs((open) => !open)}
+            >
+              Show full comparison
+              <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
+            <p className="vs-footnote">
+              Competitor features and prices are approximate and may change.
+            </p>
           </div>
         </div>
       </section>
