@@ -45,7 +45,7 @@ const FEATURE_CLUSTERS: FeatureCluster[] = [
     items: [
       { name: 'Photo snap', desc: 'Point your camera at any meal and get instant calories and macros powered by Claude AI.' },
       { name: 'Gallery upload', desc: 'Already eaten? Upload from your camera roll and log it after the fact.' },
-      { name: 'Barcode scanner', desc: 'Scan any packaged food and pull verified nutrition data from the Open Food Facts database.' },
+      { name: 'Barcode scanner', desc: 'Scan any packaged food and pull nutrition data from the Open Food Facts database.' },
       { name: 'Voice logging', desc: 'Just say what you ate. The app transcribes and estimates your macros automatically.' },
       { name: 'Restaurant menu scanner', desc: 'Photograph a menu and Stacy recommends the best dish for your goal.' },
       { name: 'Quick re-log', desc: 'See your recent meals and log them again in one tap — no scanning needed.' },
@@ -56,7 +56,7 @@ const FEATURE_CLUSTERS: FeatureCluster[] = [
     items: [
       { name: 'Daily calorie target', desc: 'Set your personalised calorie and macro targets using the Mifflin-St Jeor calculator on first open.' },
       { name: 'Net carbs mode', desc: 'Toggle net carbs on for keto tracking. Fibre is tracked and subtracted automatically.' },
-      { name: 'Water tracker', desc: 'Log your glasses and get browser reminders every two hours to stay hydrated.' },
+      { name: 'Water tracker', desc: 'Log your glasses and get reminders every two hours while the app is open.' },
       { name: 'Weight trend graph', desc: 'Log your weight daily and watch your 30-day trend line in a clean SVG graph.' },
       { name: 'Calories burned', desc: 'Enter calories burned from your watch or tracker and see your adjusted daily budget.' },
       { name: '7-day rolling history', desc: 'Your meal log keeps a full seven days of history, grouped by date, with daily macro totals.' },
@@ -65,18 +65,18 @@ const FEATURE_CLUSTERS: FeatureCluster[] = [
   {
     title: 'Build habits that stick',
     items: [
-      { name: 'Streak tracker', desc: 'Build a consecutive logging streak. Milestone notifications fire at 3, 7, 14, and 30 days.' },
-      { name: 'Daily reminders', desc: 'Get a gentle nudge at breakfast, lunch, and dinner so nothing slips through the gaps.' },
-      { name: 'Fasting timer', desc: 'Run 16:8, 18:6, 20:4, or a custom fasting window with a live countdown and eating window alerts.' },
+      { name: 'Streak tracker', desc: 'Build a consecutive logging streak. Milestones at 3, 7, 14 and 30 days.' },
+      { name: 'Daily reminders', desc: 'Get a gentle nudge at breakfast, lunch and dinner while the app is open.' },
+      { name: 'Fasting timer', desc: 'Run 16:8, 18:6, 20:4, or a custom fasting window with a live countdown and an alert when your fast ends.' },
       { name: 'Progress photos', desc: 'Upload a weekly progress photo and compare any two side by side to see your transformation.' },
       { name: 'Dated meal history', desc: 'Every entry is timestamped. Tap any date to expand and see everything you ate that day.' },
-      { name: 'Syncs everywhere', desc: 'Your data lives in the cloud. Log on your phone, check on your laptop — always in sync.' },
+      { name: 'Syncs everywhere', desc: 'Your meal log lives in the cloud. Log on your phone, check on your laptop.' },
     ],
   },
   {
     title: 'Your coach in your pocket',
     items: [
-      { name: "Stacy's coaching note", desc: "Every single meal scan returns a personalised note written in Stacy's voice — not generic AI output." },
+      { name: "Stacy's coaching note", desc: "Every photo, voice and menu scan comes with a personalised coaching note written in Stacy's voice." },
       { name: 'AI Coach', desc: 'Ask Stacy anything about your week. She reads your actual logged data and answers like a real PT would.' },
       { name: 'Pre-built meal plans', desc: "Three done-for-you day plans — fat loss, maintain, and build — written by Stacy. Log any meal straight to your day." },
       { name: 'Goal-aware output', desc: 'Set your goal to Fat Loss, Maintain, or Build & Tone. Every result and recommendation adapts to it.' },
@@ -149,7 +149,7 @@ const VS_ROWS: VsRow[] = [
   { feature: 'Fasting timer', munch: '✓ 16:8, 18:6, 20:4, custom', mfp: '✓ Premium', cal: '✗', macro: '✗', mfpKind: 'check', calKind: 'cross', macroKind: 'cross' },
   { feature: 'Progress photos', munch: '✓ With comparison', mfp: '✗', cal: '✗', macro: '✗', mfpKind: 'cross', calKind: 'cross', macroKind: 'cross' },
   { feature: 'Pre-built meal plans', munch: "✓ In Stacy's voice", mfp: '✓ Premium+', cal: '✗', macro: '✗', mfpKind: 'check', calKind: 'cross', macroKind: 'cross' },
-  { feature: 'Cloud sync all devices', munch: '✓ Included', mfp: '✓', cal: '✓', macro: '✓', mfpKind: 'check', calKind: 'check', macroKind: 'check' },
+  { feature: 'Meal log syncs across devices', munch: '✓ Included', mfp: '✓', cal: '✓', macro: '✓', mfpKind: 'check', calKind: 'check', macroKind: 'check' },
   { feature: 'UK price', munch: '£5.99/mo', mfp: '~£13/mo', cal: '~£6/mo', macro: '~£6/mo' },
   { feature: 'Free entry point', munch: '✓ 3 free snaps', mfp: '~ Limited', cal: '✓ 3-day trial', macro: '✗ No free tier', mfpKind: 'partial', calKind: 'check', macroKind: 'cross' },
 ];
@@ -257,7 +257,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: "What is Stacy's coaching note?",
-    a: "Every meal analysis comes with a short note written in Stacy Kundu’s coaching voice — a real Level 3 certified personal trainer. The note is specific to your logged meal and your goal (fat loss, maintain, or build). It is not a generic AI response — it reads like a message from your PT.",
+    a: "Every meal analysis comes with a short note written in Stacy Kundu’s coaching voice — a real Level 3 certified personal trainer. The note is specific to your logged meal and your goal (fat loss, maintain, or build). It reads like a message from your PT.",
   },
   {
     q: 'What is the AI Coach?',
@@ -281,7 +281,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: 'How much does it cost?',
-    a: '£5.99 per month or £49.99 per year (saving 31%). You get 3 free photo snaps before any payment is required — no credit card needed to start.',
+    a: '£5.99 per month or £49.99 per year (saving 30%). You get 3 free photo snaps before any payment is required — no credit card needed to start.',
   },
 ];
 
@@ -411,7 +411,7 @@ export default function Home() {
                 <span className="accent">Get coached.</span>
               </h1>
               <p className="hero-sub">
-                The only food tracking app with a real PT&apos;s voice on every meal. Photo snap, barcode scanner, voice logging, AI coaching, and a plan built around your goal — all in one place.
+                The only food tracking app with a real PT&apos;s voice on every snap. Photo snap, barcode scanner, voice logging, AI coaching, and targets and meal plans built around your goal — all in one place.
               </p>
               <div className="hero-ctas">
                 <Link
@@ -749,7 +749,7 @@ export default function Home() {
 
             {/* ANNUAL */}
             <div className="price-card featured">
-              <div className="featured-badge">SAVE 31%</div>
+              <div className="featured-badge">SAVE 30%</div>
               <div className="price-name">Annual</div>
               <div className="price-amount">
                 <span className="currency">£</span>49.99
