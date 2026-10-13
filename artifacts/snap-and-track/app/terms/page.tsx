@@ -1,19 +1,10 @@
 import Link from 'next/link';
+import { APP_COLOURS } from '../lib/app-colours';
 
 export const metadata = {
   title: 'Terms of Service — Munch Snapper',
   description:
     'The terms governing your use of Munch Snapper — subscriptions, billing, acceptable use, and account responsibilities.',
-};
-
-const COLOURS = {
-  magenta: '#B0185E',
-  nearBlack: '#0E0E10',
-  card: '#1a1a1e',
-  border: '#2a2a30',
-  white: '#ffffff',
-  textMuted: 'rgba(255,255,255,0.75)',
-  textFaint: 'rgba(255,255,255,0.5)',
 };
 
 const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
@@ -68,7 +59,7 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
         For any questions about these terms:{' '}
         <a
           href="mailto:help@munchsnapper.com"
-          style={{ color: COLOURS.magenta, textDecoration: 'none', fontWeight: 600 }}
+          style={{ color: APP_COLOURS.magenta, textDecoration: 'underline', fontWeight: 600 }}
         >
           help@munchsnapper.com
         </a>
@@ -82,29 +73,32 @@ export default function TermsOfServicePage() {
     <main
       style={{
         minHeight: '100vh',
-        background: COLOURS.nearBlack,
-        color: COLOURS.white,
+        background: APP_COLOURS.pageBg,
+        color: APP_COLOURS.text,
         fontFamily: "'Barlow', sans-serif",
-        padding: '2.5rem 1.25rem 4rem',
+        padding: '3rem 1.25rem 5rem',
         display: 'flex',
         justifyContent: 'center',
       }}
     >
+      {/* Matches the page behind the wrapper so no dark body shows on overscroll */}
+      <style>{`body { background: ${APP_COLOURS.pageBg}; }`}</style>
       <div
         style={{
           width: '100%',
-          maxWidth: 720,
+          maxWidth: 760,
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.75rem',
+          gap: '2rem',
         }}
       >
         <Link
           href="/"
           style={{
-            color: COLOURS.textMuted,
+            color: APP_COLOURS.textMuted,
             textDecoration: 'none',
-            fontSize: 13,
+            fontSize: 16,
+            fontWeight: 500,
             letterSpacing: '0.02em',
           }}
         >
@@ -114,11 +108,11 @@ export default function TermsOfServicePage() {
         <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span
             style={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: COLOURS.magenta,
+              color: APP_COLOURS.magenta,
             }}
           >
             Munch Snapper
@@ -127,38 +121,37 @@ export default function TermsOfServicePage() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 800,
-              fontSize: 'clamp(2rem, 5vw, 3rem)',
+              fontSize: 'clamp(2.4rem, 6vw, 3.5rem)',
               lineHeight: 1.05,
               margin: 0,
               letterSpacing: '-0.01em',
+              color: APP_COLOURS.heading,
             }}
           >
             Terms of Service
           </h1>
-          <div style={{ fontSize: 13, color: COLOURS.textFaint }}>Last updated: June 2026</div>
+          <div style={{ fontSize: 16, color: APP_COLOURS.textMuted }}>Last updated: June 2026</div>
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {SECTIONS.map((s) => (
             <section
               key={s.title}
               style={{
-                background: COLOURS.card,
-                border: `1px solid ${COLOURS.border}`,
-                borderRadius: 14,
-                padding: '18px 20px',
+                borderTop: `1px solid ${APP_COLOURS.border}`,
+                paddingTop: '2rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 10,
+                gap: 12,
               }}
             >
               <h2
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: 20,
+                  fontSize: 26,
                   lineHeight: 1.15,
-                  color: COLOURS.magenta,
+                  color: APP_COLOURS.heading,
                   margin: 0,
                   letterSpacing: '-0.01em',
                 }}
@@ -167,9 +160,9 @@ export default function TermsOfServicePage() {
               </h2>
               <div
                 style={{
-                  fontSize: 14.5,
-                  lineHeight: 1.65,
-                  color: COLOURS.textMuted,
+                  fontSize: 17.5,
+                  lineHeight: 1.7,
+                  color: APP_COLOURS.text,
                 }}
               >
                 {s.body}
@@ -181,9 +174,10 @@ export default function TermsOfServicePage() {
         <Link
           href="/"
           style={{
-            color: COLOURS.textMuted,
+            color: APP_COLOURS.textMuted,
             textDecoration: 'none',
-            fontSize: 13,
+            fontSize: 16,
+            fontWeight: 500,
             letterSpacing: '0.02em',
             alignSelf: 'flex-start',
           }}

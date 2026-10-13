@@ -1,0 +1,51 @@
+// Single source of colour for the app and its auth, legal and subscribe
+// pages (everything except the landing page, which is themed in globals.css).
+// Light theme: white and very faint mint, brand magenta, near-black text.
+//
+// Keys, and the old per-page COLOURS key each one replaces:
+//   pageBg        page background                      (was nearBlack)
+//   softBg        soft section / card background, mint
+//   card          card surface                         (was card)
+//   cardRaised    raised or inset surface, mint        (was cardRaised)
+//   border        1px borders                          (was border)
+//   heading       headings
+//   text          body text                            (was white, used as text)
+//   textMuted     secondary text                       (was textMuted, textLight)
+//   textFaint     tertiary text                        (was textFaint)
+//   onMagenta     text and icons on a magenta fill     (was white, used on buttons)
+//   magenta       brand colour, same as the landing page
+//   magentaDark   hover / pressed brand colour, same as the landing page
+//   magentaSoft   pale magenta fill                    (was magentaSoft)
+//   magentaTint   stronger magenta wash, for outlines  (was magentaTint)
+//   success       positive text and icons              (was success, green)
+//   successSoft   pale green fill                      (was greenSoft)
+//   danger        error text and icons                 (was danger, errorText)
+//   dangerSoft    pale red fill                        (was errorBg)
+//   dangerBorder  error outline                        (was errorBorder)
+//   shadowCard    soft card shadow
+//
+// Nothing on a light background should be lighter than textMuted, so
+// textFaint deliberately shares its value. All text colours pass WCAG AA on
+// both pageBg and softBg.
+export const APP_COLOURS = {
+  pageBg: '#FFFFFF',
+  softBg: '#F1F8F4',
+  card: '#FFFFFF',
+  cardRaised: '#F1F8F4',
+  border: '#D5E6DC',
+  heading: '#14141A',
+  text: '#1F1F26',
+  textMuted: '#4B4B57',
+  textFaint: '#4B4B57',
+  onMagenta: '#FFFFFF',
+  magenta: '#B0185E',
+  magentaDark: '#8a1249',
+  magentaSoft: '#F9EAF1',
+  magentaTint: 'rgba(176,24,94,0.25)',
+  success: '#15803D',
+  successSoft: '#E8F5EC',
+  danger: '#B42318',
+  dangerSoft: '#FEF3F2',
+  dangerBorder: '#F0B4AE',
+  shadowCard: '0 1px 2px rgba(20,20,26,0.04), 0 8px 24px rgba(20,20,26,0.06)',
+} as const;

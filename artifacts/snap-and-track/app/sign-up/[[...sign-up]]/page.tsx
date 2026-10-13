@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SignUp } from '@clerk/nextjs';
+import { APP_COLOURS } from '../../lib/app-colours';
 import { clerkAppearance } from '../../lib/clerk-appearance';
 
 export const metadata: Metadata = {
@@ -35,8 +36,8 @@ export default function SignUpPage() {
     <main
       style={{
         minHeight: '100vh',
-        background: '#0E0E10',
-        color: '#ffffff',
+        background: APP_COLOURS.softBg,
+        color: APP_COLOURS.text,
         fontFamily: "'Barlow', sans-serif",
         display: 'flex',
         flexDirection: 'column',
@@ -45,6 +46,8 @@ export default function SignUpPage() {
         padding: '2.5rem 1.25rem 3rem',
       }}
     >
+      {/* Matches the page behind the wrapper so no dark body shows on overscroll */}
+      <style>{`body { background: ${APP_COLOURS.softBg}; }`}</style>
       <div
         style={{
           width: '100%',
@@ -55,7 +58,7 @@ export default function SignUpPage() {
           gap: '1.5rem',
         }}
       >
-        {/* Logo header — matches /app header pattern */}
+        {/* Logo header — the PNG is white line art, so it is darkened for the light page */}
         <Link href="/" aria-label="Munch Snapper home" style={{ textDecoration: 'none' }}>
           <Image
             src="/munch-snapper-logo.png"
@@ -63,7 +66,13 @@ export default function SignUpPage() {
             width={220}
             height={82}
             priority
-            style={{ width: 'auto', height: 72, display: 'block' }}
+            style={{
+              width: 'auto',
+              height: 72,
+              display: 'block',
+              filter: 'brightness(0)',
+              opacity: 0.92,
+            }}
           />
         </Link>
 
@@ -72,8 +81,8 @@ export default function SignUpPage() {
         <Link
           href="/"
           style={{
-            fontSize: 13,
-            color: 'rgba(255,255,255,0.45)',
+            fontSize: 15,
+            color: APP_COLOURS.textMuted,
             textDecoration: 'none',
             fontWeight: 500,
           }}
