@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { StreakBadge } from '../../components/StreakBadge';
 import { MacroPill } from '../../components/MacroPill';
+import { APP_COLOURS } from '../../lib/app-colours';
 import { EMPTY_STREAK, checkAndResetStreak, type Streak } from '../../lib/streak';
 
 interface FoodItem {
@@ -101,22 +102,6 @@ interface WeightEntry {
   value: number;
   unit: WeightUnit;
 }
-
-const COLOURS = {
-  magenta: '#B0185E',
-  magentaDark: '#8a1249',
-  magentaSoft: 'rgba(176,24,94,0.12)',
-  magentaTint: 'rgba(176,24,94,0.18)',
-  nearBlack: '#0E0E10',
-  card: '#1a1a1e',
-  cardRaised: '#22222a',
-  border: '#2a2a30',
-  white: '#ffffff',
-  textMuted: 'rgba(255,255,255,0.55)',
-  textFaint: 'rgba(255,255,255,0.35)',
-  textLight: '#cccccc',
-  danger: '#fca5a5',
-};
 
 function isLogEntry(v: unknown): v is LogEntry {
   if (!v || typeof v !== 'object') return false;
@@ -1073,7 +1058,7 @@ export default function MealLogPage() {
             <div style={styles.headerTitle}>Today&apos;s Log</div>
             <div style={styles.headerSub}>by Stacy Kundu</div>
           </div>
-          <Link href="/app" className="snap-link" style={{ color: '#ffffff', textDecoration: 'none' }}>
+          <Link href="/app" className="snap-link" style={{ color: APP_COLOURS.onMagenta, textDecoration: 'none' }}>
             ＋ Snap a meal
           </Link>
         </header>
@@ -1085,8 +1070,9 @@ export default function MealLogPage() {
         <section
           aria-label="Ask Stacy"
           style={{
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 16,
             padding: chatOpen ? '14px 16px 16px' : '12px 16px',
             display: 'flex',
@@ -1107,7 +1093,7 @@ export default function MealLogPage() {
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 12,
-              color: COLOURS.white,
+              color: APP_COLOURS.heading,
               fontFamily: "'Barlow', sans-serif",
               textAlign: 'left',
             }}
@@ -1120,26 +1106,26 @@ export default function MealLogPage() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: 18,
+                  fontSize: 20,
                   letterSpacing: '-0.01em',
-                  color: COLOURS.white,
+                  color: APP_COLOURS.heading,
                 }}
               >
                 Ask Stacy
               </span>
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: 600,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  color: COLOURS.magenta,
+                  color: APP_COLOURS.magenta,
                 }}
               >
                 AI coach
               </span>
             </span>
-            <span style={{ color: COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
+            <span style={{ color: APP_COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
               {chatOpen ? '▾' : '▸'}
             </span>
           </button>
@@ -1160,8 +1146,8 @@ export default function MealLogPage() {
                 {chatMessages.length === 0 && !isChatLoading ? (
                   <div
                     style={{
-                      fontSize: 13,
-                      color: COLOURS.textMuted,
+                      fontSize: 16,
+                      color: APP_COLOURS.textMuted,
                       padding: '12px 4px',
                       lineHeight: 1.5,
                     }}
@@ -1177,12 +1163,12 @@ export default function MealLogPage() {
                       style={{
                         alignSelf: 'flex-end',
                         maxWidth: '85%',
-                        background: COLOURS.cardRaised,
-                        border: `1px solid ${COLOURS.border}`,
+                        background: APP_COLOURS.cardRaised,
+                        border: `1px solid ${APP_COLOURS.border}`,
                         borderRadius: 14,
                         padding: '10px 14px',
-                        color: COLOURS.white,
-                        fontSize: 13.5,
+                        color: APP_COLOURS.text,
+                        fontSize: 16,
                         lineHeight: 1.5,
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
@@ -1207,7 +1193,7 @@ export default function MealLogPage() {
                           flexShrink: 0,
                           width: 24,
                           height: 24,
-                          background: COLOURS.magenta,
+                          background: APP_COLOURS.magenta,
                           borderRadius: 6,
                           display: 'flex',
                           alignItems: 'center',
@@ -1215,7 +1201,7 @@ export default function MealLogPage() {
                           fontFamily: "'Barlow Condensed', sans-serif",
                           fontWeight: 800,
                           fontSize: 10,
-                          color: COLOURS.white,
+                          color: APP_COLOURS.onMagenta,
                           letterSpacing: '-0.02em',
                           lineHeight: 1,
                         }}
@@ -1225,8 +1211,8 @@ export default function MealLogPage() {
                       <div
                         style={{
                           background: 'transparent',
-                          color: COLOURS.white,
-                          fontSize: 13.5,
+                          color: APP_COLOURS.text,
+                          fontSize: 16,
                           lineHeight: 1.55,
                           whiteSpace: 'pre-wrap',
                           wordBreak: 'break-word',
@@ -1246,8 +1232,8 @@ export default function MealLogPage() {
                       display: 'flex',
                       gap: 8,
                       alignItems: 'center',
-                      color: COLOURS.textMuted,
-                      fontSize: 12,
+                      color: APP_COLOURS.textMuted,
+                      fontSize: 14,
                       fontStyle: 'italic',
                     }}
                   >
@@ -1257,7 +1243,7 @@ export default function MealLogPage() {
                         flexShrink: 0,
                         width: 24,
                         height: 24,
-                        background: COLOURS.magenta,
+                        background: APP_COLOURS.magenta,
                         borderRadius: 6,
                         display: 'flex',
                         alignItems: 'center',
@@ -1265,7 +1251,7 @@ export default function MealLogPage() {
                         fontFamily: "'Barlow Condensed', sans-serif",
                         fontWeight: 800,
                         fontSize: 10,
-                        color: COLOURS.white,
+                        color: APP_COLOURS.onMagenta,
                         letterSpacing: '-0.02em',
                         lineHeight: 1,
                         opacity: 0.85,
@@ -1288,8 +1274,8 @@ export default function MealLogPage() {
                     style={{
                       alignSelf: 'flex-start',
                       maxWidth: '85%',
-                      fontSize: 12,
-                      color: COLOURS.danger,
+                      fontSize: 14,
+                      color: APP_COLOURS.danger,
                       lineHeight: 1.5,
                     }}
                   >
@@ -1320,13 +1306,13 @@ export default function MealLogPage() {
                   style={{
                     flex: 1,
                     minWidth: 0,
-                    background: COLOURS.nearBlack,
-                    color: COLOURS.white,
-                    border: `1px solid ${COLOURS.border}`,
+                    background: APP_COLOURS.card,
+                    color: APP_COLOURS.text,
+                    border: `1px solid ${APP_COLOURS.border}`,
                     borderRadius: 10,
                     padding: '10px 12px',
                     fontFamily: "'Barlow', sans-serif",
-                    fontSize: 14,
+                    fontSize: 16,
                     outline: 'none',
                   }}
                 />
@@ -1334,13 +1320,13 @@ export default function MealLogPage() {
                   type="submit"
                   disabled={isChatLoading || !chatInput.trim()}
                   style={{
-                    background: COLOURS.magenta,
-                    color: COLOURS.white,
+                    background: APP_COLOURS.magenta,
+                    color: APP_COLOURS.onMagenta,
                     border: 'none',
                     borderRadius: 10,
                     padding: '10px 16px',
                     fontFamily: "'Barlow', sans-serif",
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: 700,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
@@ -1359,8 +1345,9 @@ export default function MealLogPage() {
         <section
           aria-label="Water intake today"
           style={{
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 16,
             padding: '16px 18px',
             display: 'flex',
@@ -1380,8 +1367,8 @@ export default function MealLogPage() {
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 800,
-                fontSize: 18,
-                color: COLOURS.white,
+                fontSize: 20,
+                color: APP_COLOURS.heading,
                 letterSpacing: '-0.01em',
               }}
             >
@@ -1389,11 +1376,11 @@ export default function MealLogPage() {
             </div>
             <div
               style={{
-                fontSize: 11,
+                fontSize: 14,
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: COLOURS.magenta,
+                color: APP_COLOURS.magenta,
               }}
             >
               Goal · {GLASS_GOAL} glasses
@@ -1433,8 +1420,8 @@ export default function MealLogPage() {
                   <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       d="M12 2 C12 2 5 10 5 15 a7 7 0 0 0 14 0 c0-5-7-13-7-13z"
-                      fill={filled ? COLOURS.magenta : 'transparent'}
-                      stroke={filled ? COLOURS.magenta : COLOURS.border}
+                      fill={filled ? APP_COLOURS.magenta : 'transparent'}
+                      stroke={filled ? APP_COLOURS.magenta : APP_COLOURS.controlOutline}
                       strokeWidth={1.5}
                       strokeLinejoin="round"
                     />
@@ -1454,8 +1441,8 @@ export default function MealLogPage() {
           >
             <div
               style={{
-                fontSize: 12,
-                color: COLOURS.textMuted,
+                fontSize: 14,
+                color: APP_COLOURS.textMuted,
                 fontVariantNumeric: 'tabular-nums',
                 letterSpacing: '0.02em',
               }}
@@ -1470,9 +1457,9 @@ export default function MealLogPage() {
                   background: 'transparent',
                   border: 'none',
                   padding: 0,
-                  color: COLOURS.textFaint,
+                  color: APP_COLOURS.textMuted,
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 500,
                   cursor: 'pointer',
                   letterSpacing: '0.02em',
@@ -1517,8 +1504,9 @@ export default function MealLogPage() {
             <section
               aria-label="Fasting timer"
               style={{
-                background: COLOURS.card,
-                border: `1px solid ${COLOURS.border}`,
+                background: APP_COLOURS.card,
+                border: `1px solid ${APP_COLOURS.border}`,
+                boxShadow: APP_COLOURS.shadowCard,
                 borderRadius: 16,
                 padding: fastOpen ? '14px 16px 16px' : '12px 16px',
                 display: 'flex',
@@ -1539,7 +1527,7 @@ export default function MealLogPage() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: 12,
-                  color: COLOURS.white,
+                  color: APP_COLOURS.heading,
                   fontFamily: "'Barlow', sans-serif",
                   textAlign: 'left',
                 }}
@@ -1552,9 +1540,9 @@ export default function MealLogPage() {
                     style={{
                       fontFamily: "'Barlow Condensed', sans-serif",
                       fontWeight: 800,
-                      fontSize: 18,
+                      fontSize: 20,
                       letterSpacing: '-0.01em',
-                      color: COLOURS.white,
+                      color: APP_COLOURS.heading,
                     }}
                   >
                     Fasting Timer
@@ -1567,11 +1555,11 @@ export default function MealLogPage() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 4,
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: 700,
                         letterSpacing: '0.08em',
                         textTransform: 'uppercase',
-                        color: COLOURS.magenta,
+                        color: APP_COLOURS.magenta,
                       }}
                     >
                       <span aria-hidden="true">🔒</span>
@@ -1579,7 +1567,7 @@ export default function MealLogPage() {
                     </span>
                   )}
                 </span>
-                <span style={{ color: COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
+                <span style={{ color: APP_COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
                   {fastOpen ? '▾' : '▸'}
                 </span>
               </button>
@@ -1603,13 +1591,13 @@ export default function MealLogPage() {
                               aria-checked={active}
                               onClick={() => setSelectedPlan(p.plan)}
                               style={{
-                                background: active ? COLOURS.magenta : 'transparent',
-                                color: active ? COLOURS.white : 'rgba(255,255,255,0.85)',
-                                border: `1.5px solid ${active ? COLOURS.magenta : COLOURS.border}`,
+                                background: active ? APP_COLOURS.magenta : APP_COLOURS.card,
+                                color: active ? APP_COLOURS.onMagenta : APP_COLOURS.heading,
+                                border: `1.5px solid ${active ? APP_COLOURS.magenta : APP_COLOURS.border}`,
                                 borderRadius: 999,
                                 padding: '8px 6px',
                                 fontFamily: "'Barlow', sans-serif",
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: 700,
                                 letterSpacing: '0.04em',
                                 textTransform: 'uppercase',
@@ -1635,11 +1623,11 @@ export default function MealLogPage() {
                           >
                             <span
                               style={{
-                                fontSize: 11,
+                                fontSize: 14,
                                 fontWeight: 600,
                                 letterSpacing: '0.08em',
                                 textTransform: 'uppercase',
-                                color: COLOURS.textMuted,
+                                color: APP_COLOURS.textMuted,
                               }}
                             >
                               Fast hours
@@ -1653,13 +1641,13 @@ export default function MealLogPage() {
                               value={customFastHours}
                               onChange={(e) => setCustomFastHours(e.target.value)}
                               style={{
-                                background: COLOURS.nearBlack,
-                                color: COLOURS.white,
-                                border: `1px solid ${COLOURS.border}`,
+                                background: APP_COLOURS.card,
+                                color: APP_COLOURS.text,
+                                border: `1px solid ${APP_COLOURS.border}`,
                                 borderRadius: 10,
                                 padding: '10px 12px',
                                 fontFamily: "'Barlow', sans-serif",
-                                fontSize: 14,
+                                fontSize: 16,
                                 outline: 'none',
                                 appearance: 'textfield',
                               }}
@@ -1675,11 +1663,11 @@ export default function MealLogPage() {
                           >
                             <span
                               style={{
-                                fontSize: 11,
+                                fontSize: 14,
                                 fontWeight: 600,
                                 letterSpacing: '0.08em',
                                 textTransform: 'uppercase',
-                                color: COLOURS.textMuted,
+                                color: APP_COLOURS.textMuted,
                               }}
                             >
                               Eating window
@@ -1693,13 +1681,13 @@ export default function MealLogPage() {
                               value={customEatingHours}
                               onChange={(e) => setCustomEatingHours(e.target.value)}
                               style={{
-                                background: COLOURS.nearBlack,
-                                color: COLOURS.white,
-                                border: `1px solid ${COLOURS.border}`,
+                                background: APP_COLOURS.card,
+                                color: APP_COLOURS.text,
+                                border: `1px solid ${APP_COLOURS.border}`,
                                 borderRadius: 10,
                                 padding: '10px 12px',
                                 fontFamily: "'Barlow', sans-serif",
-                                fontSize: 14,
+                                fontSize: 16,
                                 outline: 'none',
                                 appearance: 'textfield',
                               }}
@@ -1712,8 +1700,8 @@ export default function MealLogPage() {
 
                   <div
                     style={{
-                      background: COLOURS.nearBlack,
-                      border: `1px solid ${COLOURS.border}`,
+                      background: APP_COLOURS.cardRaised,
+                      border: `1px solid ${APP_COLOURS.border}`,
                       borderRadius: 12,
                       padding: '18px 16px',
                       display: 'flex',
@@ -1727,9 +1715,9 @@ export default function MealLogPage() {
                       style={{
                         fontFamily: "'Barlow Condensed', sans-serif",
                         fontWeight: 800,
-                        fontSize: 28,
+                        fontSize: 34,
                         lineHeight: 1.1,
-                        color: isActive ? COLOURS.magenta : COLOURS.textMuted,
+                        color: isActive ? APP_COLOURS.magenta : APP_COLOURS.heading,
                         letterSpacing: '-0.01em',
                         fontVariantNumeric: 'tabular-nums',
                       }}
@@ -1743,8 +1731,8 @@ export default function MealLogPage() {
                     {isActive && windowStartMs !== null && windowEndMs !== null ? (
                       <div
                         style={{
-                          fontSize: 12,
-                          color: COLOURS.textMuted,
+                          fontSize: 14,
+                          color: APP_COLOURS.textMuted,
                           letterSpacing: '0.02em',
                           fontVariantNumeric: 'tabular-nums',
                         }}
@@ -1754,8 +1742,8 @@ export default function MealLogPage() {
                     ) : (
                       <div
                         style={{
-                          fontSize: 12,
-                          color: COLOURS.textMuted,
+                          fontSize: 14,
+                          color: APP_COLOURS.textMuted,
                           letterSpacing: '0.02em',
                         }}
                       >
@@ -1770,12 +1758,12 @@ export default function MealLogPage() {
                       onClick={endFast}
                       style={{
                         background: 'transparent',
-                        color: COLOURS.magenta,
-                        border: `2px solid ${COLOURS.magenta}`,
+                        color: APP_COLOURS.magenta,
+                        border: `2px solid ${APP_COLOURS.magenta}`,
                         borderRadius: 999,
                         padding: '12px 18px',
                         fontFamily: "'Barlow', sans-serif",
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: 700,
                         letterSpacing: '0.06em',
                         textTransform: 'uppercase',
@@ -1790,13 +1778,13 @@ export default function MealLogPage() {
                       onClick={startFast}
                       disabled={!canStart}
                       style={{
-                        background: canStart ? COLOURS.magenta : '#2a2a30',
-                        color: canStart ? COLOURS.white : 'rgba(255,255,255,0.4)',
+                        background: canStart ? APP_COLOURS.magenta : APP_COLOURS.border,
+                        color: canStart ? APP_COLOURS.onMagenta : APP_COLOURS.textMuted,
                         border: 'none',
                         borderRadius: 999,
                         padding: '12px 18px',
                         fontFamily: "'Barlow', sans-serif",
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: 700,
                         letterSpacing: '0.06em',
                         textTransform: 'uppercase',
@@ -1816,8 +1804,9 @@ export default function MealLogPage() {
         <section
           aria-label="Weight log"
           style={{
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 16,
             padding: '16px 18px',
             display: 'flex',
@@ -1829,8 +1818,8 @@ export default function MealLogPage() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 800,
-              fontSize: 18,
-              color: COLOURS.white,
+              fontSize: 20,
+              color: APP_COLOURS.heading,
               letterSpacing: '-0.01em',
             }}
           >
@@ -1856,13 +1845,13 @@ export default function MealLogPage() {
               style={{
                 flex: '1 1 120px',
                 minWidth: 0,
-                background: COLOURS.nearBlack,
-                color: COLOURS.white,
-                border: `1px solid ${COLOURS.border}`,
+                background: APP_COLOURS.card,
+                color: APP_COLOURS.text,
+                border: `1px solid ${APP_COLOURS.border}`,
                 borderRadius: 10,
                 padding: '10px 12px',
                 fontFamily: "'Barlow', sans-serif",
-                fontSize: 15,
+                fontSize: 16,
                 outline: 'none',
                 appearance: 'textfield',
               }}
@@ -1872,8 +1861,8 @@ export default function MealLogPage() {
               aria-label="Weight unit"
               style={{
                 display: 'inline-flex',
-                background: COLOURS.nearBlack,
-                border: `1px solid ${COLOURS.border}`,
+                background: APP_COLOURS.cardRaised,
+                border: `1px solid ${APP_COLOURS.border}`,
                 borderRadius: 10,
                 padding: 3,
                 gap: 2,
@@ -1889,13 +1878,13 @@ export default function MealLogPage() {
                     aria-checked={active}
                     onClick={() => changeWeightUnit(u)}
                     style={{
-                      background: active ? COLOURS.magenta : 'transparent',
-                      color: active ? COLOURS.white : COLOURS.textMuted,
+                      background: active ? APP_COLOURS.magenta : 'transparent',
+                      color: active ? APP_COLOURS.onMagenta : APP_COLOURS.textMuted,
                       border: 'none',
                       padding: '8px 12px',
                       borderRadius: 8,
                       fontFamily: "'Barlow', sans-serif",
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: 700,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
@@ -1912,13 +1901,13 @@ export default function MealLogPage() {
               type="submit"
               disabled={!weightInput || !Number.isFinite(parseFloat(weightInput)) || parseFloat(weightInput) <= 0}
               style={{
-                background: COLOURS.magenta,
-                color: COLOURS.white,
+                background: APP_COLOURS.magenta,
+                color: APP_COLOURS.onMagenta,
                 border: 'none',
                 borderRadius: 10,
                 padding: '10px 18px',
                 fontFamily: "'Barlow', sans-serif",
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 700,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
@@ -1936,8 +1925,8 @@ export default function MealLogPage() {
           {weightGraphData.length < 2 ? (
             <div
               style={{
-                fontSize: 12,
-                color: COLOURS.textMuted,
+                fontSize: 14,
+                color: APP_COLOURS.textMuted,
                 textAlign: 'center',
                 padding: '24px 8px',
                 lineHeight: 1.5,
@@ -1992,8 +1981,8 @@ export default function MealLogPage() {
                   <text
                     x={LEFT - 4}
                     y={TOP + 4}
-                    fill={COLOURS.textFaint}
-                    fontSize="11"
+                    fill={APP_COLOURS.textMuted}
+                    fontSize="14"
                     fontFamily="'Barlow', sans-serif"
                     textAnchor="end"
                   >
@@ -2002,8 +1991,8 @@ export default function MealLogPage() {
                   <text
                     x={LEFT - 4}
                     y={H - BOTTOM}
-                    fill={COLOURS.textFaint}
-                    fontSize="11"
+                    fill={APP_COLOURS.textMuted}
+                    fontSize="14"
                     fontFamily="'Barlow', sans-serif"
                     textAnchor="end"
                   >
@@ -2012,8 +2001,8 @@ export default function MealLogPage() {
                   <text
                     x={LEFT}
                     y={H - 4}
-                    fill={COLOURS.textFaint}
-                    fontSize="11"
+                    fill={APP_COLOURS.textMuted}
+                    fontSize="14"
                     fontFamily="'Barlow', sans-serif"
                     textAnchor="start"
                   >
@@ -2022,8 +2011,8 @@ export default function MealLogPage() {
                   <text
                     x={W - RIGHT}
                     y={H - 4}
-                    fill={COLOURS.textFaint}
-                    fontSize="11"
+                    fill={APP_COLOURS.textMuted}
+                    fontSize="14"
                     fontFamily="'Barlow', sans-serif"
                     textAnchor="end"
                   >
@@ -2031,14 +2020,14 @@ export default function MealLogPage() {
                   </text>
                   <polyline
                     fill="none"
-                    stroke={COLOURS.white}
+                    stroke={APP_COLOURS.heading}
                     strokeWidth={2}
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     points={polylinePoints}
                   />
                   {points.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r={5} fill={COLOURS.magenta} />
+                    <circle key={i} cx={p.x} cy={p.y} r={5} fill={APP_COLOURS.magenta} />
                   ))}
                 </svg>
               );
@@ -2050,8 +2039,9 @@ export default function MealLogPage() {
         <section
           aria-label="Progress photos"
           style={{
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 16,
             padding: photosOpen ? '14px 16px 16px' : '12px 16px',
             display: 'flex',
@@ -2072,7 +2062,7 @@ export default function MealLogPage() {
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 12,
-              color: COLOURS.white,
+              color: APP_COLOURS.heading,
               fontFamily: "'Barlow', sans-serif",
               textAlign: 'left',
             }}
@@ -2085,9 +2075,9 @@ export default function MealLogPage() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: 18,
+                  fontSize: 20,
                   letterSpacing: '-0.01em',
-                  color: COLOURS.white,
+                  color: APP_COLOURS.heading,
                 }}
               >
                 Progress photos
@@ -2095,18 +2085,18 @@ export default function MealLogPage() {
               {progressPhotos.length > 0 ? (
                 <span
                   style={{
-                    fontSize: 11,
+                    fontSize: 14,
                     fontWeight: 600,
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    color: COLOURS.magenta,
+                    color: APP_COLOURS.magenta,
                   }}
                 >
                   {progressPhotos.length}
                 </span>
               ) : null}
             </span>
-            <span style={{ color: COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
+            <span style={{ color: APP_COLOURS.textMuted, fontSize: 14 }} aria-hidden="true">
               {photosOpen ? '▾' : '▸'}
             </span>
           </button>
@@ -2124,8 +2114,8 @@ export default function MealLogPage() {
               {progressPhotos.length === 0 ? (
                 <div
                   style={{
-                    fontSize: 13,
-                    color: COLOURS.textMuted,
+                    fontSize: 16,
+                    color: APP_COLOURS.textMuted,
                     lineHeight: 1.55,
                     padding: '8px 4px',
                   }}
@@ -2168,14 +2158,14 @@ export default function MealLogPage() {
                           height: 120,
                           objectFit: 'cover',
                           borderRadius: 8,
-                          border: `1px solid ${COLOURS.border}`,
+                          border: `1px solid ${APP_COLOURS.border}`,
                           display: 'block',
                         }}
                       />
                       <span
                         style={{
-                          fontSize: 11,
-                          color: COLOURS.textMuted,
+                          fontSize: 14,
+                          color: APP_COLOURS.textMuted,
                           fontVariantNumeric: 'tabular-nums',
                           textAlign: 'center',
                           letterSpacing: '0.02em',
@@ -2202,13 +2192,13 @@ export default function MealLogPage() {
                   disabled={photoUploading}
                   style={{
                     flex: '1 1 200px',
-                    background: COLOURS.magenta,
-                    color: COLOURS.white,
+                    background: APP_COLOURS.magenta,
+                    color: APP_COLOURS.onMagenta,
                     border: 'none',
                     borderRadius: 10,
                     padding: '12px 18px',
                     fontFamily: "'Barlow', sans-serif",
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: 700,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
@@ -2225,12 +2215,12 @@ export default function MealLogPage() {
                     style={{
                       flex: '0 0 auto',
                       background: 'transparent',
-                      color: COLOURS.white,
-                      border: `1px solid ${COLOURS.border}`,
+                      color: APP_COLOURS.magenta,
+                      border: `1px solid ${APP_COLOURS.magenta}`,
                       borderRadius: 10,
                       padding: '12px 18px',
                       fontFamily: "'Barlow', sans-serif",
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
@@ -2246,8 +2236,8 @@ export default function MealLogPage() {
                 <div
                   role="alert"
                   style={{
-                    fontSize: 12,
-                    color: COLOURS.danger,
+                    fontSize: 14,
+                    color: APP_COLOURS.danger,
                     lineHeight: 1.5,
                   }}
                 >
@@ -2268,12 +2258,12 @@ export default function MealLogPage() {
           <div
             role="alert"
             style={{
-              background: COLOURS.card,
-              border: `1px solid ${COLOURS.border}`,
+              background: APP_COLOURS.dangerSoft,
+              border: `1px solid ${APP_COLOURS.dangerBorder}`,
               borderRadius: 14,
               padding: '16px 18px',
-              color: COLOURS.danger,
-              fontSize: 14,
+              color: APP_COLOURS.danger,
+              fontSize: 16,
               textAlign: 'center',
             }}
           >
@@ -2289,7 +2279,7 @@ export default function MealLogPage() {
             </div>
             <div style={styles.emptyTitle}>Nothing logged yet</div>
             <div style={styles.emptySub}>Snap your first meal to get started</div>
-            <Link href="/app" className="snap-cta" style={{ color: '#ffffff', textDecoration: 'none' }}>
+            <Link href="/app" className="snap-cta" style={{ color: APP_COLOURS.onMagenta, textDecoration: 'none' }}>
               Snap a meal →
             </Link>
           </div>
@@ -2329,10 +2319,10 @@ export default function MealLogPage() {
                           </div>
 
                           <div style={styles.macroPills}>
-                            <MacroPill value={fmtMacro(e.calories)} unit="kcal" accent />
-                            <MacroPill value={`${fmtMacro(e.protein_g)}g`} unit="protein" />
-                            <MacroPill value={`${fmtMacro(carbsForDisplay(e, netCarbs))}g`} unit={netCarbs ? 'net carbs' : 'carbs'} />
-                            <MacroPill value={`${fmtMacro(e.fat_g)}g`} unit="fat" />
+                            <MacroPill value={fmtMacro(e.calories)} unit="kcal" accent size="large" />
+                            <MacroPill value={`${fmtMacro(e.protein_g)}g`} unit="protein" size="large" />
+                            <MacroPill value={`${fmtMacro(carbsForDisplay(e, netCarbs))}g`} unit={netCarbs ? 'net carbs' : 'carbs'} size="large" />
+                            <MacroPill value={`${fmtMacro(e.fat_g)}g`} unit="fat" size="large" />
                           </div>
 
                           <button
@@ -2355,7 +2345,7 @@ export default function MealLogPage() {
                           )}
 
                           {e.stacy_insight ? (
-                            <p style={{ ...styles.insight, color: '#ffffff' }}>{e.stacy_insight}</p>
+                            <p style={{ ...styles.insight, color: APP_COLOURS.text }}>{e.stacy_insight}</p>
                           ) : null}
 
                           <div style={styles.entryFoot}>
@@ -2381,8 +2371,9 @@ export default function MealLogPage() {
         <section
           aria-label="Export and integrations"
           style={{
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 16,
             padding: '14px 16px 16px',
             display: 'flex',
@@ -2392,11 +2383,11 @@ export default function MealLogPage() {
         >
           <div
             style={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: COLOURS.magenta,
+              color: APP_COLOURS.magenta,
             }}
           >
             Export & integrations
@@ -2408,12 +2399,12 @@ export default function MealLogPage() {
             disabled={!entries || entries.length === 0}
             style={{
               background: 'transparent',
-              color: COLOURS.white,
-              border: `1.5px solid ${COLOURS.border}`,
+              color: APP_COLOURS.magenta,
+              border: `1.5px solid ${APP_COLOURS.magenta}`,
               borderRadius: 999,
               padding: '12px 18px',
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
@@ -2430,8 +2421,8 @@ export default function MealLogPage() {
           </button>
           <div
             style={{
-              fontSize: 12,
-              color: COLOURS.textFaint,
+              fontSize: 14,
+              color: APP_COLOURS.textMuted,
               textAlign: 'center',
               lineHeight: 1.5,
               marginTop: -4,
@@ -2443,8 +2434,8 @@ export default function MealLogPage() {
           {platform === 'ios' && (
             <div
               style={{
-                background: COLOURS.nearBlack,
-                border: `1px solid ${COLOURS.border}`,
+                background: APP_COLOURS.cardRaised,
+                border: `1px solid ${APP_COLOURS.border}`,
                 borderRadius: 12,
                 padding: '14px 16px',
                 display: 'flex',
@@ -2456,9 +2447,9 @@ export default function MealLogPage() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: 16,
+                  fontSize: 18,
                   letterSpacing: '-0.01em',
-                  color: COLOURS.white,
+                  color: APP_COLOURS.heading,
                 }}
               >
                 Sync to Apple Health
@@ -2466,8 +2457,8 @@ export default function MealLogPage() {
               <p
                 style={{
                   margin: 0,
-                  fontSize: 13,
-                  color: COLOURS.textMuted,
+                  fontSize: 16,
+                  color: APP_COLOURS.textMuted,
                   lineHeight: 1.55,
                 }}
               >
@@ -2490,12 +2481,12 @@ export default function MealLogPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  background: COLOURS.magenta,
-                  color: COLOURS.white,
+                  background: APP_COLOURS.magenta,
+                  color: APP_COLOURS.onMagenta,
                   borderRadius: 999,
                   padding: '10px 16px',
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 700,
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
@@ -2511,8 +2502,8 @@ export default function MealLogPage() {
           {platform === 'android' && (
             <div
               style={{
-                background: COLOURS.nearBlack,
-                border: `1px solid ${COLOURS.border}`,
+                background: APP_COLOURS.cardRaised,
+                border: `1px solid ${APP_COLOURS.border}`,
                 borderRadius: 12,
                 padding: '14px 16px',
                 display: 'flex',
@@ -2524,9 +2515,9 @@ export default function MealLogPage() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: 16,
+                  fontSize: 18,
                   letterSpacing: '-0.01em',
-                  color: COLOURS.white,
+                  color: APP_COLOURS.heading,
                 }}
               >
                 Sync to Google Health
@@ -2534,8 +2525,8 @@ export default function MealLogPage() {
               <p
                 style={{
                   margin: 0,
-                  fontSize: 13,
-                  color: COLOURS.textMuted,
+                  fontSize: 16,
+                  color: APP_COLOURS.textMuted,
                   lineHeight: 1.55,
                 }}
               >
@@ -2555,12 +2546,12 @@ export default function MealLogPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  background: COLOURS.magenta,
-                  color: COLOURS.white,
+                  background: APP_COLOURS.magenta,
+                  color: APP_COLOURS.onMagenta,
                   borderRadius: 999,
                   padding: '10px 16px',
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 700,
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
@@ -2579,16 +2570,23 @@ export default function MealLogPage() {
 
       <style jsx>{`
         :global(body) {
-          background: ${COLOURS.nearBlack};
+          background: ${APP_COLOURS.softBg};
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+          border-color: ${APP_COLOURS.magenta} !important;
+          box-shadow: 0 0 0 3px ${APP_COLOURS.magentaTint};
         }
 
         .snap-link {
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
           padding: 8px 16px;
           border-radius: 999px;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 700;
           letter-spacing: 0.06em;
           text-transform: uppercase;
@@ -2597,14 +2595,14 @@ export default function MealLogPage() {
           transition: background 0.2s, transform 0.1s;
         }
         .snap-link:hover {
-          background: ${COLOURS.magentaDark};
+          background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
         .snap-cta {
           margin-top: 1.25rem;
-          background: ${COLOURS.magenta};
-          color: ${COLOURS.white};
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
           padding: 14px 24px;
           border-radius: 999px;
           font-family: var(--body-font), 'Barlow', sans-serif;
@@ -2617,14 +2615,15 @@ export default function MealLogPage() {
           transition: background 0.2s, transform 0.1s;
         }
         .snap-cta:hover {
-          background: ${COLOURS.magentaDark};
+          background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
         .date-header {
           width: 100%;
-          background: ${COLOURS.card};
-          border: 1px solid ${COLOURS.border};
+          background: ${APP_COLOURS.card};
+          border: 1px solid ${APP_COLOURS.border};
+          box-shadow: ${APP_COLOURS.shadowCard};
           border-radius: 14px;
           padding: 12px 16px;
           display: flex;
@@ -2633,21 +2632,21 @@ export default function MealLogPage() {
           gap: 12px;
           cursor: pointer;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          color: ${COLOURS.white};
+          color: ${APP_COLOURS.text};
           text-align: left;
           transition: background 0.15s;
         }
         .date-header:hover {
-          background: ${COLOURS.cardRaised};
+          background: ${APP_COLOURS.cardRaised};
         }
 
         .see-toggle {
           background: transparent;
-          color: ${COLOURS.magenta};
+          color: ${APP_COLOURS.magenta};
           border: none;
           padding: 0;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 11px;
+          font-size: 14px;
           font-weight: 700;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -2656,22 +2655,22 @@ export default function MealLogPage() {
           transition: color 0.2s;
         }
         .see-toggle:hover {
-          color: ${COLOURS.white};
+          color: ${APP_COLOURS.magentaDark};
         }
 
         .remove-link {
           background: transparent;
-          color: ${COLOURS.textFaint};
+          color: ${APP_COLOURS.textMuted};
           border: none;
           padding: 0;
           font-family: var(--body-font), 'Barlow', sans-serif;
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 500;
           cursor: pointer;
           transition: color 0.2s;
         }
         .remove-link:hover {
-          color: ${COLOURS.danger};
+          color: ${APP_COLOURS.danger};
         }
 
         .coach-typing-dots {
@@ -2711,7 +2710,7 @@ export default function MealLogPage() {
                 style={{
                   position: 'fixed',
                   inset: 0,
-                  background: 'rgba(14,14,16,0.96)',
+                  background: APP_COLOURS.overlay,
                   zIndex: 120,
                   overflowY: 'auto',
                   display: 'flex',
@@ -2731,7 +2730,7 @@ export default function MealLogPage() {
                     right: 12,
                     background: 'transparent',
                     border: 'none',
-                    color: COLOURS.white,
+                    color: APP_COLOURS.onOverlay,
                     fontSize: 16,
                     fontFamily: "'Barlow', sans-serif",
                     fontWeight: 700,
@@ -2773,13 +2772,13 @@ export default function MealLogPage() {
                         maxHeight: '70vh',
                         objectFit: 'contain',
                         borderRadius: 10,
-                        background: '#000',
+                        background: APP_COLOURS.photoMatte,
                       }}
                     />
                     <figcaption
                       style={{
-                        fontSize: 12,
-                        color: COLOURS.textMuted,
+                        fontSize: 14,
+                        color: APP_COLOURS.onOverlayMuted,
                         textAlign: 'center',
                         letterSpacing: '0.02em',
                         fontVariantNumeric: 'tabular-nums',
@@ -2809,13 +2808,13 @@ export default function MealLogPage() {
                         maxHeight: '70vh',
                         objectFit: 'contain',
                         borderRadius: 10,
-                        background: '#000',
+                        background: APP_COLOURS.photoMatte,
                       }}
                     />
                     <figcaption
                       style={{
-                        fontSize: 12,
-                        color: COLOURS.textMuted,
+                        fontSize: 14,
+                        color: APP_COLOURS.onOverlayMuted,
                         textAlign: 'center',
                         letterSpacing: '0.02em',
                         fontVariantNumeric: 'tabular-nums',
@@ -2836,8 +2835,8 @@ export default function MealLogPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: COLOURS.nearBlack,
-    color: COLOURS.white,
+    background: APP_COLOURS.softBg,
+    color: APP_COLOURS.text,
     fontFamily: "'Barlow', sans-serif",
     padding: '2rem 1.25rem 4rem',
     display: 'flex',
@@ -2855,7 +2854,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '0.5rem 0 1rem',
-    borderBottom: `1px solid ${COLOURS.border}`,
+    borderBottom: `1px solid ${APP_COLOURS.border}`,
   },
   headerTitleGroup: {
     flex: 1,
@@ -2864,7 +2863,7 @@ const styles: Record<string, React.CSSProperties> = {
   headerMark: {
     width: 44,
     height: 44,
-    background: COLOURS.magenta,
+    background: APP_COLOURS.magenta,
     borderRadius: 12,
     display: 'flex',
     alignItems: 'center',
@@ -2874,27 +2873,28 @@ const styles: Record<string, React.CSSProperties> = {
   headerTitle: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 20,
-    color: COLOURS.white,
+    fontSize: 28,
+    color: APP_COLOURS.heading,
     lineHeight: 1.1,
     letterSpacing: '-0.01em',
   },
   headerSub: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
   },
   loadingHint: {
-    color: COLOURS.textMuted,
-    fontSize: 13,
+    color: APP_COLOURS.textMuted,
+    fontSize: 16,
     padding: '2rem 0',
     textAlign: 'center',
   },
   empty: {
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 18,
     padding: '3rem 1.5rem',
     display: 'flex',
@@ -2912,13 +2912,13 @@ const styles: Record<string, React.CSSProperties> = {
   emptyTitle: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 24,
-    color: COLOURS.white,
+    fontSize: 26,
+    color: APP_COLOURS.heading,
     letterSpacing: '-0.01em',
   },
   emptySub: {
-    fontSize: 14,
-    color: COLOURS.textMuted,
+    fontSize: 16,
+    color: APP_COLOURS.textMuted,
   },
   dateGroups: {
     display: 'flex',
@@ -2937,8 +2937,8 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
   },
   chevron: {
-    color: COLOURS.textMuted,
-    fontSize: 13,
+    color: APP_COLOURS.textMuted,
+    fontSize: 14,
     width: 14,
     display: 'inline-block',
     textAlign: 'center',
@@ -2946,13 +2946,13 @@ const styles: Record<string, React.CSSProperties> = {
   dateLabel: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 18,
-    color: COLOURS.white,
+    fontSize: 20,
+    color: APP_COLOURS.heading,
     letterSpacing: '-0.01em',
   },
   dateTotals: {
-    fontSize: 12,
-    color: COLOURS.textLight,
+    fontSize: 14,
+    color: APP_COLOURS.textMuted,
     fontVariantNumeric: 'tabular-nums',
     textAlign: 'right',
   },
@@ -2962,8 +2962,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1rem',
   },
   entryCard: {
-    background: COLOURS.card,
-    border: `1px solid ${COLOURS.border}`,
+    background: APP_COLOURS.card,
+    border: `1px solid ${APP_COLOURS.border}`,
+    boxShadow: APP_COLOURS.shadowCard,
     borderRadius: 16,
     padding: '16px 18px',
     display: 'flex',
@@ -2979,14 +2980,14 @@ const styles: Record<string, React.CSSProperties> = {
   entryDish: {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontWeight: 800,
-    fontSize: 22,
-    color: COLOURS.white,
+    fontSize: 24,
+    color: APP_COLOURS.heading,
     lineHeight: 1.15,
     letterSpacing: '-0.01em',
   },
   entryTime: {
-    fontSize: 12,
-    color: COLOURS.textFaint,
+    fontSize: 14,
+    color: APP_COLOURS.textMuted,
     fontVariantNumeric: 'tabular-nums',
     flexShrink: 0,
     paddingTop: 4,
@@ -3002,32 +3003,32 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     display: 'flex',
     flexDirection: 'column',
-    background: 'rgba(255,255,255,0.02)',
+    background: APP_COLOURS.cardRaised,
     borderRadius: 10,
-    border: `1px solid ${COLOURS.border}`,
+    border: `1px solid ${APP_COLOURS.border}`,
   },
   foodItem: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '8px 12px',
-    borderBottom: `1px solid ${COLOURS.border}`,
-    fontSize: 13,
+    borderBottom: `1px solid ${APP_COLOURS.border}`,
+    fontSize: 16,
   },
   foodName: {
-    color: 'rgba(255,255,255,0.85)',
+    color: APP_COLOURS.text,
   },
   foodCal: {
-    color: COLOURS.textMuted,
+    color: APP_COLOURS.textMuted,
     fontVariantNumeric: 'tabular-nums',
   },
   insight: {
-    fontSize: 14,
+    fontSize: 16,
     lineHeight: 1.6,
-    color: COLOURS.magenta,
+    color: APP_COLOURS.magenta,
     fontStyle: 'italic',
-    background: COLOURS.magentaSoft,
-    border: `1px solid rgba(176,24,94,0.25)`,
+    background: APP_COLOURS.magentaSoft,
+    border: `1px solid ${APP_COLOURS.magentaTint}`,
     borderRadius: 12,
     padding: '12px 14px',
     margin: 0,
@@ -3035,13 +3036,13 @@ const styles: Record<string, React.CSSProperties> = {
   entryFoot: {
     display: 'flex',
     justifyContent: 'flex-end',
-    borderTop: `1px solid ${COLOURS.border}`,
+    borderTop: `1px solid ${APP_COLOURS.border}`,
     paddingTop: 10,
     marginTop: 2,
   },
   footerNote: {
-    fontSize: 12,
-    color: COLOURS.textFaint,
+    fontSize: 14,
+    color: APP_COLOURS.textMuted,
     textAlign: 'center',
     padding: '1rem 0',
   },

@@ -24,6 +24,13 @@
 //   dangerSoft    pale red fill                        (was errorBg)
 //   dangerBorder  error outline                        (was errorBorder)
 //   shadowCard    soft card shadow
+//   controlOutline  outline of an empty control or chart mark; 3:1 on white
+//
+// Deliberately dark, for surfaces that sit over a photo or camera view:
+//   overlay         full-screen backdrop behind photos
+//   onOverlay       text and icons on the overlay
+//   onOverlayMuted  captions on the overlay
+//   photoMatte      letterbox behind a photo
 //
 // Nothing on a light background should be lighter than textMuted, so
 // textFaint deliberately shares its value. All text colours pass WCAG AA on
@@ -50,4 +57,9 @@ export const APP_COLOURS = {
   dangerSoft: '#FEF3F2',
   dangerBorder: '#F0B4AE',
   shadowCard: '0 1px 2px rgba(20,20,26,0.04), 0 8px 24px rgba(20,20,26,0.06)',
+  controlOutline: '#7C8A82',
+  overlay: 'rgba(14,14,16,0.96)',
+  onOverlay: '#FFFFFF',
+  onOverlayMuted: 'rgba(255,255,255,0.8)',
+  photoMatte: '#000000',
 } as const;
