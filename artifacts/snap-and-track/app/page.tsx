@@ -301,15 +301,10 @@ export default function Home() {
                   See pricing
                 </a>
               </div>
-              <p
-                className="hero-trust"
-                style={{
-                  marginTop: '1.25rem',
-                  fontSize: 13,
-                  letterSpacing: '0.02em',
-                }}
-              >
-                {HERO_SOCIAL_STRIP}
+              <p className="hero-trust">
+                {HERO_SOCIAL_STRIP.split(' · ').map((chip) => (
+                  <span key={chip}>{chip}</span>
+                ))}
               </p>
             </div>
             <div className="hero-visual">
@@ -374,7 +369,7 @@ export default function Home() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" className="section-mint" style={{ padding: '6rem 0' }}>
+      <section id="how-it-works" className="section-mint">
         <div className="container">
           <span className="eyebrow">How it works</span>
           <h2 className="section-headline">Three steps. Ten seconds.</h2>
@@ -405,39 +400,25 @@ export default function Home() {
       </section>
 
       {/* FEATURES — 4 CLUSTERS */}
-      <section id="features" className="section-white" style={{ padding: '6rem 0' }}>
+      <section id="features" className="section-white">
         <div className="container">
           <span className="eyebrow">Features</span>
           <h2 className="features-headline">Everything you need. Nothing you don&apos;t.</h2>
           <p className="features-lede">
             A full nutrition coaching platform for £5.99 a month.
           </p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: 20,
-            }}
-          >
+          <div className="cluster-grid">
             {FEATURE_CLUSTERS.map((c, index) => {
               const isLast = index === FEATURE_CLUSTERS.length - 1;
               return (
                 <article
                   key={c.title}
                   className="cluster-card"
-                  style={{
-                    padding: '22px 22px 18px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 14,
-                    ...(isLast
-                      ? {
-                          gridColumn: '1 / -1',
-                          alignItems: 'center',
-                          textAlign: 'center',
-                        }
-                      : {}),
-                  }}
+                  style={
+                    isLast
+                      ? { gridColumn: '1 / -1', alignItems: 'center', textAlign: 'center' }
+                      : undefined
+                  }
                 >
                   <header
                     style={{
@@ -447,7 +428,7 @@ export default function Home() {
                       ...(isLast ? { justifyContent: 'center' } : {}),
                     }}
                   >
-                    <span aria-hidden="true" style={{ fontSize: 24, lineHeight: 1 }}>
+                    <span aria-hidden="true" className="cluster-emoji">
                       {c.emoji}
                     </span>
                     <h3
@@ -455,7 +436,6 @@ export default function Home() {
                       style={{
                         fontFamily: 'var(--display-font)',
                         fontWeight: 800,
-                        fontSize: 20,
                         lineHeight: 1.15,
                         margin: 0,
                         letterSpacing: '-0.01em',
@@ -466,27 +446,17 @@ export default function Home() {
                     </h3>
                   </header>
                   <ul
-                    style={{
-                      listStyle: 'none',
-                      padding: 0,
-                      margin: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 12,
-                      ...(isLast
-                        ? { maxWidth: 520, width: '100%', textAlign: 'left' }
-                        : {}),
-                    }}
+                    className="cluster-list"
+                    style={
+                      isLast ? { maxWidth: '34rem', width: '100%', textAlign: 'left' } : undefined
+                    }
                   >
                     {c.items.map((f) => (
                       <li
                         key={f.name}
-                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}
                       >
-                        <span
-                          aria-hidden="true"
-                          style={{ fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}
-                        >
+                        <span aria-hidden="true" className="cluster-item-emoji">
                           {f.emoji}
                         </span>
                         <div style={{ minWidth: 0 }}>
@@ -500,15 +470,7 @@ export default function Home() {
                           >
                             {f.name}
                           </div>
-                          <div
-                            className="cluster-item-desc"
-                            style={{
-                              lineHeight: 1.55,
-                              marginTop: 2,
-                            }}
-                          >
-                            {f.desc}
-                          </div>
+                          <div className="cluster-item-desc">{f.desc}</div>
                         </div>
                       </li>
                     ))}
@@ -521,7 +483,7 @@ export default function Home() {
       </section>
 
       {/* VS COMPETITORS */}
-      <section id="vs" className="section-mint" style={{ padding: '6rem 0' }}>
+      <section id="vs" className="section-mint">
         <div className="container">
           <span className="eyebrow">Why Munch Snapper</span>
           <h2 className="vs-headline">
@@ -556,7 +518,7 @@ export default function Home() {
       </section>
 
       {/* STACY SECTION */}
-      <section id="stacy" className="section-white" style={{ padding: '6rem 0' }}>
+      <section id="stacy" className="section-white">
         <div className="container">
           <div className="stacy-grid">
             <div className="stacy-img-wrap">
@@ -589,12 +551,7 @@ export default function Home() {
                   href="https://www.youtube.com/@stacykundu"
                   target="_blank"
                   rel="noopener"
-                  style={{
-                    color: 'var(--magenta)',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                  }}
+                  className="stacy-link"
                 >
                   Watch Stacy use it on YouTube →
                 </a>
@@ -605,22 +562,14 @@ export default function Home() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="section-mint" style={{ padding: '6rem 0' }}>
+      <section id="pricing" className="section-mint">
         <div className="container">
           <span className="eyebrow">Pricing</span>
           <h2 className="pricing-headline">Simple, honest pricing.</h2>
           <p className="pricing-sub">
             No ads. No upsells. Just Stacy, your data, and a plan that works.
           </p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 20,
-              maxWidth: 800,
-              margin: '2.5rem auto 0',
-            }}
-          >
+          <div className="pricing-cards">
             {/* MONTHLY */}
             <div className="price-card">
               <div className="price-name">Monthly</div>
@@ -669,11 +618,7 @@ export default function Home() {
           </div>
           <p
             className="pricing-note"
-            style={{
-              maxWidth: 680,
-              margin: '1.5rem auto 0',
-              lineHeight: 1.55,
-            }}
+            style={{ maxWidth: '44rem', margin: '2rem auto 0' }}
           >
             3 free snaps included before any payment. Monthly subscribers can cancel at any time.
             Annual subscribers can cancel before renewal. No lock-ins.
@@ -695,7 +640,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="section-white" style={{ padding: '6rem 0' }}>
+      <section id="faq" className="section-white">
         <div className="container">
           <span className="eyebrow">Got questions?</span>
           <h2 className="faq-headline">We&apos;ve got answers.</h2>
@@ -727,7 +672,7 @@ export default function Home() {
             <Link
               href="/sign-up"
               className="btn-primary btn-on-magenta"
-              style={{ fontSize: 16, padding: '14px 32px', textDecoration: 'none' }}
+              style={{ textDecoration: 'none' }}
             >
               Start for free — 3 snaps on us
             </Link>
@@ -736,8 +681,8 @@ export default function Home() {
       </section>
 
       {/* CONTACT */}
-      <section id="contact" className="section-white" style={{ padding: '6rem 0' }}>
-        <div className="container" style={{ textAlign: 'center', maxWidth: 720 }}>
+      <section id="contact" className="section-white">
+        <div className="container" style={{ textAlign: 'center', maxWidth: '50rem' }}>
           <span className="eyebrow">Contact</span>
           <h2 className="section-headline" style={{ marginBottom: '1rem' }}>
             Get in Touch
@@ -770,7 +715,6 @@ export default function Home() {
         style={{
           flexDirection: 'column',
           alignItems: 'stretch',
-          padding: '3rem 2rem 2rem',
         }}
       >
         <div
@@ -783,11 +727,10 @@ export default function Home() {
             width: '100%',
           }}
         >
-          <div className="footer-brand" style={{ maxWidth: 360 }}>
+          <div className="footer-brand" style={{ maxWidth: '26rem' }}>
             <strong
               style={{
                 fontFamily: 'var(--display-font)',
-                fontSize: 20,
                 letterSpacing: '0.02em',
                 display: 'block',
               }}
