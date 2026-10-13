@@ -5,13 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 
-const MAGENTA = '#B0185E';
-const CARD = '#1a1a1e';
-const BORDER = '#2a2a30';
-const WHITE = '#ffffff';
-const TEXT_MUTED = 'rgba(255,255,255,0.7)';
-const TEXT_FAINT = 'rgba(255,255,255,0.55)';
-
 const HERO_SOCIAL_STRIP =
   '📸 Photo snap · 🔊 Voice log · 📊 Macro tracking · 🔥 Streak coaching · 🤖 AI Coach';
 
@@ -240,32 +233,33 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+    <div className="landing">
       {/* NAV */}
       <nav>
         <Link href="/" className="nav-logo" aria-label="Munch Snapper home">
-          <Image
-            src="/munch-snapper-logo.png"
-            alt="Munch Snapper"
-            width={160}
-            height={60}
-            priority
-            style={{ height: 44, width: 'auto', display: 'block', background: 'transparent' }}
-          />
+          <span className="logo-crop logo-dark">
+            <Image
+              src="/munch-snapper-logo.png"
+              alt="Munch Snapper"
+              width={240}
+              height={240}
+              priority
+            />
+          </span>
         </Link>
         <ul className="nav-links">
           <li>
-            <a href="#how-it-works" style={{ color: '#ffffff', textDecoration: 'none' }}>
+            <a href="#how-it-works" style={{ textDecoration: 'none' }}>
               How it works
             </a>
           </li>
           <li>
-            <a href="#features" style={{ color: '#ffffff', textDecoration: 'none' }}>
+            <a href="#features" style={{ textDecoration: 'none' }}>
               Features
             </a>
           </li>
           <li>
-            <a href="#pricing" style={{ color: '#ffffff', textDecoration: 'none' }}>
+            <a href="#pricing" style={{ textDecoration: 'none' }}>
               Pricing
             </a>
           </li>
@@ -273,31 +267,17 @@ export default function Home() {
         <Link
           href={showAppCta ? '/app' : '/sign-up'}
           className="btn-primary"
-          style={{ color: '#ffffff', textDecoration: 'none' }}
+          style={{ textDecoration: 'none' }}
         >
           {showAppCta ? 'Go to app' : 'Try Free'}
         </Link>
       </nav>
 
       {/* HERO */}
-      <section id="hero" className="section-dark">
+      <section id="hero" className="section-white">
         <div className="container">
           <div className="hero-grid">
             <div>
-              <Image
-                src="/munch-snapper-logo.png"
-                alt="Munch Snapper"
-                width={220}
-                height={82}
-                priority
-                style={{
-                  width: 'auto',
-                  height: 82,
-                  display: 'block',
-                  background: 'transparent',
-                  marginBottom: '1.25rem',
-                }}
-              />
               <h1 className="hero-headline">
                 Snap it.<br />Track it.<br />
                 <span className="accent">Get coached.</span>
@@ -309,14 +289,14 @@ export default function Home() {
                 <Link
                   href={showAppCta ? '/app' : '/sign-up'}
                   className="btn-primary"
-                  style={{ color: '#ffffff', textDecoration: 'none' }}
+                  style={{ textDecoration: 'none' }}
                 >
                   {showAppCta ? 'Go to app' : 'Try free — 3 snaps on us'}
                 </Link>
                 <a
                   href="#pricing"
                   className="btn-outline"
-                  style={{ color: '#ffffff', textDecoration: 'none' }}
+                  style={{ textDecoration: 'none' }}
                 >
                   See pricing
                 </a>
@@ -326,7 +306,6 @@ export default function Home() {
                 style={{
                   marginTop: '1.25rem',
                   fontSize: 13,
-                  color: TEXT_FAINT,
                   letterSpacing: '0.02em',
                 }}
               >
@@ -395,20 +374,10 @@ export default function Home() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" className="section-dark" style={{ padding: '6rem 0' }}>
+      <section id="how-it-works" className="section-mint" style={{ padding: '6rem 0' }}>
         <div className="container">
           <span className="eyebrow">How it works</span>
-          <h2
-            style={{
-              fontFamily: 'var(--display-font)',
-              fontWeight: 800,
-              fontSize: 'clamp(2rem,4vw,3.5rem)',
-              lineHeight: 1,
-              color: 'var(--white)',
-            }}
-          >
-            Three steps. Ten seconds.
-          </h2>
+          <h2 className="section-headline">Three steps. Ten seconds.</h2>
           <div className="steps">
             <div className="step">
               <div className="step-num">01</div>
@@ -436,19 +405,11 @@ export default function Home() {
       </section>
 
       {/* FEATURES — 4 CLUSTERS */}
-      <section id="features" className="section-light" style={{ padding: '6rem 0' }}>
+      <section id="features" className="section-white" style={{ padding: '6rem 0' }}>
         <div className="container">
           <span className="eyebrow">Features</span>
           <h2 className="features-headline">Everything you need. Nothing you don&apos;t.</h2>
-          <p
-            style={{
-              fontSize: '18px',
-              color: 'rgba(0,0,0,0.65)',
-              maxWidth: 640,
-              margin: '0.5rem 0 2.5rem',
-              lineHeight: 1.55,
-            }}
-          >
+          <p className="features-lede">
             A full nutrition coaching platform for £5.99 a month.
           </p>
           <div
@@ -465,14 +426,10 @@ export default function Home() {
                   key={c.title}
                   className="cluster-card"
                   style={{
-                    background: CARD,
-                    border: `1px solid ${BORDER}`,
-                    borderRadius: 18,
                     padding: '22px 22px 18px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 14,
-                    color: WHITE,
                     ...(isLast
                       ? {
                           gridColumn: '1 / -1',
@@ -494,12 +451,12 @@ export default function Home() {
                       {c.emoji}
                     </span>
                     <h3
+                      className="cluster-title"
                       style={{
                         fontFamily: 'var(--display-font)',
                         fontWeight: 800,
                         fontSize: 20,
                         lineHeight: 1.15,
-                        color: MAGENTA,
                         margin: 0,
                         letterSpacing: '-0.01em',
                         textTransform: 'uppercase',
@@ -534,20 +491,18 @@ export default function Home() {
                         </span>
                         <div style={{ minWidth: 0 }}>
                           <div
+                            className="cluster-item-name"
                             style={{
                               fontFamily: "'Barlow', sans-serif",
                               fontWeight: 700,
-                              fontSize: 14,
-                              color: WHITE,
                               lineHeight: 1.4,
                             }}
                           >
                             {f.name}
                           </div>
                           <div
+                            className="cluster-item-desc"
                             style={{
-                              fontSize: 13,
-                              color: TEXT_MUTED,
                               lineHeight: 1.55,
                               marginTop: 2,
                             }}
@@ -566,14 +521,14 @@ export default function Home() {
       </section>
 
       {/* VS COMPETITORS */}
-      <section id="vs" className="section-mid" style={{ padding: '6rem 0' }}>
+      <section id="vs" className="section-mint" style={{ padding: '6rem 0' }}>
         <div className="container">
           <span className="eyebrow">Why Munch Snapper</span>
           <h2 className="vs-headline">
             Every other app gives you<br />numbers. We give you{' '}
             <span style={{ color: 'var(--magenta)' }}>coaching.</span>
           </h2>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="vs-card" style={{ overflowX: 'auto' }}>
             <table className="vs-table">
               <thead>
                 <tr>
@@ -601,7 +556,7 @@ export default function Home() {
       </section>
 
       {/* STACY SECTION */}
-      <section id="stacy" className="section-dark" style={{ padding: '6rem 0' }}>
+      <section id="stacy" className="section-white" style={{ padding: '6rem 0' }}>
         <div className="container">
           <div className="stacy-grid">
             <div className="stacy-img-wrap">
@@ -650,7 +605,7 @@ export default function Home() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="section-light" style={{ padding: '6rem 0' }}>
+      <section id="pricing" className="section-mint" style={{ padding: '6rem 0' }}>
         <div className="container">
           <span className="eyebrow">Pricing</span>
           <h2 className="pricing-headline">Simple, honest pricing.</h2>
@@ -706,17 +661,15 @@ export default function Home() {
               <Link
                 href="/subscribe?annual=true"
                 className="btn-primary price-cta"
-                style={{ color: '#ffffff', textDecoration: 'none' }}
+                style={{ textDecoration: 'none' }}
               >
                 Get annual — best value
               </Link>
             </div>
           </div>
           <p
+            className="pricing-note"
             style={{
-              fontSize: 13,
-              color: 'rgba(0,0,0,0.55)',
-              textAlign: 'center',
               maxWidth: 680,
               margin: '1.5rem auto 0',
               lineHeight: 1.55,
@@ -725,14 +678,7 @@ export default function Home() {
             3 free snaps included before any payment. Monthly subscribers can cancel at any time.
             Annual subscribers can cancel before renewal. No lock-ins.
           </p>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'rgba(0,0,0,0.55)',
-              textAlign: 'center',
-              margin: '0.5rem auto 0',
-            }}
-          >
+          <p className="pricing-note" style={{ margin: '0.5rem auto 0' }}>
             Questions? Email{' '}
             <a
               href="mailto:help@munchsnapper.com"
@@ -749,7 +695,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="section-dark" style={{ padding: '6rem 0' }}>
+      <section id="faq" className="section-white" style={{ padding: '6rem 0' }}>
         <div className="container">
           <span className="eyebrow">Got questions?</span>
           <h2 className="faq-headline">We&apos;ve got answers.</h2>
@@ -767,12 +713,12 @@ export default function Home() {
       </section>
 
       {/* FINAL CTA */}
-      <section id="final-cta" className="section-dark">
+      <section id="final-cta" className="section-magenta">
         <div className="container" style={{ textAlign: 'center' }}>
           <span className="eyebrow">Ready?</span>
           <h2 className="final-headline">
             Stop guessing.<br />Start{' '}
-            <span style={{ color: 'var(--magenta)' }}>knowing.</span>
+            <span>knowing.</span>
           </h2>
           <p className="final-sub">
             Three free snaps. No card. No commitment. See what you&apos;ve been missing.
@@ -780,8 +726,8 @@ export default function Home() {
           <div className="final-ctas">
             <Link
               href="/sign-up"
-              className="btn-primary"
-              style={{ fontSize: 16, padding: '14px 32px', color: '#ffffff', textDecoration: 'none' }}
+              className="btn-primary btn-on-magenta"
+              style={{ fontSize: 16, padding: '14px 32px', textDecoration: 'none' }}
             >
               Start for free — 3 snaps on us
             </Link>
@@ -790,29 +736,13 @@ export default function Home() {
       </section>
 
       {/* CONTACT */}
-      <section id="contact" className="section-dark" style={{ padding: '6rem 0' }}>
+      <section id="contact" className="section-white" style={{ padding: '6rem 0' }}>
         <div className="container" style={{ textAlign: 'center', maxWidth: 720 }}>
           <span className="eyebrow">Contact</span>
-          <h2
-            style={{
-              fontFamily: 'var(--display-font)',
-              fontWeight: 800,
-              fontSize: 'clamp(2rem, 4vw, 3.5rem)',
-              lineHeight: 1,
-              color: WHITE,
-              marginBottom: '1rem',
-            }}
-          >
+          <h2 className="section-headline" style={{ marginBottom: '1rem' }}>
             Get in Touch
           </h2>
-          <p
-            style={{
-              fontSize: 18,
-              color: TEXT_MUTED,
-              marginBottom: '2.25rem',
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="contact-sub">
             Got a question? We&apos;d love to hear from you.
           </p>
           <a
@@ -822,11 +752,11 @@ export default function Home() {
               fontFamily: 'var(--display-font)',
               fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
               fontWeight: 800,
-              color: MAGENTA,
+              color: 'var(--magenta)',
               textDecoration: 'none',
               letterSpacing: '-0.01em',
               display: 'inline-block',
-              borderBottom: `2px solid ${MAGENTA}`,
+              borderBottom: '2px solid var(--magenta)',
               paddingBottom: 4,
             }}
           >
@@ -864,14 +794,7 @@ export default function Home() {
             >
               Munch Snapper
             </strong>
-            <div
-              style={{
-                marginTop: '0.5rem',
-                color: 'rgba(255,255,255,0.55)',
-                fontSize: 13,
-                lineHeight: 1.5,
-              }}
-            >
+            <div className="footer-tagline">
               AI-powered macro tracking. Snap, log, and stay on track.
             </div>
           </div>
@@ -887,19 +810,10 @@ export default function Home() {
             </li>
           </ul>
         </div>
-        <div
-          style={{
-            borderTop: `1px solid ${BORDER}`,
-            marginTop: '2rem',
-            paddingTop: '1.5rem',
-            fontSize: 12,
-            color: 'rgba(255,255,255,0.4)',
-            textAlign: 'center',
-          }}
-        >
+        <div className="footer-legal">
           © 2026 Munch Snapper. All rights reserved.
         </div>
       </footer>
-    </>
+    </div>
   );
 }
