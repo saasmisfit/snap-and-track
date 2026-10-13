@@ -13,6 +13,7 @@
 //   textMuted     secondary text                       (was textMuted, textLight)
 //   textFaint     tertiary text                        (was textFaint)
 //   onMagenta     text and icons on a magenta fill     (was white, used on buttons)
+//   onMagentaFaint  low-emphasis marks on a magenta fill, e.g. a spinner track
 //   magenta       brand colour, same as the landing page
 //   magentaDark   hover / pressed brand colour, same as the landing page
 //   magentaSoft   pale magenta fill                    (was magentaSoft)
@@ -38,6 +39,7 @@ export const APP_COLOURS = {
   textMuted: '#4B4B57',
   textFaint: '#4B4B57',
   onMagenta: '#FFFFFF',
+  onMagentaFaint: 'rgba(255,255,255,0.4)',
   magenta: '#B0185E',
   magentaDark: '#8a1249',
   magentaSoft: '#F9EAF1',
