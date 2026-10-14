@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { MacroPill } from '../../components/MacroPill';
@@ -25,6 +25,12 @@ const GOAL_TABS: Array<{ value: Goal; label: string }> = [
   { value: 'maintain', label: 'Maintain' },
   { value: 'build', label: 'Build & tone' },
 ];
+
+const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
+
+function isGoal(v: unknown): v is Goal {
+  return GOAL_TABS.some((g) => g.value === v);
+}
 
 const PLANS: Record<Goal, PlanMeal[]> = {
   fat_loss: [
@@ -181,6 +187,16 @@ export default function MealPlansPage() {
   const [loggingKey, setLoggingKey] = useState<string | null>(null);
   const [loggedKeys, setLoggedKeys] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+
+  // Start on the goal chosen on /app. Read after mount to avoid a hydration mismatch; never written here.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(ACTIVE_GOAL_KEY);
+      if (isGoal(stored)) setTab(stored);
+    } catch {
+      // best-effort
+    }
+  }, []);
 
   const meals = PLANS[tab];
   const totals = planTotals(meals);

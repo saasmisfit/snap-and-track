@@ -118,6 +118,10 @@ const GOALS: Array<{ value: Goal; label: string }> = [
   { value: 'build', label: 'Build & tone' },
 ];
 
+function isGoal(v: unknown): v is Goal {
+  return GOALS.some((g) => g.value === v);
+}
+
 const LOADING_MESSAGES = [
   'Spotting the ingredients…',
   'Estimating portion sizes…',
@@ -316,6 +320,7 @@ export default function SnapAndTrackApp() {
   const isSubscribed = user?.publicMetadata?.subscribed === true;
 
   const [goal, setGoal] = useState<Goal>('fat_loss');
+  const [goalHydrated, setGoalHydrated] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAnalysing, setIsAnalysing] = useState(false);
@@ -418,14 +423,27 @@ export default function SnapAndTrackApp() {
     setStreak(checkAndResetStreak());
   }, []);
 
-  // Persist the active goal so other pages (log/coach) can read it
+  // Restore the active goal after mount (not during render, to avoid a hydration mismatch)
   useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(ACTIVE_GOAL_KEY);
+      if (isGoal(stored)) setGoal(stored);
+    } catch {
+      // best-effort
+    }
+    setGoalHydrated(true);
+  }, []);
+
+  // Persist the active goal so other pages (log/coach) can read it.
+  // Waits for the restore above so the default never overwrites the saved value.
+  useEffect(() => {
+    if (!goalHydrated) return;
     try {
       window.localStorage.setItem(ACTIVE_GOAL_KEY, goal);
     } catch {
       // best-effort
     }
-  }, [goal]);
+  }, [goal, goalHydrated]);
 
   // Hydrate today's burned-calories input (per-day key, so it resets automatically)
   useEffect(() => {
