@@ -7,6 +7,7 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import { StreakBadge } from '../components/StreakBadge';
 import { EMPTY_STREAK, checkAndResetStreak, readStreak, writeStreak, type Streak } from '../lib/streak';
 import { APP_COLOURS } from '../lib/app-colours';
+import { shrinkImage } from '../lib/shrink-image';
 
 const userButtonAppearance = {
   variables: {
@@ -711,11 +712,14 @@ export default function SnapAndTrackApp() {
     setError(null);
     setResult(null);
     try {
-      const base64 = await fileToBase64(file);
+      // Every photo (camera, gallery, drag-and-drop, menu) passes through here.
+      // shrinkImage returns the original file whenever shrinking is not possible.
+      const upload = await shrinkImage(file);
+      const base64 = await fileToBase64(upload);
       const res = await fetch('/api/analyse', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ image: base64, mimeType: file.type, goal, mode }),
+        body: JSON.stringify({ image: base64, mimeType: upload.type, goal, mode }),
       });
       const data: unknown = await res.json().catch(() => ({}));
       const payload = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
