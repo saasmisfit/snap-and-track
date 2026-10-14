@@ -2657,7 +2657,8 @@ export default function MealLogPage() {
           box-shadow: 0 0 0 3px ${APP_COLOURS.magentaTint};
         }
 
-        .snap-link {
+        /* :global — styled-jsx does not tag <Link>, so a scoped rule would never match */
+        :global(.snap-link) {
           background: ${APP_COLOURS.magenta};
           color: ${APP_COLOURS.onMagenta};
           padding: 8px 16px;
@@ -2671,12 +2672,12 @@ export default function MealLogPage() {
           white-space: nowrap;
           transition: background 0.2s, transform 0.1s;
         }
-        .snap-link:hover {
+        :global(.snap-link:hover) {
           background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
-        .snap-cta {
+        :global(.snap-cta) {
           margin-top: 1.25rem;
           background: ${APP_COLOURS.magenta};
           color: ${APP_COLOURS.onMagenta};
@@ -2691,9 +2692,14 @@ export default function MealLogPage() {
           display: inline-block;
           transition: background 0.2s, transform 0.1s;
         }
-        .snap-cta:hover {
+        :global(.snap-cta:hover) {
           background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
+        }
+        :global(.snap-link:focus-visible),
+        :global(.snap-cta:focus-visible) {
+          outline: 3px solid ${APP_COLOURS.magentaTint};
+          outline-offset: 2px;
         }
 
         .date-header {
