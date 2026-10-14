@@ -17,6 +17,8 @@ export default function SubscribeSuccessPage() {
   // deliberately show the no-trial-claim copy rather than risk repeating the
   // false trial claim this page used to show unconditionally.
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -27,6 +29,27 @@ export default function SubscribeSuccessPage() {
       setPlan(null);
     }
   }, []);
+
+  // Opens the Stripe customer portal (cancel, change card, invoices).
+  async function openBillingPortal() {
+    if (portalLoading) return;
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const res = await fetch('/api/billing-portal', { method: 'POST' });
+      const data: unknown = await res.json().catch(() => ({}));
+      const payload = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+      if (!res.ok || typeof payload.url !== 'string') {
+        throw new Error(
+          typeof payload.error === 'string' ? payload.error : `Request failed (${res.status})`
+        );
+      }
+      window.location.href = payload.url;
+    } catch (err) {
+      setPortalError(err instanceof Error ? err.message : 'Could not open the billing portal.');
+      setPortalLoading(false);
+    }
+  }
 
   return (
     <main
@@ -158,6 +181,45 @@ export default function SubscribeSuccessPage() {
         >
           Manage your subscription any time from your account settings.
         </div>
+        <button
+          type="button"
+          onClick={openBillingPortal}
+          disabled={portalLoading}
+          aria-busy={portalLoading}
+          style={{
+            background: 'transparent',
+            border: `2px solid ${APP_COLOURS.magenta}`,
+            color: APP_COLOURS.magenta,
+            padding: '12px 22px',
+            borderRadius: 999,
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            cursor: portalLoading ? 'wait' : 'pointer',
+          }}
+        >
+          {portalLoading ? 'Opening…' : 'Manage subscription'}
+        </button>
+        {portalError ? (
+          <div
+            role="alert"
+            style={{
+              width: '100%',
+              background: APP_COLOURS.dangerSoft,
+              border: `1px solid ${APP_COLOURS.dangerBorder}`,
+              borderRadius: 12,
+              padding: '12px 16px',
+              fontSize: 16,
+              fontWeight: 500,
+              color: APP_COLOURS.danger,
+              textAlign: 'left',
+            }}
+          >
+            {portalError}
+          </div>
+        ) : null}
       </div>
 
       <style jsx>{`

@@ -43,6 +43,8 @@ const WEIGHT_MAX_DAYS = 90;
 const WEIGHT_GRAPH_DAYS = 30;
 const ACTIVE_GOAL_KEY = 'munchsnapper_active_goal';
 const FAST_KEY = 'munchsnapper_fast';
+// Apple Health / Health Connect panels are stubs, hidden until implemented.
+const SHOW_HEALTH_SYNC = false;
 const FAST_COMPLETE_MESSAGE =
   '⏰ Your fast is complete! Your eating window is now open.';
 
@@ -2431,7 +2433,7 @@ export default function MealLogPage() {
             Last 7 days · works with Apple Health, MyFitnessPal, spreadsheets
           </div>
 
-          {platform === 'ios' && (
+          {SHOW_HEALTH_SYNC && platform === 'ios' && (
             <div
               style={{
                 background: APP_COLOURS.cardRaised,
@@ -2499,7 +2501,7 @@ export default function MealLogPage() {
             </div>
           )}
 
-          {platform === 'android' && (
+          {SHOW_HEALTH_SYNC && platform === 'android' && (
             <div
               style={{
                 background: APP_COLOURS.cardRaised,

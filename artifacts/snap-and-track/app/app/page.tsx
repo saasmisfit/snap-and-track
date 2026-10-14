@@ -336,6 +336,8 @@ export default function SnapAndTrackApp() {
   const [recentMeals, setRecentMeals] = useState<RecentMealItem[]>([]);
   const [logEntryCount, setLogEntryCount] = useState(0);
   const [showRelogToast, setShowRelogToast] = useState(false);
+  const [relogBusyKey, setRelogBusyKey] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showVoiceLog, setShowVoiceLog] = useState(false);
   const [mode, setMode] = useState<AnalyseMode>('meal');
@@ -813,14 +815,15 @@ export default function SnapAndTrackApp() {
     }
   }
 
-  async function relogMeal(template: SavedLogEntry) {
-    if (!user?.id) return;
+  async function relogMeal(template: SavedLogEntry, key: string) {
+    if (!user?.id || relogBusyKey) return;
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const logTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    setShowRelogToast(true);
+    setRelogBusyKey(key);
+    setError(null);
     try {
-      await fetch('/api/log', {
+      const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -838,9 +841,21 @@ export default function SnapAndTrackApp() {
           coachingNote: typeof template.stacy_insight === 'string' ? template.stacy_insight : '',
         }),
       });
-    } catch {
-      // best-effort
+      if (!res.ok) {
+        const data: unknown = await res.json().catch(() => ({}));
+        throw new Error(
+          data && typeof data === 'object' && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : `Save failed (${res.status})`
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not log that meal again.');
+      setRelogBusyKey(null);
+      return;
     }
+    setRelogBusyKey(null);
+    setShowRelogToast(true);
 
     try {
       const entries = await fetchLogEntries(user.id);
@@ -864,6 +879,27 @@ export default function SnapAndTrackApp() {
       } catch {
         // best-effort
       }
+    }
+  }
+
+  // Opens the Stripe customer portal (cancel, change card, invoices).
+  async function openBillingPortal() {
+    if (portalLoading) return;
+    setPortalLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/billing-portal', { method: 'POST' });
+      const data: unknown = await res.json().catch(() => ({}));
+      const payload = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+      if (!res.ok || typeof payload.url !== 'string') {
+        throw new Error(
+          typeof payload.error === 'string' ? payload.error : `Request failed (${res.status})`
+        );
+      }
+      window.location.href = payload.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open the billing portal.');
+      setPortalLoading(false);
     }
   }
 
@@ -1106,7 +1142,9 @@ export default function SnapAndTrackApp() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => relogMeal(m.template)}
+                    onClick={() => relogMeal(m.template, m.key)}
+                    disabled={relogBusyKey !== null}
+                    aria-busy={relogBusyKey === m.key}
                     aria-label={`Log ${m.dish} again`}
                     style={{
                       marginTop: 'auto',
@@ -1120,11 +1158,11 @@ export default function SnapAndTrackApp() {
                       fontWeight: 600,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
-                      cursor: 'pointer',
+                      cursor: relogBusyKey !== null ? 'default' : 'pointer',
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    ＋ Log again
+                    {relogBusyKey === m.key ? 'Saving…' : '＋ Log again'}
                   </button>
                 </div>
               ))}
@@ -1383,7 +1421,18 @@ export default function SnapAndTrackApp() {
                       : 'Analyse my meal ✦'}
                 </button>
                 {isSubscribed ? (
-                  <div style={styles.proBadge}>✓ Pro</div>
+                  <>
+                    <div style={styles.proBadge}>✓ Pro</div>
+                    <button
+                      type="button"
+                      onClick={openBillingPortal}
+                      disabled={portalLoading}
+                      aria-busy={portalLoading}
+                      style={styles.manageSubLink}
+                    >
+                      {portalLoading ? 'Opening…' : 'Manage subscription'}
+                    </button>
+                  </>
                 ) : snapCount !== null && snapCount < FREE_SNAP_LIMIT ? (
                   <div style={styles.freeCounter}>
                     {FREE_SNAP_LIMIT - snapCount} of {FREE_SNAP_LIMIT} free snaps remaining
@@ -3634,5 +3683,18 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
     paddingTop: 4,
+  },
+  manageSubLink: {
+    alignSelf: 'center',
+    background: 'transparent',
+    border: 'none',
+    padding: '4px 8px',
+    fontFamily: "'Barlow', sans-serif",
+    fontSize: 15,
+    fontWeight: 600,
+    color: APP_COLOURS.magenta,
+    textDecoration: 'underline',
+    textUnderlineOffset: 3,
+    cursor: 'pointer',
   },
 };
