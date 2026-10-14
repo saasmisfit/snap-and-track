@@ -65,6 +65,7 @@ export async function POST(req: Request) {
       cancel_url: `${appUrl}/subscribe`,
       ...(email ? { customer_email: email } : {}),
       metadata: { userId },
+      allow_promotion_codes: true,
     });
 
     return NextResponse.json({ url: session.url });

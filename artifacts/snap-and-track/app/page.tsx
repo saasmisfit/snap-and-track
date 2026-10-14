@@ -265,7 +265,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: 'Is this separate from the Metaburn app?',
-    a: 'Munch Snapper is a completely standalone product — no Metaburn subscription needed. It works on its own for anyone who wants smart macro tracking with real coaching. If you are also a Metaburn app subscriber, you can add Munch Snapper as a bolt-on and receive 30% off your monthly or annual plan. Details available inside the Metaburn app.',
+    a: 'Munch Snapper is a completely standalone product — no Metaburn subscription needed. It works on its own for anyone who wants smart macro tracking with real coaching. Metaburn clients get 20% off with their promo code. Email help@munchsnapper.com to get yours.',
   },
   {
     q: 'Does my data sync across devices?',
@@ -487,7 +487,7 @@ export default function Home() {
                   <div className="phone-badge-sub">Smashing your target</div>
                 </div>
                 <div className="phone-badge2">
-                  <div className="phone-badge2-text">⚡ Result in 3 seconds</div>
+                  <div className="phone-badge2-text">⚡ Result in seconds</div>
                 </div>
               </div>
             </div>
@@ -761,12 +761,6 @@ export default function Home() {
                     {f}
                   </li>
                 ))}
-                <li>
-                  <span className="price-tick" aria-hidden="true">
-                    <Check size={13} strokeWidth={3} />
-                  </span>
-                  Priority email support
-                </li>
               </ul>
               <Link
                 href="/subscribe?annual=true"
