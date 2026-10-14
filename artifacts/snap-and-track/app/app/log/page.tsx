@@ -628,6 +628,8 @@ export default function MealLogPage() {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  // Photo dates picked for comparison, in the order they were tapped (max 2, not stored).
+  const [selectedPhotoDates, setSelectedPhotoDates] = useState<string[]>([]);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -1026,6 +1028,27 @@ export default function MealLogPage() {
     const el = chatScrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [chatMessages, isChatLoading, chatError]);
+
+  // Ignore any picked date whose photo no longer exists (e.g. pruned past the
+  // 12-photo limit), so removal can never leave a stale selection behind.
+  const selectedPhotos = selectedPhotoDates.filter((d) =>
+    progressPhotos.some((p) => p.date === d)
+  );
+  const comparePair =
+    selectedPhotos.length === 2
+      ? progressPhotos
+          .filter((p) => selectedPhotos.includes(p.date))
+          .sort((a, b) => a.date.localeCompare(b.date))
+      : null;
+
+  function togglePhotoSelection(date: string) {
+    setSelectedPhotoDates((prev) => {
+      const current = prev.filter((d) => progressPhotos.some((p) => p.date === d));
+      if (current.includes(date)) return current.filter((d) => d !== date);
+      const next = [...current, date];
+      return next.length > 2 ? next.slice(next.length - 2) : next;
+    });
+  }
 
   const weightGraphData = useMemo<Array<{ date: string; value: number }>>(() => {
     const cutoff = daysAgoLocalStr(WEIGHT_GRAPH_DAYS - 1);
@@ -2140,30 +2163,69 @@ export default function MealLogPage() {
                     paddingRight: 2,
                   }}
                 >
-                  {progressPhotos.map((p) => (
-                    <div
+                  {progressPhotos.map((p) => {
+                    const order = selectedPhotos.indexOf(p.date);
+                    const isSelected = order !== -1;
+                    return (
+                    <button
                       key={p.date}
+                      type="button"
+                      onClick={() => togglePhotoSelection(p.date)}
+                      aria-pressed={isSelected}
+                      aria-label={`Photo from ${fmtPhotoDate(p.date)}${isSelected ? `, selected ${order + 1} of 2` : ''}`}
                       style={{
                         flex: '0 0 auto',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 4,
                         alignItems: 'center',
+                        position: 'relative',
+                        background: 'transparent',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        fontFamily: "'Barlow', sans-serif",
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={p.dataUrl}
-                        alt={p.weekLabel}
+                        alt=""
                         style={{
                           width: 90,
                           height: 120,
                           objectFit: 'cover',
                           borderRadius: 8,
                           border: `1px solid ${APP_COLOURS.border}`,
+                          // Drawn inside the image so the scroll row never clips it
+                          outline: isSelected ? `3px solid ${APP_COLOURS.magenta}` : 'none',
+                          outlineOffset: -3,
                           display: 'block',
                         }}
                       />
+                      {isSelected && (
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            top: 6,
+                            left: 6,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            background: APP_COLOURS.magenta,
+                            color: APP_COLOURS.onMagenta,
+                            fontSize: 14,
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {order + 1}
+                        </span>
+                      )}
                       <span
                         style={{
                           fontSize: 14,
@@ -2175,8 +2237,9 @@ export default function MealLogPage() {
                       >
                         {fmtPhotoDate(p.date)}
                       </span>
-                    </div>
-                  ))}
+                    </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -2210,15 +2273,16 @@ export default function MealLogPage() {
                 >
                   {photoUploading ? 'Adding…' : "＋ Add this week's photo"}
                 </button>
-                {progressPhotos.length >= 2 && (
+                {progressPhotos.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setCompareOpen(true)}
+                    disabled={!comparePair}
                     style={{
                       flex: '0 0 auto',
-                      background: 'transparent',
-                      color: APP_COLOURS.magenta,
-                      border: `1px solid ${APP_COLOURS.magenta}`,
+                      background: comparePair ? 'transparent' : APP_COLOURS.border,
+                      color: comparePair ? APP_COLOURS.magenta : APP_COLOURS.textMuted,
+                      border: `1px solid ${comparePair ? APP_COLOURS.magenta : APP_COLOURS.border}`,
                       borderRadius: 10,
                       padding: '12px 18px',
                       fontFamily: "'Barlow', sans-serif",
@@ -2226,13 +2290,24 @@ export default function MealLogPage() {
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
-                      cursor: 'pointer',
+                      cursor: comparePair ? 'pointer' : 'not-allowed',
                     }}
                   >
                     Compare
                   </button>
                 )}
               </div>
+
+              {progressPhotos.length > 0 && (
+                <div
+                  aria-live="polite"
+                  style={{ fontSize: 16, color: APP_COLOURS.textMuted, lineHeight: 1.5 }}
+                >
+                  {comparePair
+                    ? `Comparing ${fmtPhotoDate(comparePair[0].date)} with ${fmtPhotoDate(comparePair[1].date)}.`
+                    : 'Pick any two photos to compare.'}
+                </div>
+              )}
 
               {photoError && (
                 <div
@@ -2699,11 +2774,9 @@ export default function MealLogPage() {
         }
       `}</style>
 
-      {compareOpen && progressPhotos.length >= 2
+      {compareOpen && comparePair
         ? (() => {
-            const sorted = [...progressPhotos].sort((a, b) => a.date.localeCompare(b.date));
-            const newest = sorted[sorted.length - 1];
-            const older = sorted[sorted.length - 2];
+            const [older, newest] = comparePair;
             return (
               <div
                 role="dialog"
