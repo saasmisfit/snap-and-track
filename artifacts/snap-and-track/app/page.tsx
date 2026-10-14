@@ -449,11 +449,17 @@ export default function Home() {
                         <div className="phone-header-sub">by Stacy Kundu</div>
                       </div>
                     </div>
-                    <div className="phone-meal-img">
-                      <div className="meal-placeholder">
-                        <span className="meal-placeholder-icon">🍽️</span>
-                        <span className="meal-placeholder-text">Herb chicken · Rice · Broccoli</span>
-                      </div>
+                    <div className="phone-meal-img has-photo">
+                      <Image
+                        src="/images/meal-hero.jpg"
+                        alt="Herb chicken with rice and broccoli"
+                        width={1024}
+                        height={1024}
+                        loading="eager"
+                        unoptimized
+                        className="meal-photo"
+                      />
+                      <span className="meal-photo-caption">Herb chicken · Rice · Broccoli</span>
                     </div>
                     <div className="phone-macros">
                       <div className="macro-cell">
@@ -668,9 +674,16 @@ export default function Home() {
         <div className="container">
           <div className="stacy-grid">
             <div className="stacy-img-wrap">
-              <div className="stacy-img-box">
-                <span className="stacy-camera">📷</span>
-                <span className="stacy-photo-label">📸 PHOTO COMING SOON</span>
+              <div className="stacy-img-box has-photo">
+                <Image
+                  src="/images/stacy.jpg"
+                  alt="Stacy Kundu, Level 3 Personal Trainer"
+                  width={1200}
+                  height={1680}
+                  loading="lazy"
+                  unoptimized
+                  className="stacy-photo"
+                />
               </div>
               <div className="stacy-creds">
                 <div className="cred-pill"><span className="cred-check">✓</span> Level 3 Personal Trainer</div>
