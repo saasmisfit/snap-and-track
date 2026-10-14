@@ -362,7 +362,8 @@ export default function MealPlansPage() {
           background: ${APP_COLOURS.softBg};
         }
 
-        .header-link {
+        /* :global — styled-jsx does not tag <Link>, so a scoped rule would never match */
+        :global(.header-link) {
           background: ${APP_COLOURS.magenta};
           color: ${APP_COLOURS.onMagenta};
           padding: 10px 18px;
@@ -376,12 +377,12 @@ export default function MealPlansPage() {
           white-space: nowrap;
           transition: background 0.2s, transform 0.1s;
         }
-        .header-link:hover {
+        :global(.header-link:hover) {
           background: ${APP_COLOURS.magentaDark};
           transform: translateY(-1px);
         }
 
-        .footer-link {
+        :global(.footer-link) {
           align-self: center;
           font-size: 15px;
           font-weight: 500;
@@ -389,8 +390,13 @@ export default function MealPlansPage() {
           letter-spacing: 0.02em;
           transition: color 0.2s;
         }
-        .footer-link:hover {
+        :global(.footer-link:hover) {
           color: ${APP_COLOURS.magenta} !important;
+        }
+        :global(.header-link:focus-visible),
+        :global(.footer-link:focus-visible) {
+          outline: 3px solid ${APP_COLOURS.magentaTint};
+          outline-offset: 2px;
         }
       `}</style>
     </main>

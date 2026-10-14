@@ -223,7 +223,8 @@ export default function SubscribeSuccessPage() {
       </div>
 
       <style jsx>{`
-        .start-snapping-cta:hover {
+        /* :global — styled-jsx does not tag <Link>, so a scoped rule would never match */
+        :global(.start-snapping-cta:hover) {
           background: ${APP_COLOURS.magentaDark} !important;
           transform: translateY(-1px);
         }
