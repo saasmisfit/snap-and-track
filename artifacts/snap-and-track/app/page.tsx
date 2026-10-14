@@ -265,7 +265,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: 'Is this separate from the Metaburn app?',
-    a: 'Munch Snapper is a completely standalone product — no Metaburn subscription needed. It works on its own for anyone who wants smart macro tracking with real coaching. Metaburn clients get 20% off with their promo code. Email help@munchsnapper.com to get yours.',
+    a: 'Munch Snapper is a completely standalone product — no Metaburn subscription needed. It works on its own for anyone who wants smart macro tracking with real coaching. Metaburn clients get 20% off for their first year with their promo code. Email help@munchsnapper.com to get yours.',
   },
   {
     q: 'Does my data sync across devices?',
