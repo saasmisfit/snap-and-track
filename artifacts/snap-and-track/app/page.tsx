@@ -96,7 +96,7 @@ const COACH_CHAT_EXAMPLE: { label: string; text: string; from: 'user' | 'stacy' 
   { label: 'You asked', text: 'How am I doing this week?', from: 'user' },
   {
     label: "Stacy's answer",
-    text: "Solid week. Your streak is strong and your protein is on track. Let's tighten up the weekend snacking.",
+    text: "You've logged five days out of seven, which is the habit doing its job. Protein is hitting target most days, so keep that up. The gap is the weekends, where the logging stops and the snacking creeps in. Let's aim to log them too, even if it's messy.",
     from: 'stacy',
   },
 ];
