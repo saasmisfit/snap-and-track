@@ -458,22 +458,18 @@ export default function Home() {
                     <div className="phone-macros">
                       <div className="macro-cell">
                         <div className="macro-val cal">497</div>
-                        <div className="macro-unit">kcal</div>
                         <div className="macro-label">Calories</div>
                       </div>
                       <div className="macro-cell">
                         <div className="macro-val">44g</div>
-                        <div className="macro-unit">protein</div>
                         <div className="macro-label">Protein</div>
                       </div>
                       <div className="macro-cell">
                         <div className="macro-val">38g</div>
-                        <div className="macro-unit">carbs</div>
                         <div className="macro-label">Carbs</div>
                       </div>
                       <div className="macro-cell">
                         <div className="macro-val">10g</div>
-                        <div className="macro-unit">fat</div>
                         <div className="macro-label">Fat</div>
                       </div>
                     </div>
