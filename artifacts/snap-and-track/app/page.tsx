@@ -834,7 +834,7 @@ export default function Home() {
             <span>knowing.</span>
           </h2>
           <p className="final-sub">
-            Three free snaps. No card. No commitment. See what you&apos;ve been missing.
+            Three free snaps. No card needed for those. See what you&apos;ve been missing.
           </p>
           <div className="final-ctas">
             <Link
