@@ -139,19 +139,19 @@ interface VsRow {
 }
 
 const VS_ROWS: VsRow[] = [
-  { feature: 'Photo macro analysis', munch: '✓ Claude AI', mfp: '~ Basic', cal: '✓ Good', macro: '✗ None', mfpKind: 'partial', calKind: 'check', macroKind: 'cross' },
-  { feature: 'Motivating coaching tone', munch: '✓ Warm & empowering', mfp: '✗', cal: '✗', macro: '✗ Clinical', mfpKind: 'cross', calKind: 'cross', macroKind: 'cross' },
+  { feature: 'Photo macro analysis', munch: '✓ Claude AI', mfp: '✓ Premium only', cal: '✓ Good', macro: '✓ AI photo (beta)', mfpKind: 'check', calKind: 'check', macroKind: 'check' },
+  { feature: 'Motivating coaching tone', munch: '✓ Warm & empowering', mfp: '✗', cal: '✗', macro: '✗ Data-led', mfpKind: 'cross', calKind: 'cross', macroKind: 'cross' },
   { feature: 'Goal-aware output', munch: '✓ Fat loss / Maintain / Build', mfp: '~ Basic', cal: '✗', macro: '✓ Advanced', mfpKind: 'partial', calKind: 'cross', macroKind: 'check' },
-  { feature: 'Voice logging', munch: '✓ Included', mfp: '✓ Premium only', cal: '✗', macro: '✗', mfpKind: 'check', calKind: 'cross', macroKind: 'cross' },
+  { feature: 'Voice logging', munch: '✓ Included', mfp: '✓ Premium only', cal: '✓', macro: '✓', mfpKind: 'check', calKind: 'check', macroKind: 'check' },
   { feature: 'Barcode scanner', munch: '✓ Free via Open Food Facts', mfp: '✓ Premium only', cal: '✓', macro: '✓', mfpKind: 'check', calKind: 'check', macroKind: 'check' },
   { feature: 'AI Coach on your data', munch: '✓ Ask Stacy', mfp: '✓ Premium only', cal: '✗', macro: '✗', mfpKind: 'check', calKind: 'cross', macroKind: 'cross' },
   { feature: 'Streak + habit tracking', munch: '✓ Built in', mfp: '✓', cal: '✗', macro: '✓ Basic', mfpKind: 'check', calKind: 'cross', macroKind: 'check' },
   { feature: 'Fasting timer', munch: '✓ 16:8, 18:6, 20:4, custom', mfp: '✓ Premium', cal: '✗', macro: '✗', mfpKind: 'check', calKind: 'cross', macroKind: 'cross' },
-  { feature: 'Progress photos', munch: '✓ With comparison', mfp: '✗', cal: '✗', macro: '✗', mfpKind: 'cross', calKind: 'cross', macroKind: 'cross' },
+  { feature: 'Progress photos', munch: '✓ With comparison', mfp: '~ Weight-entry photos', cal: '✗', macro: '✓', mfpKind: 'partial', calKind: 'cross', macroKind: 'check' },
   { feature: 'Pre-built meal plans', munch: "✓ In Stacy's voice", mfp: '✓ Premium+', cal: '✗', macro: '✗', mfpKind: 'check', calKind: 'cross', macroKind: 'cross' },
   { feature: 'Meal log syncs across devices', munch: '✓ Included', mfp: '✓', cal: '✓', macro: '✓', mfpKind: 'check', calKind: 'check', macroKind: 'check' },
-  { feature: 'UK price', munch: '£5.99/mo', mfp: '~£13/mo', cal: '~£6/mo', macro: '~£6/mo' },
-  { feature: 'Free entry point', munch: '✓ 3 free snaps', mfp: '~ Limited', cal: '✓ 3-day trial', macro: '✗ No free tier', mfpKind: 'partial', calKind: 'check', macroKind: 'cross' },
+  { feature: 'UK price', munch: '£5.99/mo', mfp: 'from ~£13/mo', cal: '~£7/mo', macro: '~£9/mo (~£6 annual)' },
+  { feature: 'Free entry point', munch: '✓ 3 free snaps', mfp: '~ Free tier with ads', cal: '~ 3-day trial (card needed)', macro: '~ 7-day trial, no free tier', mfpKind: 'partial', calKind: 'partial', macroKind: 'partial' },
 ];
 
 // Rows shown before "Show full comparison" is opened.
@@ -277,7 +277,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: 'I already use MyFitnessPal — why switch?',
-    a: 'MyFitnessPal is a database app — you search and select every ingredient manually. Munch Snapper analyses a photo of your actual meal in seconds. You also get Stacy’s coaching voice on every result, an AI Coach reading your weekly data, a streak tracker, fasting timer, progress photos, and a pre-built meal plan — all for less than MFP’s premium tier. The difference is tracking vs coaching.',
+    a: 'MyFitnessPal is built around a food database — you search and select ingredients. Munch Snapper analyses a photo of your actual meal in seconds. You also get Stacy’s coaching voice on every result, an AI Coach reading your weekly data, a streak tracker, fasting timer, progress photos, and a pre-built meal plan — all for less than MFP’s premium tier. The difference is tracking vs coaching.',
   },
   {
     q: 'How much does it cost?',
@@ -411,7 +411,7 @@ export default function Home() {
                 <span className="accent">Get coached.</span>
               </h1>
               <p className="hero-sub">
-                The only food tracking app with a real PT&apos;s voice on every snap. Photo snap, barcode scanner, voice logging, AI coaching, and targets and meal plans built around your goal — all in one place.
+                Food tracking with a real PT&apos;s voice on every snap. Photo snap, barcode scanner, voice logging, AI coaching, and targets and meal plans built around your goal — all in one place.
               </p>
               <div className="hero-ctas">
                 <Link
@@ -604,7 +604,7 @@ export default function Home() {
         <div className="container">
           <span className="eyebrow">Why Munch Snapper</span>
           <h2 className="vs-headline">
-            Every other app gives you<br />numbers. We give you{' '}
+            Most apps give you<br />numbers. We give you{' '}
             <span style={{ color: 'var(--magenta)' }}>coaching.</span>
           </h2>
           <div className="vs-card">
@@ -663,7 +663,7 @@ export default function Home() {
               <ChevronDown size={18} strokeWidth={2} aria-hidden="true" />
             </button>
             <p className="vs-footnote">
-              Competitor features and prices are approximate and may change.
+              Competitor features and prices are approximate, based on public information checked in October 2026, and may change.
             </p>
           </div>
         </div>
