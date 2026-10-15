@@ -7,10 +7,10 @@ import { clerkAppearance } from '../../lib/clerk-appearance';
 
 export const metadata: Metadata = {
   title: 'Sign Up — Munch Snapper',
-  description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card required.',
+  description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card needed for those.',
   openGraph: {
     title: 'Sign Up — Munch Snapper',
-    description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card required.',
+    description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card needed for those.',
     url: 'https://www.munchsnapper.com/sign-up',
     siteName: 'Munch Snapper',
     images: [
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Sign Up — Munch Snapper',
-    description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card required.',
+    description: 'Create your free Munch Snapper account — 3 free AI meal snaps, no card needed for those.',
     images: ['https://www.munchsnapper.com/opengraph.jpg'],
   },
 };
