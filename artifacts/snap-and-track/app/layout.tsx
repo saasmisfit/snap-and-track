@@ -5,7 +5,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Munch Snapper — Snap Your Macros in Seconds',
   description:
-    "The only food tracking app with a real PT's voice on every snap. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+    "Food tracking with a real PT's voice on every snap. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
   // White logo on a magenta tile, so it shows on light and dark browser tabs.
   icons: {
     icon: [

@@ -281,7 +281,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: 'How much does it cost?',
-    a: '£5.99 per month or £49.99 per year (saving 30%). You get 3 free photo snaps before any payment is required — no credit card needed to start.',
+    a: '£5.99 per month or £49.99 per year (saving 30%). You get 3 free photo snaps before any payment is required — no card needed for those. The monthly plan then starts with a 3-day free trial (card required), and you can cancel anytime.',
   },
 ];
 
@@ -736,6 +736,7 @@ export default function Home() {
                 <span className="currency">£</span>5.99
               </div>
               <div className="price-period">Cancel anytime</div>
+              <div className="price-period">3 days free, then £5.99/mo</div>
               <div className="price-tagline">Less than a coffee. Unlimited snaps.</div>
               <ul className="price-features">
                 {PLAN_FEATURES.map((f) => (
