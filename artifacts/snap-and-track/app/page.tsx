@@ -91,7 +91,6 @@ const STACY_TAKE =
   "That's a brilliant fat-loss plate. 44g of protein is exactly where you want to be — the broccoli keeps it filling without blowing your calories. Genuinely good choice.";
 
 const AI_COACH = 'AI Coach';
-// PLACEHOLDER example copy, needs Mark's approval
 const COACH_CHAT_EXAMPLE: { label: string; text: string; from: 'user' | 'stacy' }[] = [
   { label: 'You asked', text: 'How am I doing this week?', from: 'user' },
   {
