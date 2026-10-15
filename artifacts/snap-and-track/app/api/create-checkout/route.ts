@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { getStripe } from '../../lib/stripe';
 
 export const runtime = 'nodejs';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 type Plan = 'monthly' | 'annual';
 
@@ -52,6 +50,7 @@ export async function POST(req: Request) {
   )?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  const stripe = getStripe();
 
   try {
     const session = await stripe.checkout.sessions.create({
