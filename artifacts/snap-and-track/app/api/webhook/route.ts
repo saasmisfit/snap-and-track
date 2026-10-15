@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { clerkClient } from '@clerk/nextjs/server';
+import { getStripe } from '../../lib/stripe';
 
 export const runtime = 'nodejs';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 const SUBSCRIPTION_METADATA_KEY = 'clerkUserId';
 
@@ -120,6 +119,7 @@ async function attachClerkUserId(
   knownMetadata?: Stripe.Metadata | null
 ): Promise<void> {
   try {
+    const stripe = getStripe();
     const existing =
       knownMetadata ?? (await stripe.subscriptions.retrieve(subscriptionId)).metadata ?? {};
     if (existing[SUBSCRIPTION_METADATA_KEY] === clerkUserId) return;
@@ -181,6 +181,7 @@ export async function POST(request: Request) {
 
   const body = await request.text();
   const secret = process.env.STRIPE_WEBHOOK_SECRET as string;
+  const stripe = getStripe();
 
   let event: Stripe.Event;
   try {

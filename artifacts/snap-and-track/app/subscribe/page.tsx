@@ -3,22 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import { APP_COLOURS } from '../lib/app-colours';
 
 type Plan = 'monthly' | 'annual';
-
-const COLOURS = {
-  magenta: '#B0185E',
-  magentaDark: '#8a1249',
-  nearBlack: '#0E0E10',
-  card: '#1a1a1e',
-  border: '#2a2a30',
-  white: '#ffffff',
-  textMuted: 'rgba(255,255,255,0.55)',
-  textFaint: 'rgba(255,255,255,0.35)',
-  errorText: '#fca5a5',
-  errorBg: 'rgba(220,38,38,0.10)',
-  errorBorder: 'rgba(220,38,38,0.45)',
-};
 
 export default function SubscribePage() {
   const { isLoaded, isSignedIn } = useUser();
@@ -46,9 +33,11 @@ export default function SubscribePage() {
       <main
         style={{
           minHeight: '100vh',
-          background: COLOURS.nearBlack,
+          background: APP_COLOURS.softBg,
         }}
-      />
+      >
+        <style>{`body { background: ${APP_COLOURS.softBg}; }`}</style>
+      </main>
     );
   }
 
@@ -86,8 +75,8 @@ export default function SubscribePage() {
     <main
       style={{
         minHeight: '100vh',
-        background: COLOURS.nearBlack,
-        color: COLOURS.white,
+        background: APP_COLOURS.softBg,
+        color: APP_COLOURS.text,
         fontFamily: "'Barlow', sans-serif",
         display: 'flex',
         flexDirection: 'column',
@@ -96,10 +85,12 @@ export default function SubscribePage() {
         padding: '2.5rem 1.25rem 4rem',
       }}
     >
+      {/* Matches the page behind the wrapper so no dark body shows on overscroll */}
+      <style>{`body { background: ${APP_COLOURS.softBg}; }`}</style>
       <div
         style={{
           width: '100%',
-          maxWidth: 460,
+          maxWidth: 480,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -113,7 +104,7 @@ export default function SubscribePage() {
           style={{
             width: 56,
             height: 56,
-            background: COLOURS.magenta,
+            background: APP_COLOURS.magenta,
             borderRadius: 14,
             display: 'flex',
             alignItems: 'center',
@@ -121,7 +112,7 @@ export default function SubscribePage() {
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 800,
             fontSize: 22,
-            color: COLOURS.white,
+            color: APP_COLOURS.onMagenta,
             letterSpacing: '-0.02em',
             lineHeight: 1,
           }}
@@ -133,11 +124,11 @@ export default function SubscribePage() {
         <div>
           <span
             style={{
-              fontSize: 11,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: COLOURS.magenta,
+              color: APP_COLOURS.magenta,
               display: 'block',
               marginBottom: 10,
             }}
@@ -148,9 +139,9 @@ export default function SubscribePage() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 800,
-              fontSize: 'clamp(2.2rem, 5vw, 3rem)',
+              fontSize: 'clamp(2.6rem, 6vw, 3.6rem)',
               lineHeight: 1.05,
-              color: COLOURS.white,
+              color: APP_COLOURS.heading,
               letterSpacing: '-0.01em',
               margin: 0,
             }}
@@ -159,8 +150,9 @@ export default function SubscribePage() {
           </h1>
           <p
             style={{
-              fontSize: 16,
-              color: COLOURS.textMuted,
+              fontSize: 18,
+              fontWeight: 500,
+              color: APP_COLOURS.text,
               lineHeight: 1.6,
               marginTop: '1rem',
             }}
@@ -180,10 +172,11 @@ export default function SubscribePage() {
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
             gap: 6,
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 999,
-            padding: 4,
+            padding: 5,
           }}
         >
           {(['monthly', 'annual'] as Plan[]).map((p) => {
@@ -196,13 +189,13 @@ export default function SubscribePage() {
                 aria-checked={active}
                 onClick={() => setPlan(p)}
                 style={{
-                  background: active ? COLOURS.magenta : 'transparent',
-                  color: active ? COLOURS.white : 'rgba(255,255,255,0.7)',
+                  background: active ? APP_COLOURS.magenta : 'transparent',
+                  color: active ? APP_COLOURS.onMagenta : APP_COLOURS.heading,
                   border: 'none',
-                  padding: '10px 12px',
+                  padding: '13px 12px',
                   borderRadius: 999,
                   fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
+                  fontSize: 15,
                   fontWeight: 700,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
@@ -220,13 +213,14 @@ export default function SubscribePage() {
         <div
           style={{
             width: '100%',
-            background: COLOURS.card,
-            border: `1px solid ${COLOURS.border}`,
+            background: APP_COLOURS.card,
+            border: `1px solid ${APP_COLOURS.border}`,
+            boxShadow: APP_COLOURS.shadowCard,
             borderRadius: 16,
-            padding: '20px 22px',
+            padding: '26px 26px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
+            gap: 14,
             textAlign: 'left',
           }}
         >
@@ -249,18 +243,28 @@ export default function SubscribePage() {
               key={feature}
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                fontSize: 14,
-                color: 'rgba(255,255,255,0.85)',
+                alignItems: 'flex-start',
+                gap: 12,
+                fontSize: 16,
+                fontWeight: 500,
+                lineHeight: 1.45,
+                color: APP_COLOURS.text,
               }}
             >
               <span
                 aria-hidden="true"
                 style={{
-                  color: COLOURS.magenta,
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  background: APP_COLOURS.magentaSoft,
+                  color: APP_COLOURS.magenta,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   fontWeight: 800,
-                  fontSize: 16,
+                  fontSize: 13,
+                  lineHeight: 1,
                   flexShrink: 0,
                 }}
               >
@@ -277,12 +281,13 @@ export default function SubscribePage() {
             role="alert"
             style={{
               width: '100%',
-              background: COLOURS.errorBg,
-              border: `1px solid ${COLOURS.errorBorder}`,
+              background: APP_COLOURS.dangerSoft,
+              border: `1px solid ${APP_COLOURS.dangerBorder}`,
               borderRadius: 12,
-              padding: '12px 16px',
-              fontSize: 14,
-              color: COLOURS.errorText,
+              padding: '14px 16px',
+              fontSize: 16,
+              fontWeight: 500,
+              color: APP_COLOURS.danger,
               textAlign: 'left',
             }}
           >
@@ -298,18 +303,17 @@ export default function SubscribePage() {
           aria-busy={isLoading}
           style={{
             width: '100%',
-            background: isLoading ? COLOURS.magentaDark : COLOURS.magenta,
-            color: COLOURS.white,
+            background: isLoading ? APP_COLOURS.magentaDark : APP_COLOURS.magenta,
+            color: APP_COLOURS.onMagenta,
             border: 'none',
-            padding: '16px 24px',
+            padding: '18px 24px',
             borderRadius: 999,
             fontFamily: "'Barlow', sans-serif",
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: 700,
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
             cursor: isLoading ? 'wait' : 'pointer',
-            opacity: isLoading ? 0.85 : 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -339,12 +343,12 @@ export default function SubscribePage() {
             marginTop: '0.5rem',
           }}
         >
-          <div style={{ fontSize: 13, color: COLOURS.textMuted }}>
+          <div style={{ fontSize: 15, color: APP_COLOURS.textMuted }}>
             Already subscribed?{' '}
             <Link
               href="/sign-in"
               style={{
-                color: COLOURS.magenta,
+                color: APP_COLOURS.magenta,
                 textDecoration: 'none',
                 fontWeight: 600,
               }}
@@ -355,20 +359,20 @@ export default function SubscribePage() {
           <Link
             href="/app"
             style={{
-              fontSize: 13,
-              color: COLOURS.textFaint,
+              fontSize: 15,
+              color: APP_COLOURS.textMuted,
               textDecoration: 'none',
               fontWeight: 500,
             }}
           >
             ← Back to Munch Snapper
           </Link>
-          <div style={{ fontSize: 13, color: COLOURS.textMuted, marginTop: '0.25rem' }}>
+          <div style={{ fontSize: 15, color: APP_COLOURS.textMuted, marginTop: '0.25rem' }}>
             Need help? Email{' '}
             <a
               href="mailto:help@munchsnapper.com"
               style={{
-                color: COLOURS.magenta,
+                color: APP_COLOURS.magenta,
                 textDecoration: 'none',
                 fontWeight: 600,
               }}
@@ -384,8 +388,8 @@ export default function SubscribePage() {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          border: 2px solid rgba(255, 255, 255, 0.35);
-          border-top-color: ${COLOURS.white};
+          border: 2px solid ${APP_COLOURS.onMagentaFaint};
+          border-top-color: ${APP_COLOURS.onMagenta};
           animation: sub-spin 0.8s linear infinite;
           display: inline-block;
         }

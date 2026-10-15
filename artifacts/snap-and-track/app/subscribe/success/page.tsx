@@ -2,19 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-const COLOURS = {
-  magenta: '#B0185E',
-  magentaDark: '#8a1249',
-  nearBlack: '#0E0E10',
-  card: '#1a1a1e',
-  border: '#2a2a30',
-  white: '#ffffff',
-  green: '#4ade80',
-  greenSoft: 'rgba(74,222,128,0.12)',
-  textMuted: 'rgba(255,255,255,0.55)',
-  textFaint: 'rgba(255,255,255,0.35)',
-};
+import { APP_COLOURS } from '../../lib/app-colours';
 
 type Plan = 'monthly' | 'annual';
 
@@ -29,6 +17,8 @@ export default function SubscribeSuccessPage() {
   // deliberately show the no-trial-claim copy rather than risk repeating the
   // false trial claim this page used to show unconditionally.
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -40,12 +30,33 @@ export default function SubscribeSuccessPage() {
     }
   }, []);
 
+  // Opens the Stripe customer portal (cancel, change card, invoices).
+  async function openBillingPortal() {
+    if (portalLoading) return;
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const res = await fetch('/api/billing-portal', { method: 'POST' });
+      const data: unknown = await res.json().catch(() => ({}));
+      const payload = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+      if (!res.ok || typeof payload.url !== 'string') {
+        throw new Error(
+          typeof payload.error === 'string' ? payload.error : `Request failed (${res.status})`
+        );
+      }
+      window.location.href = payload.url;
+    } catch (err) {
+      setPortalError(err instanceof Error ? err.message : 'Could not open the billing portal.');
+      setPortalLoading(false);
+    }
+  }
+
   return (
     <main
       style={{
         minHeight: '100vh',
-        background: COLOURS.nearBlack,
-        color: COLOURS.white,
+        background: APP_COLOURS.softBg,
+        color: APP_COLOURS.text,
         fontFamily: "'Barlow', sans-serif",
         display: 'flex',
         flexDirection: 'column',
@@ -54,15 +65,22 @@ export default function SubscribeSuccessPage() {
         padding: '2.5rem 1.25rem 4rem',
       }}
     >
+      {/* Matches the page behind the wrapper so no dark body shows on overscroll */}
+      <style>{`body { background: ${APP_COLOURS.softBg}; }`}</style>
       <div
         style={{
           width: '100%',
-          maxWidth: 460,
+          maxWidth: 480,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '1.5rem',
           textAlign: 'center',
+          background: APP_COLOURS.card,
+          border: `1px solid ${APP_COLOURS.border}`,
+          boxShadow: APP_COLOURS.shadowCard,
+          borderRadius: 20,
+          padding: '2.75rem 2rem 2.5rem',
         }}
       >
         {/* Checkmark */}
@@ -72,14 +90,14 @@ export default function SubscribeSuccessPage() {
             width: 88,
             height: 88,
             borderRadius: '50%',
-            background: COLOURS.greenSoft,
-            border: `2px solid ${COLOURS.green}`,
+            background: APP_COLOURS.successSoft,
+            border: `2px solid ${APP_COLOURS.success}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 44,
             lineHeight: 1,
-            color: COLOURS.green,
+            color: APP_COLOURS.success,
             fontWeight: 800,
           }}
         >
@@ -91,9 +109,9 @@ export default function SubscribeSuccessPage() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 800,
-            fontSize: 'clamp(2.4rem, 6vw, 3.2rem)',
+            fontSize: 'clamp(2.6rem, 6vw, 3.6rem)',
             lineHeight: 1.05,
-            color: COLOURS.white,
+            color: APP_COLOURS.heading,
             letterSpacing: '-0.01em',
             margin: 0,
           }}
@@ -104,8 +122,9 @@ export default function SubscribeSuccessPage() {
         {/* Body */}
         <p
           style={{
-            fontSize: 16,
-            color: COLOURS.textMuted,
+            fontSize: 18,
+            fontWeight: 500,
+            color: APP_COLOURS.text,
             lineHeight: 1.6,
             margin: 0,
           }}
@@ -128,13 +147,13 @@ export default function SubscribeSuccessPage() {
           href="/app"
           style={{
             width: '100%',
-            background: COLOURS.magenta,
-            color: COLOURS.white,
+            background: APP_COLOURS.magenta,
+            color: APP_COLOURS.onMagenta,
             border: 'none',
-            padding: '16px 24px',
+            padding: '18px 24px',
             borderRadius: 999,
             fontFamily: "'Barlow', sans-serif",
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: 700,
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
@@ -154,19 +173,59 @@ export default function SubscribeSuccessPage() {
         {/* Footnote */}
         <div
           style={{
-            fontSize: 12,
-            color: COLOURS.textFaint,
+            fontSize: 15,
+            color: APP_COLOURS.textMuted,
             marginTop: '0.5rem',
             lineHeight: 1.5,
           }}
         >
           Manage your subscription any time from your account settings.
         </div>
+        <button
+          type="button"
+          onClick={openBillingPortal}
+          disabled={portalLoading}
+          aria-busy={portalLoading}
+          style={{
+            background: 'transparent',
+            border: `2px solid ${APP_COLOURS.magenta}`,
+            color: APP_COLOURS.magenta,
+            padding: '12px 22px',
+            borderRadius: 999,
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            cursor: portalLoading ? 'wait' : 'pointer',
+          }}
+        >
+          {portalLoading ? 'Opening…' : 'Manage subscription'}
+        </button>
+        {portalError ? (
+          <div
+            role="alert"
+            style={{
+              width: '100%',
+              background: APP_COLOURS.dangerSoft,
+              border: `1px solid ${APP_COLOURS.dangerBorder}`,
+              borderRadius: 12,
+              padding: '12px 16px',
+              fontSize: 16,
+              fontWeight: 500,
+              color: APP_COLOURS.danger,
+              textAlign: 'left',
+            }}
+          >
+            {portalError}
+          </div>
+        ) : null}
       </div>
 
       <style jsx>{`
-        .start-snapping-cta:hover {
-          background: ${COLOURS.magentaDark} !important;
+        /* :global — styled-jsx does not tag <Link>, so a scoped rule would never match */
+        :global(.start-snapping-cta:hover) {
+          background: ${APP_COLOURS.magentaDark} !important;
           transform: translateY(-1px);
         }
       `}</style>

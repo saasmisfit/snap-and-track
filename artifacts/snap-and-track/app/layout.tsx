@@ -1,14 +1,19 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Munch Snapper — Snap Your Macros in Seconds',
   description:
-    "The only food tracking app with a real PT's voice on every meal. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+    "Food tracking with a real PT's voice on every snap. Photo snap, barcode scanner, voice logging, AI coaching — all in one place.",
+  // White logo on a magenta tile, so it shows on light and dark browser tabs.
   icons: {
-    icon: '/munch-snapper-logo.png',
-    apple: '/munch-snapper-logo.png',
+    icon: [
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
   },
   openGraph: {
     title: 'Munch Snapper — Snap Your Macros in Seconds',
@@ -33,6 +38,10 @@ export const metadata: Metadata = {
       'Snap any meal. Get instant macros + a coaching note from Stacy. Photo, voice, barcode — all in one app.',
     images: ['https://www.munchsnapper.com/opengraph.jpg'],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#FFFFFF',
 };
 
 export default function RootLayout({
