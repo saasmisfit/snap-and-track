@@ -734,8 +734,10 @@ export default function Home() {
               <div className="price-amount">
                 <span className="currency">£</span>5.99
               </div>
-              <div className="price-period">Cancel anytime</div>
-              <div className="price-period">3 days free, then £5.99/mo</div>
+              <div className="price-period-group">
+                <div className="price-period">Cancel anytime</div>
+                <div className="price-period">3 days free, then £5.99/mo</div>
+              </div>
               <div className="price-tagline">Less than a coffee. Unlimited snaps.</div>
               <ul className="price-features">
                 {PLAN_FEATURES.map((f) => (
@@ -763,7 +765,9 @@ export default function Home() {
               <div className="price-amount">
                 <span className="currency">£</span>49.99
               </div>
-              <div className="price-period">That&apos;s just £4.17/month · Save £21.89</div>
+              <div className="price-period-group">
+                <div className="price-period">That&apos;s just £4.17/month · Save £21.89</div>
+              </div>
               <div className="price-tagline">Best value. Same everything. One year of Stacy.</div>
               <ul className="price-features">
                 {PLAN_FEATURES.map((f) => (

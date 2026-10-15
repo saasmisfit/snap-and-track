@@ -908,10 +908,21 @@
   .pricing-note { font-size: var(--fs-small); color: var(--text-muted); text-align: center; line-height: 1.6; }
   .pricing-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    grid-template-columns: 1fr;
     gap: 32px;
     max-width: 58rem;
     margin: 3rem auto 0;
+  }
+  /* Two columns: each card takes the same 6 rows via subgrid so the name, price,
+     period group and tagline line up even when one period group is taller. */
+  @media (min-width: 640px) {
+    .pricing-cards { grid-template-columns: repeat(2, 1fr); }
+    .pricing-cards > .price-card {
+      display: grid;
+      grid-template-rows: subgrid;
+      grid-row: span 6;
+      row-gap: 0;
+    }
   }
   .pricing-grid {
     display: grid;
