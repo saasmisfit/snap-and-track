@@ -2835,9 +2835,13 @@ function BarcodeScannerModal({
         {phase === 'error' && (
           <>
             <h2 style={titleStyle}>Camera trouble</h2>
-            <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 16, color: APP_COLOURS.text, margin: 0, lineHeight: 1.5 }}>
+              No camera? No problem: type the number printed under the barcode instead.
+            </p>
+            <p style={{ fontSize: 14, color: APP_COLOURS.textMuted, margin: 0, lineHeight: 1.5 }}>
               {errorMsg || 'Something went wrong starting the camera.'}
             </p>
+            {typedEntry}
             <button type="button" onClick={tryAgain} style={primaryBtnStyle}>
               Try again
             </button>
