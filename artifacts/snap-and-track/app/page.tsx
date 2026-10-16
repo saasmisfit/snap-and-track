@@ -268,7 +268,7 @@ const FAQS: FaqEntry[] = [
   },
   {
     q: 'Does my data sync across devices?',
-    a: 'Yes. Your meal log is stored in the cloud (not just on your phone). Log on your phone, check your history on your laptop — your meal log is always in sync. Water, weight, streaks, and preferences are stored locally per device.',
+    a: 'Yes. Your meal log is stored in the cloud (not just on your phone). Log on your phone, check your history on your laptop — your meal log is always in sync. Meal photos stay on the device that took them, so they won\'t appear on a second device. Water, weight, streaks, and preferences are stored locally per device.',
   },
   {
     q: 'Can I cancel at any time?',

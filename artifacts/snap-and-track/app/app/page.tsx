@@ -359,6 +359,10 @@ export default function SnapAndTrackApp() {
   const resultTokenRef = useRef(0);
   const savingTokenRef = useRef<number | null>(null);
   const savedTokenRef = useRef<number | null>(null);
+  // The small photo thumbnail for the current result, kept so a manual retry
+  // after a failed automatic save still stores it. Released once saved or when
+  // a new result begins.
+  const pendingThumbRef = useRef<{ token: number; blob: Promise<Blob | null> } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
@@ -627,6 +631,7 @@ export default function SnapAndTrackApp() {
   // Starts a fresh save state for the next result (or for no result).
   function beginNewResult() {
     resultTokenRef.current += 1;
+    pendingThumbRef.current = null;
     setJustLogged(false);
     setIsSaving(false);
     setSaveFailed(false);
@@ -774,7 +779,13 @@ export default function SnapAndTrackApp() {
       if (typeof result.freeSnapsUsed === 'number') setSnapCount(result.freeSnapsUsed);
       // A menu scan is a recommendation, not a meal eaten, so it is only
       // logged if the user taps the button.
-      if (mode === 'meal') void logMeal(result, makeMealThumb(upload));
+      if (mode === 'meal') {
+        pendingThumbRef.current = {
+          token: resultTokenRef.current,
+          blob: makeMealThumb(upload),
+        };
+        void logMeal(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong analysing that meal.');
     } finally {
@@ -786,10 +797,7 @@ export default function SnapAndTrackApp() {
   // "Log this meal" button for menu scans or when the automatic save failed.
   // `target` is passed on the automatic path because the new result is not in
   // state yet. A result is saved at most once (see resultTokenRef).
-  async function logMeal(
-    target: AnalyseResponse | null = result,
-    thumb: Promise<Blob | null> | null = null
-  ) {
+  async function logMeal(target: AnalyseResponse | null = result) {
     const token = resultTokenRef.current;
     if (!target || !user?.id) return;
     if (savedTokenRef.current === token || savingTokenRef.current === token) return;
@@ -834,8 +842,12 @@ export default function SnapAndTrackApp() {
           if (typeof id === 'number') {
             if (isCurrent()) setLoggedEntryId(id);
             // Browser-only photo for the Log page; never sent anywhere.
-            if (thumb) {
-              void thumb.then((blob) => (blob ? saveMealThumb(id, userId, blob) : undefined));
+            const pending = pendingThumbRef.current;
+            if (pending && pending.token === token) {
+              pendingThumbRef.current = null;
+              void pending.blob.then((blob) =>
+                blob ? saveMealThumb(id, userId, blob) : undefined
+              );
             }
           }
         }
