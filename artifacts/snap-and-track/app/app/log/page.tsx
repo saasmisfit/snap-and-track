@@ -607,6 +607,8 @@ export default function MealLogPage() {
   const [thumbUrls, setThumbUrls] = useState<Map<number, string>>(() => new Map());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // The one meal currently showing "Sure? Remove" (only one at a time).
+  const [confirmRemoveId, setConfirmRemoveId] = useState<number | null>(null);
   const [openDates, setOpenDates] = useState<Set<string>>(() => new Set());
   const [netCarbs, setNetCarbs] = useState(false);
   const [waterCount, setWaterCount] = useState(0);
@@ -889,6 +891,13 @@ export default function MealLogPage() {
       // best-effort — leave optimistic removal in place
     }
   }
+
+  // Undo the "Sure? Remove" state by itself if nothing is tapped
+  useEffect(() => {
+    if (confirmRemoveId === null) return;
+    const t = window.setTimeout(() => setConfirmRemoveId(null), 5000);
+    return () => window.clearTimeout(t);
+  }, [confirmRemoveId]);
 
   function toggleExpanded(id: number) {
     setExpanded((m) => ({ ...m, [String(id)]: !m[String(id)] }));
@@ -2464,13 +2473,35 @@ export default function MealLogPage() {
                           ) : null}
 
                           <div style={styles.entryFoot}>
-                            <button
-                              type="button"
-                              onClick={() => removeEntry(e.id)}
-                              className="remove-link"
-                            >
-                              Remove
-                            </button>
+                            {confirmRemoveId === e.id ? (
+                              <div className="remove-confirm" role="group" aria-label={`Remove ${e.dish}?`}>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmRemoveId(null)}
+                                  className="keep-btn"
+                                >
+                                  Keep
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setConfirmRemoveId(null);
+                                    void removeEntry(e.id);
+                                  }}
+                                  className="confirm-remove-btn"
+                                >
+                                  Sure? Remove
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmRemoveId(e.id)}
+                                className="remove-link"
+                              >
+                                Remove
+                              </button>
+                            )}
                           </div>
                         </article>
                       ))}
@@ -2792,6 +2823,39 @@ export default function MealLogPage() {
         }
         .remove-link:hover {
           color: ${APP_COLOURS.danger};
+        }
+        .remove-confirm {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+        .keep-btn,
+        .confirm-remove-btn {
+          min-height: 44px;
+          padding: 0 18px;
+          border-radius: 999px;
+          font-family: var(--body-font), 'Barlow', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+        }
+        .keep-btn {
+          background: transparent;
+          color: ${APP_COLOURS.magenta};
+          border: 1.5px solid ${APP_COLOURS.magenta};
+        }
+        .keep-btn:hover {
+          background: ${APP_COLOURS.magentaSoft};
+        }
+        .confirm-remove-btn {
+          background: ${APP_COLOURS.magenta};
+          color: ${APP_COLOURS.onMagenta};
+          border: 1.5px solid ${APP_COLOURS.magenta};
+        }
+        .confirm-remove-btn:hover {
+          background: ${APP_COLOURS.magentaDark};
+          border-color: ${APP_COLOURS.magentaDark};
         }
 
         .coach-typing-dots {
