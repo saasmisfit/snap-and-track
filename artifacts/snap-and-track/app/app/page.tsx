@@ -8,6 +8,7 @@ import { StreakBadge } from '../components/StreakBadge';
 import { EMPTY_STREAK, checkAndResetStreak, readStreak, writeStreak, type Streak } from '../lib/streak';
 import { APP_COLOURS } from '../lib/app-colours';
 import { shrinkImage } from '../lib/shrink-image';
+import { makeMealThumb, saveMealThumb } from '../lib/meal-thumbs';
 
 const userButtonAppearance = {
   variables: {
@@ -352,6 +353,18 @@ export default function SnapAndTrackApp() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  // Each result shown gets a token. A save is tied to the token it started on,
+  // so one result is saved at most once and a late reply never marks a newer
+  // result as logged.
+  const resultTokenRef = useRef(0);
+  const savingTokenRef = useRef<number | null>(null);
+  const savedTokenRef = useRef<number | null>(null);
+  // The small photo thumbnail for the current result, kept so a manual retry
+  // after a failed automatic save still stores it. Released once saved or when
+  // a new result begins.
+  const pendingThumbRef = useRef<{ token: number; blob: Promise<Blob | null> } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   // Revoke object URLs when they change or component unmounts
   useEffect(() => {
@@ -369,13 +382,6 @@ export default function SnapAndTrackApp() {
     }, 1800);
     return () => window.clearInterval(id);
   }, [isAnalysing]);
-
-  // Auto-clear "Logged!" confirmation after 2 seconds
-  useEffect(() => {
-    if (!justLogged) return;
-    const id = window.setTimeout(() => setJustLogged(false), 2000);
-    return () => window.clearTimeout(id);
-  }, [justLogged]);
 
   // Hydrate the free-snap count from Clerk publicMetadata — the server is the
   // sole source of truth, this is display only. Refreshed from each
@@ -622,6 +628,16 @@ export default function SnapAndTrackApp() {
     setShowVoiceLog(true);
   }
 
+  // Starts a fresh save state for the next result (or for no result).
+  function beginNewResult() {
+    resultTokenRef.current += 1;
+    pendingThumbRef.current = null;
+    setJustLogged(false);
+    setIsSaving(false);
+    setSaveFailed(false);
+    setLoggedEntryId(null);
+  }
+
   // Barcode scans make no AI call, so they never consume a free snap.
   function handleBarcodeResult(data: AnalyseResponse) {
     setShowBarcodeScanner(false);
@@ -630,9 +646,10 @@ export default function SnapAndTrackApp() {
     setPreviewUrl(null);
     setError(null);
     setEditingTile(null);
-    setLoggedEntryId(null);
+    beginNewResult();
     setMode('meal');
     setResult(data);
+    void logMeal(data);
   }
 
   function handleVoiceResult(data: AnalyseResponse) {
@@ -642,10 +659,11 @@ export default function SnapAndTrackApp() {
     setPreviewUrl(null);
     setError(null);
     setEditingTile(null);
-    setLoggedEntryId(null);
+    beginNewResult();
     setMode('meal');
     setResult(data);
     if (typeof data.freeSnapsUsed === 'number') setSnapCount(data.freeSnapsUsed);
+    void logMeal(data);
   }
 
   function updateMacro(key: MacroKey, raw: string) {
@@ -679,6 +697,7 @@ export default function SnapAndTrackApp() {
     setPreviewUrl(URL.createObjectURL(f));
     setResult(null);
     setError(null);
+    beginNewResult();
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -716,7 +735,7 @@ export default function SnapAndTrackApp() {
     setError(null);
     setIsAnalysing(false);
     setEditingTile(null);
-    setLoggedEntryId(null);
+    beginNewResult();
     setMode('meal');
     if (!keepGoal) setGoal('fat_loss');
   }
@@ -755,8 +774,18 @@ export default function SnapAndTrackApp() {
         throw new Error(detail);
       }
       const result = data as AnalyseResponse;
+      beginNewResult();
       setResult(result);
       if (typeof result.freeSnapsUsed === 'number') setSnapCount(result.freeSnapsUsed);
+      // A menu scan is a recommendation, not a meal eaten, so it is only
+      // logged if the user taps the button.
+      if (mode === 'meal') {
+        pendingThumbRef.current = {
+          token: resultTokenRef.current,
+          blob: makeMealThumb(upload),
+        };
+        void logMeal(result);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong analysing that meal.');
     } finally {
@@ -764,53 +793,75 @@ export default function SnapAndTrackApp() {
     }
   }
 
-  async function logMeal() {
-    if (!result || justLogged || !user?.id) return;
+  // Called automatically after each successful analysis, and by the
+  // "Log this meal" button for menu scans or when the automatic save failed.
+  // `target` is passed on the automatic path because the new result is not in
+  // state yet. A result is saved at most once (see resultTokenRef).
+  async function logMeal(target: AnalyseResponse | null = result) {
+    const token = resultTokenRef.current;
+    if (!target || !user?.id) return;
+    if (savedTokenRef.current === token || savingTokenRef.current === token) return;
+    savingTokenRef.current = token;
+    const isCurrent = () => resultTokenRef.current === token;
+    const userId = user.id;
+    setIsSaving(true);
+    setSaveFailed(false);
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const logTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    let saved = false;
     try {
       const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId,
           logDate: todayStr,
           logTime,
-          mealName: result.dish,
-          description: result.portion_estimate,
-          calories: result.calories,
-          protein: result.protein_g,
-          carbs: result.carbs_g,
-          fat: result.fat_g,
-          fibre: result.fibre_g,
-          ingredients: result.foods_identified,
-          coachingNote: result.stacy_insight,
+          mealName: target.dish,
+          description: target.portion_estimate,
+          calories: target.calories,
+          protein: target.protein_g,
+          carbs: target.carbs_g,
+          fat: target.fat_g,
+          fibre: target.fibre_g,
+          ingredients: target.foods_identified,
+          coachingNote: target.stacy_insight,
         }),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        saved = true;
+        savedTokenRef.current = token;
         const data: unknown = await res.json().catch(() => ({}));
-        const detail =
-          data && typeof data === 'object' && 'error' in data
-            ? String((data as { error: unknown }).error)
-            : `Save failed (${res.status})`;
-        setError(detail);
-        return;
+        const entry =
+          data && typeof data === 'object' && 'entry' in data
+            ? (data as { entry: unknown }).entry
+            : null;
+        if (entry && typeof entry === 'object' && 'id' in entry) {
+          const id = (entry as { id: unknown }).id;
+          if (typeof id === 'number') {
+            if (isCurrent()) setLoggedEntryId(id);
+            // Browser-only photo for the Log page; never sent anywhere.
+            const pending = pendingThumbRef.current;
+            if (pending && pending.token === token) {
+              pendingThumbRef.current = null;
+              void pending.blob.then((blob) =>
+                blob ? saveMealThumb(id, userId, blob) : undefined
+              );
+            }
+          }
+        }
       }
-      const data: unknown = await res.json().catch(() => ({}));
-      const entry =
-        data && typeof data === 'object' && 'entry' in data
-          ? (data as { entry: unknown }).entry
-          : null;
-      if (entry && typeof entry === 'object' && 'id' in entry) {
-        const id = (entry as { id: unknown }).id;
-        if (typeof id === 'number') setLoggedEntryId(id);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save your meal.');
-      return;
+    } catch {
+      // handled below: the result stays on screen with the manual button
     }
-    setJustLogged(true);
+    if (savingTokenRef.current === token) savingTokenRef.current = null;
+    if (isCurrent()) {
+      setIsSaving(false);
+      setSaveFailed(!saved);
+      if (saved) setJustLogged(true);
+    }
+    if (!saved) return;
 
     const { streak: nextStreak, milestone } = recordMealLogged();
     setStreak(nextStreak);
@@ -829,7 +880,7 @@ export default function SnapAndTrackApp() {
     }
 
     try {
-      const entries = await fetchLogEntries(user.id);
+      const entries = await fetchLogEntries(userId);
       setRecentMeals(buildRecentMealsFromEntries(entries));
       setLogEntryCount(entries.length);
     } catch {
@@ -1703,14 +1754,27 @@ export default function SnapAndTrackApp() {
               <p style={styles.insight}>{result.stacy_insight}</p>
             </div>
 
-            <button
-              type="button"
-              onClick={logMeal}
-              disabled={justLogged}
-              className={`log-btn${justLogged ? ' logged' : ''}`}
-            >
-              {justLogged ? '✓ Logged!' : '✓ Log this meal'}
-            </button>
+            {justLogged ? (
+              <div className="log-btn logged" role="status">
+                ✓ Logged!
+              </div>
+            ) : (
+              <>
+                {saveFailed && (
+                  <p className="save-failed" role="alert">
+                    Not saved to your log yet. Tap below to try again.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void logMeal()}
+                  disabled={isSaving}
+                  className="log-btn"
+                >
+                  {isSaving ? 'Saving to your log…' : '✓ Log this meal'}
+                </button>
+              </>
+            )}
 
             <button type="button" onClick={() => reset()} className="reset-link">
               Analyse another meal →
@@ -1883,6 +1947,23 @@ export default function SnapAndTrackApp() {
         .log-btn:hover {
           background: ${APP_COLOURS.magenta};
           color: ${APP_COLOURS.onMagenta};
+        }
+        .log-btn:disabled,
+        .log-btn:disabled:hover {
+          cursor: default;
+          background: transparent;
+          color: ${APP_COLOURS.magenta};
+        }
+        .log-btn.logged {
+          text-align: center;
+          box-sizing: border-box;
+        }
+        .save-failed {
+          margin: 0.5rem 0 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: ${APP_COLOURS.danger};
+          text-align: center;
         }
         .log-btn.logged,
         .log-btn.logged:hover {

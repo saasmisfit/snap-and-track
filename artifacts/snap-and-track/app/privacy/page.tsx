@@ -62,7 +62,7 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
     title: '5. Data retention',
     body: (
       <>
-        Your meal log entries are kept for 7 days on a rolling basis. Account data is retained while your account is active. You can request deletion of your account and data at any time by emailing{' '}
+        Your meal log entries are kept for 7 days on a rolling basis. Photos shown next to your meals are stored on your device only, are never uploaded to our servers, and are deleted after 7 days. Account data is retained while your account is active. You can request deletion of your account and data at any time by emailing{' '}
         <a
           href="mailto:help@munchsnapper.com"
           style={{ color: APP_COLOURS.magenta, textDecoration: 'underline', fontWeight: 600 }}

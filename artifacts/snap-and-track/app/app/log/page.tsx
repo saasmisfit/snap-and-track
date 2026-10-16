@@ -7,6 +7,7 @@ import { StreakBadge } from '../../components/StreakBadge';
 import { MacroPill } from '../../components/MacroPill';
 import { APP_COLOURS } from '../../lib/app-colours';
 import { EMPTY_STREAK, checkAndResetStreak, type Streak } from '../../lib/streak';
+import { deleteMealThumb, loadMealThumbs, pruneMealThumbs } from '../../lib/meal-thumbs';
 
 interface FoodItem {
   name: string;
@@ -602,6 +603,8 @@ function dayTotals(entries: LogEntry[], netCarbs: boolean) {
 export default function MealLogPage() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
+  // Meal photo thumbnails stored on this device only, by entry id.
+  const [thumbUrls, setThumbUrls] = useState<Map<number, string>>(() => new Map());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [openDates, setOpenDates] = useState<Set<string>>(() => new Set());
@@ -730,6 +733,14 @@ export default function MealLogPage() {
         if (cancelled) return;
         setEntries(fetched);
         setLoadError(null);
+        // Only after a successful fetch, so a failed load never wipes photos.
+        const ids = fetched.map((e) => e.id);
+        await pruneMealThumbs(userId, ids);
+        const blobs = await loadMealThumbs(ids);
+        if (cancelled || blobs.size === 0) return;
+        const urls = new Map<number, string>();
+        blobs.forEach((blob, id) => urls.set(id, URL.createObjectURL(blob)));
+        setThumbUrls(urls);
       } catch {
         if (cancelled) return;
         setEntries([]);
@@ -740,6 +751,15 @@ export default function MealLogPage() {
       cancelled = true;
     };
   }, [isLoaded, isSignedIn, user?.id]);
+
+  // Release thumbnail object URLs when the page closes
+  const thumbUrlsRef = useRef(thumbUrls);
+  thumbUrlsRef.current = thumbUrls;
+  useEffect(() => {
+    return () => {
+      thumbUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   // Notification permission — ask once, remember result
   useEffect(() => {
@@ -849,6 +869,16 @@ export default function MealLogPage() {
   async function removeEntry(id: number) {
     if (!user?.id) return;
     setEntries((prev) => (prev ? prev.filter((e) => e.id !== id) : prev));
+    const thumbUrl = thumbUrls.get(id);
+    if (thumbUrl) {
+      URL.revokeObjectURL(thumbUrl);
+      setThumbUrls((prev) => {
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+    void deleteMealThumb(id);
     try {
       await fetch('/api/log', {
         method: 'DELETE',
@@ -2391,7 +2421,15 @@ export default function MealLogPage() {
                       {dayEntries.map((e) => (
                         <article key={e.id} style={styles.entryCard}>
                           <div style={styles.entryTopRow}>
-                            <div style={styles.entryDish}>{e.dish}</div>
+                            {thumbUrls.has(e.id) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={thumbUrls.get(e.id)}
+                                alt=""
+                                style={styles.entryThumb}
+                              />
+                            ) : null}
+                            <div style={{ ...styles.entryDish, flex: 1, minWidth: 0 }}>{e.dish}</div>
                             <div style={styles.entryTime}>{getEntryTime(e)}</div>
                           </div>
 
@@ -3057,6 +3095,15 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  entryThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    objectFit: 'cover',
+    flexShrink: 0,
+    border: `1px solid ${APP_COLOURS.border}`,
+    background: APP_COLOURS.softBg,
   },
   entryDish: {
     fontFamily: "'Barlow Condensed', sans-serif",
