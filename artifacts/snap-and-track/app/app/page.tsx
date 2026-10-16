@@ -7,7 +7,7 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import { StreakBadge } from '../components/StreakBadge';
 import { EMPTY_STREAK, checkAndResetStreak, readStreak, writeStreak, type Streak } from '../lib/streak';
 import { APP_COLOURS } from '../lib/app-colours';
-import { shrinkImage } from '../lib/shrink-image';
+import { convertHeicToJpeg, isHeic, shrinkImage } from '../lib/shrink-image';
 import { makeMealThumb, saveMealThumb } from '../lib/meal-thumbs';
 
 const userButtonAppearance = {
@@ -687,9 +687,22 @@ export default function SnapAndTrackApp() {
     setEditingTile(null);
   }
 
-  function acceptFile(f: File) {
+  async function acceptFile(picked: File) {
+    let f = picked;
+    // iPhone HEIC photos are converted to JPEG here, so the preview, compression,
+    // analysis and log thumbnail all work on an ordinary JPEG.
+    if (isHeic(picked)) {
+      const converted = await convertHeicToJpeg(picked);
+      if (!converted) {
+        setError(
+          'We couldn’t open that iPhone (HEIC) photo in this browser. Please choose a JPG or PNG instead.'
+        );
+        return;
+      }
+      f = converted;
+    }
     if (!ACCEPTED_TYPES.includes(f.type)) {
-      setError('That file type isn’t supported. Please use JPG, PNG, or WebP.');
+      setError('That file type isn’t supported. Please use JPG, PNG, WebP or HEIC.');
       return;
     }
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -704,7 +717,7 @@ export default function SnapAndTrackApp() {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    acceptFile(f);
+    void acceptFile(f);
   }
 
   function handleDragOver(e: React.DragEvent<HTMLButtonElement>) {
@@ -724,7 +737,7 @@ export default function SnapAndTrackApp() {
     const f = e.dataTransfer?.files?.[0];
     if (!f) return;
     setMode('meal');
-    acceptFile(f);
+    void acceptFile(f);
   }
 
   function reset(keepGoal = true) {
@@ -1249,7 +1262,7 @@ export default function SnapAndTrackApp() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
               onChange={handleFileChange}
               style={{ display: 'none' }}
             />
@@ -1284,7 +1297,7 @@ export default function SnapAndTrackApp() {
                     📷
                   </div>
                   <div className="upload-title">Drag your photo here, tap to upload, or take a photo</div>
-                  <div className="upload-sub">JPG, PNG, or WebP</div>
+                  <div className="upload-sub">JPG, PNG, WebP or HEIC</div>
                 </button>
                 <button
                   type="button"
