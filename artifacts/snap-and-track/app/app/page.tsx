@@ -2290,6 +2290,31 @@ function offNumber(v: unknown): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
+// Stacy's take for a barcode scan, worked out from the numbers for the amount
+// logged (no AI call). One short, encouraging sentence; first matching rule wins.
+function barcodeStacyTake(n: { calories: number; protein: number; carbs: number }): string {
+  const { calories, protein, carbs } = n;
+  // Missing pack data reads as 0, so make no claims when there are no calories.
+  if (calories <= 0) {
+    return 'These numbers are straight from the pack, so just tweak the amount if you had more or less than this.';
+  }
+  const proteinShare = (protein * 4) / calories;
+  const carbShare = (carbs * 4) / calories;
+  if (protein >= 20 || (protein >= 10 && proteinShare >= 0.3)) {
+    return `Nice one: ${protein}g of protein is a really good hit towards your day.`;
+  }
+  if (calories > 500) {
+    return `This one comes in at ${calories} kcal, so keep the rest of today a little lighter and you’ll stay right on track.`;
+  }
+  if (calories < 150) {
+    return `At ${calories} kcal, this is a light, easy fit for your day.`;
+  }
+  if (carbShare >= 0.5 && proteinShare < 0.15) {
+    return 'This one is mostly carbs, so pair it with a protein source and it’ll round things out nicely.';
+  }
+  return 'These numbers are straight from the pack, so just tweak the amount if you had more or less than this.';
+}
+
 function BarcodeScannerModal({
   onClose,
   onResult,
@@ -2435,8 +2460,8 @@ function BarcodeScannerModal({
           calories: preview.calories,
         },
       ],
-      stacy_insight:
-        'Logged from a barcode scan. Adjust the serving size if it does not match what you ate.',
+      // Built from the same per-serving numbers as above, so it follows the grams chosen.
+      stacy_insight: barcodeStacyTake(preview),
     });
   }
 
