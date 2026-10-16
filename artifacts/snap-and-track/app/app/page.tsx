@@ -2327,7 +2327,31 @@ function BarcodeScannerModal({
   const [productName, setProductName] = useState<string>('');
   const [per100g, setPer100g] = useState<OffPer100g | null>(null);
   const [servingGrams, setServingGrams] = useState<string>('100');
+  const [typedCode, setTypedCode] = useState<string>('');
+  const [typedError, setTypedError] = useState<string>('');
+  const [showNoReadHint, setShowNoReadHint] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Set once a lookup starts, so a camera read and a typed number can never
+  // both start one. Cleared when the lookup finishes and by tryAgain().
+  const lookupStartedRef = useRef(false);
+
+  // Leaving the 'scanning' phase stops the camera (see the cleanup below), so
+  // this is the single way into a lookup for both the camera and a typed number.
+  function startLookup(code: string) {
+    if (lookupStartedRef.current) return;
+    lookupStartedRef.current = true;
+    setPhase('looking-up');
+    void lookupBarcode(code);
+  }
+
+  // After about 15 seconds of scanning with no read, show a gentle hint. The
+  // scan keeps running; any phase change (such as a read) hides the hint.
+  useEffect(() => {
+    setShowNoReadHint(false);
+    if (phase !== 'scanning') return;
+    const t = window.setTimeout(() => setShowNoReadHint(true), 15000);
+    return () => window.clearTimeout(t);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'scanning') return;
@@ -2351,9 +2375,7 @@ function BarcodeScannerModal({
             } catch {
               // best-effort
             }
-            const text = decoded.getText();
-            setPhase('looking-up');
-            void lookupBarcode(text);
+            startLookup(decoded.getText());
           }
         );
         controls = result as unknown as ScannerControlsLike;
@@ -2378,6 +2400,8 @@ function BarcodeScannerModal({
         }
       }
     };
+    // startLookup only touches refs and state setters, so it is safe to omit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   async function lookupBarcode(barcode: string) {
@@ -2419,6 +2443,9 @@ function BarcodeScannerModal({
       setPhase('serving');
     } catch {
       setPhase('not-found');
+    } finally {
+      // The camera has stopped by now, so a new (typed) lookup may start.
+      lookupStartedRef.current = false;
     }
   }
 
@@ -2427,7 +2454,21 @@ function BarcodeScannerModal({
     setProductName('');
     setPer100g(null);
     setServingGrams('100');
+    setTypedCode('');
+    setTypedError('');
+    lookupStartedRef.current = false;
     setPhase('scanning');
+  }
+
+  function submitTypedCode(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const code = typedCode.replace(/\s+/g, '');
+    if (!/^\d{8,14}$/.test(code)) {
+      setTypedError('Check the number under the barcode (8 to 14 digits).');
+      return;
+    }
+    setTypedError('');
+    startLookup(code);
   }
 
   const servingValue = parseFloat(servingGrams);
@@ -2544,6 +2585,80 @@ function BarcodeScannerModal({
     cursor: 'pointer',
   };
 
+  // "Can't scan? Type the number": goes through the same lookup as a camera read.
+  const typedEntry = (
+    <form
+      onSubmit={submitTypedCode}
+      noValidate
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        borderTop: `1px solid ${APP_COLOURS.border}`,
+        paddingTop: '1rem',
+      }}
+    >
+      <label
+        htmlFor="barcode-typed"
+        style={{ fontSize: 16, fontWeight: 600, color: APP_COLOURS.heading }}
+      >
+        Can&apos;t scan? Type the number
+      </label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          id="barcode-typed"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="Numbers under the barcode"
+          value={typedCode}
+          onChange={(e) => {
+            setTypedCode(e.target.value);
+            if (typedError) setTypedError('');
+          }}
+          aria-invalid={typedError ? true : undefined}
+          aria-describedby={typedError ? 'barcode-typed-error' : undefined}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 44,
+            boxSizing: 'border-box',
+            background: APP_COLOURS.card,
+            color: APP_COLOURS.text,
+            border: `1px solid ${typedError ? APP_COLOURS.danger : APP_COLOURS.border}`,
+            borderRadius: 10,
+            padding: '10px 14px',
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 16,
+            outline: 'none',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            ...secondaryBtnStyle,
+            width: 'auto',
+            minHeight: 44,
+            flexShrink: 0,
+            padding: '0 18px',
+          }}
+        >
+          Look up
+        </button>
+      </div>
+      {typedError && (
+        <p
+          id="barcode-typed-error"
+          role="alert"
+          style={{ fontSize: 14, color: APP_COLOURS.danger, margin: 0, lineHeight: 1.4 }}
+        >
+          {typedError}
+        </p>
+      )}
+    </form>
+  );
+
   return (
     <div role="dialog" aria-modal="true" aria-label="Scan a barcode" style={overlayStyle}>
       <div style={cardStyle}>
@@ -2580,6 +2695,26 @@ function BarcodeScannerModal({
             <p style={{ fontSize: 16, color: APP_COLOURS.textMuted, margin: 0, textAlign: 'center' }}>
               Point your camera at a product barcode
             </p>
+            {showNoReadHint && (
+              <p
+                role="status"
+                style={{
+                  fontSize: 15,
+                  color: APP_COLOURS.text,
+                  background: APP_COLOURS.magentaSoft,
+                  border: `1px solid ${APP_COLOURS.magentaTint}`,
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  margin: 0,
+                  lineHeight: 1.5,
+                  textAlign: 'center',
+                }}
+              >
+                Still looking. Hold the barcode steady in good light, a little further back, or type
+                the number below.
+              </p>
+            )}
+            {typedEntry}
           </>
         )}
 
@@ -2693,6 +2828,7 @@ function BarcodeScannerModal({
             <button type="button" onClick={onClose} style={secondaryBtnStyle}>
               Close
             </button>
+            {typedEntry}
           </>
         )}
 
